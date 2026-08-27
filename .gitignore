@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Frontend
+FRONTEND/node_modules/
+FRONTEND/.next/
+FRONTEND/dist/
+
+# Backend
+BACKEND/target/
+
+# Spring Boot
+BACKEND/src/main/resources/application.properties
+
+# IDE
+.idea/
+.vscode/
