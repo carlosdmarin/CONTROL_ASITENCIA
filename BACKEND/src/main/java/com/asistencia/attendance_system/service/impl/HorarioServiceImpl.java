@@ -111,7 +111,7 @@ public class HorarioServiceImpl implements HorarioService {
         HorarioSemanalDTO horario = new HorarioSemanalDTO();
         horario.setIdPracticante(idPracticante);
         horario.setNombreCompleto(practicante.getNombre() + " " + practicante.getApellido());
-        horario.setCodigoTrabajador(practicante.getCodigoTrabajador());
+        horario.setDocumento(practicante.getDocumento());
 
         horario.setLunes(new ArrayList<>());
         horario.setMartes(new ArrayList<>());

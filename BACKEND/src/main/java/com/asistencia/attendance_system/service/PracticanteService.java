@@ -34,7 +34,12 @@ public interface PracticanteService {
 
     Long contarActivos();
 
-    Long contarPorAgencia(Long idAgencia);
+    Long contarPorSede(Long idSede);
+
+    // Compatibilidad temporal: antiguo endpoint /contar/agencia
+    default Long contarPorAgencia(Long idAgencia) {
+        return contarPorSede(idAgencia);
+    }
 
     // ========== CAMBIOS DE ESTADO ==========
 

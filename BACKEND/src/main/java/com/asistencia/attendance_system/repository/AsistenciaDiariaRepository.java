@@ -44,6 +44,11 @@ public interface AsistenciaDiariaRepository extends JpaRepository<AsistenciaDiar
 
     // ========== QUERYS CON SQL NATIVO ==========
 
-    @Query(value = "SELECT p.agencia, COUNT(*) as total, SUM(CASE WHEN ad.estado_dia = 'PRESENTE' THEN 1 ELSE 0 END) as presentes, SUM(CASE WHEN ad.estado_dia = 'FALTA' THEN 1 ELSE 0 END) as faltas FROM Asistencia_Diaria ad INNER JOIN Practicante p ON ad.id_practicante = p.id_practicante WHERE YEAR(ad.fecha) = :anio AND MONTH(ad.fecha) = :mes GROUP BY p.agencia", nativeQuery = true)
-    List<Object[]> getResumenAsistenciasPorAgencia(@Param("anio") Integer anio, @Param("mes") Integer mes);
+    @Query(value = "SELECT p.id_agencia, COUNT(*) as total, SUM(CASE WHEN ad.estado_dia = 'PRESENTE' THEN 1 ELSE 0 END) as presentes, SUM(CASE WHEN ad.estado_dia = 'FALTA' THEN 1 ELSE 0 END) as faltas FROM Asistencia_Diaria ad INNER JOIN Practicante p ON ad.id_practicante = p.id_practicante WHERE YEAR(ad.fecha) = :anio AND MONTH(ad.fecha) = :mes GROUP BY p.id_agencia", nativeQuery = true)
+    List<Object[]> getResumenAsistenciasPorSede(@Param("anio") Integer anio, @Param("mes") Integer mes);
+
+    // Alias compatibilidad
+    default List<Object[]> getResumenAsistenciasPorAgencia(Integer anio, Integer mes) {
+        return getResumenAsistenciasPorSede(anio, mes);
+    }
 }

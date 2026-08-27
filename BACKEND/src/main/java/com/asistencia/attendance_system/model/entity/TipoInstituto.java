@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "TipoInstituto")
+@Table(name = "Centro_estudios")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,7 +15,7 @@ public class TipoInstituto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_tipo_instituto")
+    @Column(name = "id_centro_estudios")
     private Long idTipoInstituto;
 
     @Column(name = "nombre", nullable = false, unique = true, length = 50)

@@ -1,5 +1,6 @@
 package com.asistencia.attendance_system.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResumenMensualDTO {
-    private String agencia;
+    @JsonAlias({"agencia", "sede"})
+    private String sede;
     private Integer mes;
     private Integer anio;
     private Long totalPracticantes;
@@ -20,4 +22,8 @@ public class ResumenMensualDTO {
     private Long totalJustificados;
     private BigDecimal promedioHorasTrabajadas;
     private Double porcentajeAsistencia;
+
+    // Compatibilidad
+    public String getAgencia() { return sede; }
+    public void setAgencia(String agencia) { this.sede = agencia; }
 }

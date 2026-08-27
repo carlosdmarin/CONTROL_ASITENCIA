@@ -47,7 +47,7 @@ export default function PracticantesPage() {
     (p) =>
       p.nombreCompleto?.toLowerCase().includes(busqueda.toLowerCase()) ||
       p.documento?.includes(busqueda) ||
-      p.codigoTrabajador?.includes(busqueda)
+      (p.sede || (p as any).agencia || "").toLowerCase().includes(busqueda.toLowerCase())
   );
 
   // ====== AGREGAR PRACTICANTE ======
@@ -67,16 +67,15 @@ export default function PracticantesPage() {
   // ====== EDITAR PRACTICANTE ======
   const guardarCambios = async (practicanteEditado: Practicante) => {
     try {
-      // Convertir Practicante a NuevoPracticante para el update
+      // Convertir Practicante a NuevoPracticante para el update (sin codigoTrabajador)
       const data = {
-        codigoTrabajador: practicanteEditado.codigoTrabajador,
         nombre: practicanteEditado.nombreCompleto.split(" ")[0] || "",
         apellido: practicanteEditado.nombreCompleto.split(" ").slice(1).join(" ") || "",
         documento: practicanteEditado.documento,
-        idAgencia: 1, // TODO: Obtener el ID real de la agencia
-        idPuesto: 1,  // TODO: Obtener el ID real del puesto
-        idTipoInstituto: 1, // TODO: Obtener el ID real del tipo de instituto
-        idCargo: 1,   // TODO: Obtener el ID real del cargo
+        idSede: 1,
+        idPuesto: 1,
+        idTipoInstituto: 1,
+        idCargo: 1,
         correoElectronico: practicanteEditado.correoElectronico,
         telefono: practicanteEditado.telefono,
         fechaInicioPracticas: practicanteEditado.fechaInicioPracticas,

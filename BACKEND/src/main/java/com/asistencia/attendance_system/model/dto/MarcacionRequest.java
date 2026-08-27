@@ -1,5 +1,6 @@
 package com.asistencia.attendance_system.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -11,8 +12,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MarcacionRequest {
 
-    @NotBlank(message = "El código del trabajador es obligatorio")
-    private String codigoTrabajador;
+    @NotBlank(message = "El documento es obligatorio")
+    @JsonAlias({"codigoTrabajador", "codigo_trabajador"})
+    private String documento;
+
+    // Compatibilidad
+    public String getCodigoTrabajador() { return documento; }
+    public void setCodigoTrabajador(String codigoTrabajador) { this.documento = codigoTrabajador; }
 
     @NotBlank(message = "El tipo de marcación es obligatorio")
     private String tipoMarcacion; // ENTRADA, SALIDA

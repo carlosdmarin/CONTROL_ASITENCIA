@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SaveCheck, Pencil } from "lucide-react";
-import { Practicante, Agencia, Cargo, Puesto, TipoInstituto } from "@/types/practicante";
-import { agenciasApi } from "@/lib/api/agencias";
+import { Practicante, Sede, Cargo, Puesto, TipoInstituto } from "@/types/practicante";
+import { sedeApi } from "@/lib/api/agencias";
 import { cargosApi } from "@/lib/api/cargos";
 import { puestosApi } from "@/lib/api/puestos";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
@@ -32,7 +32,7 @@ export function PracticanteEditDialog({
   practicante,
   onSave,
 }: PracticanteEditDialogProps) {
-  const [agencias, setAgencias] = useState<Agencia[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [puestos, setPuestos] = useState<Puesto[]>([]);
@@ -48,14 +48,14 @@ export function PracticanteEditDialog({
     const cargarSelects = async () => {
       try {
         setLoadingSelects(true);
-        const [agenciasData, cargosData, puestosData, tiposData] = await Promise.all([
-          agenciasApi.getAll(),
+        const [sedesData, cargosData, puestosData, tiposData] = await Promise.all([
+          sedeApi.getAll(),
           cargosApi.getAll(),
           puestosApi.getAll(),
           tiposInstitutoApi.getAll(),
         ]);
 
-        setAgencias(agenciasData);
+        setSedes(sedesData);
         setCargos(cargosData);
         setPuestos(puestosData);
         setTiposInstituto(tiposData);
@@ -108,17 +108,6 @@ export function PracticanteEditDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          {/* ====== CÓDIGO (solo lectura) ====== */}
-          <div className="grid gap-2">
-            <Label htmlFor="edit-codigo">Código</Label>
-            <Input
-              id="edit-codigo"
-              value={formData.codigoTrabajador}
-              disabled
-              className="bg-gray-100"
-            />
-          </div>
-
           {/* ====== NOMBRE COMPLETO (solo lectura) ====== */}
           <div className="grid gap-2">
             <Label htmlFor="edit-nombre">Nombre completo</Label>
@@ -165,20 +154,20 @@ export function PracticanteEditDialog({
             />
           </div>
 
-          {/* ====== AGENCIA ====== */}
+          {/* ====== SEDE ====== */}
           <div className="grid gap-2">
-            <Label htmlFor="edit-agencia">Agencia</Label>
+            <Label htmlFor="edit-sede">Sede</Label>
             <select
-              id="edit-agencia"
-              name="agencia"
-              value={formData.agencia}
+              id="edit-sede"
+              name="sede"
+              value={formData.sede || (formData as any).agencia || ""}
               onChange={handleChange}
               className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm bg-white"
               disabled={loadingSelects}
             >
-              {agencias.map((agencia) => (
-                <option key={agencia.idAgencia} value={agencia.nombre}>
-                  {agencia.nombre}
+              {sedes.map((sede) => (
+                <option key={sede.idSede} value={sede.nombre}>
+                  {sede.nombre}
                 </option>
               ))}
             </select>

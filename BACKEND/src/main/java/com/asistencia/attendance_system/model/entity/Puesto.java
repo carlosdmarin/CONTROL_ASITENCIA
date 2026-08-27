@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Puesto")
+@Table(name = "Area")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,17 +15,21 @@ public class Puesto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_puesto")
+    @Column(name = "id_area")
     private Long idPuesto;
 
-    @Column(name = "nombre_puesto", nullable = false, length = 100)
+    @Column(name = "nombre_area", nullable = false, length = 100)
     private String nombrePuesto;
 
-    @Column(name = "area", nullable = false, length = 100)
+    @Column(name = "descripcion", columnDefinition = "TEXT")
     private String area;
 
-    @Column(name = "descripcion", columnDefinition = "TEXT")
+    @Transient
     private String descripcion;
+
+    // Alias para compatibilidad: descripcion mapea a area (tabla Area solo tiene descripcion)
+    public String getDescripcion() { return area; }
+    public void setDescripcion(String descripcion) { this.area = descripcion; }
 
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;

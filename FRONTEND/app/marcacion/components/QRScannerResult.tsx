@@ -12,42 +12,42 @@ interface QRScannerResultProps {
   onClose: () => void;
 }
 
-// Datos simulados del practicante (después se conectará con el backend)
-const getPracticanteData = (codigo: string) => {
-  const practicantes = {
-    "25033": {
-      nombre: "Carlos Daniel",
-      apellido: "Marin Panduro",
-      documento: "60563764",
-      agencia: "OFICINA PUCALLPA",
+// Datos simulados del practicante (ahora por documento, sin codigoTrabajador)
+const getPracticanteData = (documento: string) => {
+  const practicantes: Record<string, { nombre: string; apellido: string; documento: string; sede: string; puesto: string; cargo: string; horas: number; foto: string }> = {
+    "70000001": {
+      nombre: "Carlos",
+      apellido: "Ramirez Torres",
+      documento: "70000001",
+      sede: "OFICINA PUCALLPA",
       puesto: "Tecnología de la Información",
       cargo: "PRACTICANTE PRE PROFESIONAL",
       horas: 30,
       foto: "",
     },
-    "25050": {
-      nombre: "Juan",
-      apellido: "Perez Gomez",
-      documento: "12345678",
-      agencia: "PLANTA NESHUYA",
-      puesto: "Mantenimiento",
-      cargo: "PRACTICANTE PROFESIONAL",
-      horas: 48,
+    "70000002": {
+      nombre: "Daniela",
+      apellido: "Flores Mendoza",
+      documento: "70000002",
+      sede: "OFICINA PUCALLPA",
+      puesto: "Recursos Humanos",
+      cargo: "PRACTICANTE PRE PROFESIONAL",
+      horas: 30,
       foto: "",
     },
-    "25060": {
-      nombre: "Maria",
-      apellido: "Lopez Torres",
-      documento: "87654321",
-      agencia: "PLANTA CAMPOVERDE",
-      puesto: "Logística",
+    "70000003": {
+      nombre: "Miguel",
+      apellido: "Sanchez Lopez",
+      documento: "70000003",
+      sede: "PLANTA NESHUYA",
+      puesto: "Mantenimiento",
       cargo: "PRACTICANTE PRE PROFESIONAL",
       horas: 30,
       foto: "",
     },
   };
 
-  return practicantes[codigo as keyof typeof practicantes] || null;
+  return practicantes[documento] || null;
 };
 
 type PracticanteData = NonNullable<ReturnType<typeof getPracticanteData>>;
@@ -92,7 +92,7 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
           </CardHeader>
           <CardContent className="text-center pb-6">
             <p className="text-gray-500 mb-4">
-              No se encontró ningún practicante con el código:
+              No se encontró ningún practicante con el documento:
             </p>
             <code className="bg-gray-100 px-4 py-2 rounded-lg font-mono text-sm">{codigo}</code>
             <Button 
@@ -165,9 +165,9 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <Building2 className="h-4 w-4" />
-                <span>Agencia</span>
+                <span>Sede</span>
               </div>
-              <span className="font-medium text-gray-800">{practicante.agencia}</span>
+              <span className="font-medium text-gray-800">{practicante.sede}</span>
             </div>
 
             <div className="flex items-center justify-between text-sm">

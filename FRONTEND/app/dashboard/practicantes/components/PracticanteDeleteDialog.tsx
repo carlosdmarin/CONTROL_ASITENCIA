@@ -49,9 +49,9 @@ export function PracticanteDeleteDialog({
             <strong className="text-foreground font-semibold">
               {practicante.nombreCompleto}
             </strong>{" "}
-            con código{" "}
+            con documento{" "}
             <strong className="text-foreground font-semibold">
-              {practicante.codigoTrabajador}
+              {practicante.documento}
             </strong>
             . Este proceso es irreversible y eliminarás todos los datos
             asociados.

@@ -49,7 +49,6 @@ const TableSkeleton = () => (
   <>
     {Array.from({ length: 5 }).map((_, index) => (
       <TableRow key={index}>
-        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
         <TableCell>
           <div className="flex items-center gap-3">
             <Skeleton className="h-8 w-8 rounded-full" />
@@ -98,10 +97,9 @@ export function PracticanteTable({
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-100 hover:bg-gray-50/80">
-                <TableHead className="font-semibold">Código</TableHead>
                 <TableHead className="font-semibold">Nombre completo</TableHead>
                 <TableHead className="font-semibold">Documento</TableHead>
-                <TableHead className="font-semibold">Agencia</TableHead>
+                <TableHead className="font-semibold">Sede</TableHead>
                 <TableHead className="font-semibold">Cargo</TableHead>
                 <TableHead className="font-semibold text-center">Horas</TableHead>
                 <TableHead className="font-semibold text-center">Estado</TableHead>
@@ -113,7 +111,7 @@ export function PracticanteTable({
                 <TableSkeleton />
               ) : practicantes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-48 text-center">
+                  <TableCell colSpan={7} className="h-48 text-center">
                     <div className="flex flex-col items-center justify-center">
                       {busqueda ? (
                         <>
@@ -142,9 +140,6 @@ export function PracticanteTable({
               ) : (
                 practicantes.map((practicante) => (
                   <TableRow key={practicante.idPracticante} className="hover:bg-slate-50 h-12">
-                    <TableCell className="font-medium text-sm text-gray-600">
-                      {practicante.codigoTrabajador}
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="w-8 h-8 text-xs font-medium">
@@ -163,7 +158,7 @@ export function PracticanteTable({
                         variant="outline"
                         className="bg-purple-50 text-black border-purple-200"
                       >
-                        {practicante.agencia}
+                        {practicante.sede || (practicante as any).agencia}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -205,7 +200,7 @@ export function PracticanteTable({
                         </Button>
 
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                          <DropdownMenuTrigger>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4 text-gray-600" />
                             </Button>

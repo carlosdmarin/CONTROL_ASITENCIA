@@ -1,14 +1,17 @@
-// types/practicante.ts
+// types/practicante.ts - Sincronizado con nueva BD (sin codigoTrabajador, Sede en lugar de Agencia)
 import { Puesto } from './puestos';
 export type { Puesto } from './puestos';
 
-export type Agencia = {
-  idAgencia: number;
+export type Sede = {
+  idSede: number;
   nombre: string;
   descripcion?: string;
   activo: boolean;
   fechaCreacion?: string;
 };
+
+// Alias compatibilidad: código antiguo usa Agencia
+export type Agencia = Sede;
 
 export type Cargo = {
   idCargo: number;
@@ -29,10 +32,9 @@ export type TipoInstituto = {
 
 export type Practicante = {
   idPracticante: number;
-  codigoTrabajador: string;
   nombreCompleto: string;
   documento: string;
-  agencia: string;
+  sede: string;
   puesto: string;
   area: string;
   tipoInstituto: string;
@@ -43,19 +45,22 @@ export type Practicante = {
   telefono?: string;
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
-  // Para relaciones completas
-  agenciaObj?: Agencia;
+  // Compatibilidad: backend aún puede devolver agencia/codigoTrabajador
+  agencia?: string;
+  codigoTrabajador?: string;
+  // Relaciones completas
+  sedeObj?: Sede;
+  agenciaObj?: Sede;
   puestoObj?: Puesto;
   tipoInstitutoObj?: TipoInstituto;
   cargoObj?: Cargo;
 };
 
 export type NuevoPracticante = {
-  codigoTrabajador: string;
   nombre: string;
   apellido: string;
   documento: string;
-  idAgencia: number;
+  idSede: number;
   idPuesto: number;
   idTipoInstituto: number;
   idCargo: number;
@@ -63,4 +68,7 @@ export type NuevoPracticante = {
   telefono?: string;
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
+  // Alias para compatibilidad si frontend antiguo envía idAgencia/codigoTrabajador
+  idAgencia?: number;
+  codigoTrabajador?: string;
 };

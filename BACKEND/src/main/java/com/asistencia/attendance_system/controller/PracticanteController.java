@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/practicantes")
@@ -64,7 +65,7 @@ public class PracticanteController {
         return ResponseEntity.ok(response);
     }
 
-    // Obtener practicante por código
+    // Obtener practicante por código (alias, ahora usa documento)
     @GetMapping("/codigo/{codigo}")
     public ResponseEntity<PracticanteResponse> obtenerPorCodigo(@PathVariable String codigo) {
         PracticanteResponse response = practicanteService.obtenerPorCodigo(codigo);
@@ -103,10 +104,10 @@ public class PracticanteController {
         return ResponseEntity.ok(count);
     }
 
-    // Contar practicantes por agencia
-    @GetMapping("/contar/agencia/{idAgencia}")
-    public ResponseEntity<Long> contarPorAgencia(@PathVariable Long idAgencia) {
-        Long count = practicanteService.contarPorAgencia(idAgencia);
+    // Contar practicantes por sede (alias /agencia para compatibilidad frontend)
+    @GetMapping({"/contar/sede/{id}", "/contar/agencia/{id}"})
+    public ResponseEntity<Long> contarPorSede(@PathVariable Long id) {
+        Long count = practicanteService.contarPorSede(id);
         return ResponseEntity.ok(count);
     }
 

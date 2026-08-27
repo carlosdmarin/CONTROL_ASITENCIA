@@ -4,6 +4,7 @@ import com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse;
 import com.asistencia.attendance_system.model.dto.MarcacionRequest;
 import com.asistencia.attendance_system.model.dto.MarcacionResponse;
 import com.asistencia.attendance_system.model.dto.ResumenAsistenciaDTO;
+import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.enums.Agencia;
 
 import java.time.LocalDate;
@@ -15,9 +16,17 @@ public interface AsistenciaService {
 
     MarcacionResponse registrarMarcacion(MarcacionRequest request);
 
-    MarcacionResponse registrarEntrada(String codigoTrabajador);
+    MarcacionResponse registrarEntrada(String documento);
 
-    MarcacionResponse registrarSalida(String codigoTrabajador);
+    MarcacionResponse registrarSalida(String documento);
+
+    // Alias compatibilidad
+    default MarcacionResponse registrarEntradaPorCodigo(String codigoTrabajador) {
+        return registrarEntrada(codigoTrabajador);
+    }
+    default MarcacionResponse registrarSalidaPorCodigo(String codigoTrabajador) {
+        return registrarSalida(codigoTrabajador);
+    }
 
     // ========== CONSULTA DE MARCACIONES ==========
 
@@ -45,7 +54,12 @@ public interface AsistenciaService {
 
     ResumenAsistenciaDTO obtenerResumenSemanal(Long idPracticante, LocalDate fechaInicio);
 
-    List<ResumenAsistenciaDTO> obtenerResumenSemanalPorAgencia(Agencia agencia, LocalDate fechaInicio);
+    List<ResumenAsistenciaDTO> obtenerResumenSemanalPorSede(Sede sede, LocalDate fechaInicio);
+
+    // Compatibilidad temporal: antiguo endpoint por Agencia enum
+    default List<ResumenAsistenciaDTO> obtenerResumenSemanalPorAgencia(Agencia agencia, LocalDate fechaInicio) {
+        return List.of();
+    }
 
     // ========== PROCESAMIENTO AUTOMÁTICO ==========
 

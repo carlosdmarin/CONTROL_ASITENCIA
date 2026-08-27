@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/puestos")
+@RequestMapping({"/api/puestos", "/api/areas"})
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 public class PuestoController {

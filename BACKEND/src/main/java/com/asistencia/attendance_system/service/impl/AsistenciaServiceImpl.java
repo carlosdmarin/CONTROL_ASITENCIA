@@ -7,6 +7,7 @@ import com.asistencia.attendance_system.model.dto.ResumenAsistenciaDTO;
 import com.asistencia.attendance_system.model.entity.AsistenciaDiaria;
 import com.asistencia.attendance_system.model.entity.Marcacion;
 import com.asistencia.attendance_system.model.entity.Practicante;
+import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.enums.Agencia;
 import com.asistencia.attendance_system.model.enums.EstadoDia;
 import com.asistencia.attendance_system.model.enums.MetodoRegistro;
@@ -41,10 +42,10 @@ public class AsistenciaServiceImpl implements AsistenciaService {
 
     @Override
     public MarcacionResponse registrarMarcacion(MarcacionRequest request) {
-        log.info("Registrando marcación para practicante: {}", request.getCodigoTrabajador());
+        log.info("Registrando marcación para practicante: {}", request.getDocumento());
 
-        Practicante practicante = practicanteRepository.findByCodigoTrabajador(request.getCodigoTrabajador())
-                .orElseThrow(() -> new RuntimeException("Practicante no encontrado con código: " + request.getCodigoTrabajador()));
+        Practicante practicante = practicanteRepository.findByDocumento(request.getDocumento())
+                .orElseThrow(() -> new RuntimeException("Practicante no encontrado con código: " + request.getDocumento()));
 
         LocalDate fecha = LocalDate.now();
         LocalTime hora = LocalTime.now();
@@ -79,13 +80,13 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         marcacion.setObservaciones(request.getObservaciones());
 
         Marcacion saved = marcacionRepository.save(marcacion);
-        log.info("Marcación registrada: {} - {}", tipo, practicante.getCodigoTrabajador());
+        log.info("Marcación registrada: {} - {}", tipo, practicante.getDocumento());
 
         procesarAsistenciaDiaria(practicante.getIdPracticante(), fecha);
 
         MarcacionResponse response = new MarcacionResponse();
         response.setIdMarcacion(saved.getIdMarcacion());
-        response.setCodigoTrabajador(practicante.getCodigoTrabajador());
+        response.setDocumento(practicante.getDocumento());
         response.setNombreCompleto(practicante.getNombre() + " " + practicante.getApellido());
         response.setFecha(saved.getFecha());
         response.setHoraMarcacion(saved.getHoraMarcacion());
@@ -99,18 +100,18 @@ public class AsistenciaServiceImpl implements AsistenciaService {
     }
 
     @Override
-    public MarcacionResponse registrarEntrada(String codigoTrabajador) {
+    public MarcacionResponse registrarEntrada(String documento) {
         MarcacionRequest request = new MarcacionRequest();
-        request.setCodigoTrabajador(codigoTrabajador);
+        request.setDocumento(documento);
         request.setTipoMarcacion("ENTRADA");
         request.setMetodoRegistro("QR");
         return registrarMarcacion(request);
     }
 
     @Override
-    public MarcacionResponse registrarSalida(String codigoTrabajador) {
+    public MarcacionResponse registrarSalida(String documento) {
         MarcacionRequest request = new MarcacionRequest();
-        request.setCodigoTrabajador(codigoTrabajador);
+        request.setDocumento(documento);
         request.setTipoMarcacion("SALIDA");
         request.setMetodoRegistro("QR");
         return registrarMarcacion(request);
@@ -188,8 +189,8 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         ResumenAsistenciaDTO resumen = new ResumenAsistenciaDTO();
         resumen.setIdPracticante(idPracticante);
         resumen.setNombreCompleto(practicante.getNombre() + " " + practicante.getApellido());
-        resumen.setCodigoTrabajador(practicante.getCodigoTrabajador());
-        resumen.setAgencia(practicante.getAgencia().getNombre());
+        resumen.setDocumento(practicante.getDocumento());
+        resumen.setSede(practicante.getSede().getNombre());
         resumen.setCargo(practicante.getCargo().getNombre());
 
         // ✅ CORREGIDO: Obtener horas desde el objeto Cargo
@@ -226,6 +227,11 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         }
 
         return resumen;
+    }
+
+    @Override
+    public List<ResumenAsistenciaDTO> obtenerResumenSemanalPorSede(Sede sede, LocalDate fechaInicio) {
+        return List.of();
     }
 
     @Override
@@ -294,7 +300,7 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         asistencia.setSalidaReal(salidaReal);
 
         asistenciaDiariaRepository.save(asistencia);
-        log.info("Asistencia diaria procesada para {} - Estado: {}", practicante.getCodigoTrabajador(), estado);
+        log.info("Asistencia diaria procesada para {} - Estado: {}", practicante.getDocumento(), estado);
     }
 
     @Override
@@ -312,7 +318,7 @@ public class AsistenciaServiceImpl implements AsistenciaService {
     private MarcacionResponse convertMarcacionToResponse(Marcacion marcacion) {
         MarcacionResponse response = new MarcacionResponse();
         response.setIdMarcacion(marcacion.getIdMarcacion());
-        response.setCodigoTrabajador(marcacion.getPracticante().getCodigoTrabajador());
+        response.setDocumento(marcacion.getPracticante().getDocumento());
         response.setNombreCompleto(marcacion.getPracticante().getNombre() + " " + marcacion.getPracticante().getApellido());
         response.setFecha(marcacion.getFecha());
         response.setHoraMarcacion(marcacion.getHoraMarcacion());

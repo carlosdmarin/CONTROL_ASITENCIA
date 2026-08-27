@@ -22,24 +22,20 @@ public class PracticanteServiceImpl implements PracticanteService {
 
     private final PracticanteRepository practicanteRepository;
     private final PuestoRepository puestoRepository;
-    private final AgenciaRepository agenciaRepository;
+    private final SedeRepository sedeRepository;
     private final CargoRepository cargoRepository;
     private final TipoInstitutoRepository tipoInstitutoRepository;
 
     @Override
     public PracticanteResponse crear(PracticanteRequest request) {
-        log.info("Creando nuevo practicante: {}", request.getCodigoTrabajador());
-
-        if (practicanteRepository.findByCodigoTrabajador(request.getCodigoTrabajador()).isPresent()) {
-            throw new RuntimeException("Ya existe un practicante con el código: " + request.getCodigoTrabajador());
-        }
+        log.info("Creando nuevo practicante: {}", request.getDocumento());
 
         if (practicanteRepository.findByDocumento(request.getDocumento()).isPresent()) {
             throw new RuntimeException("Ya existe un practicante con el documento: " + request.getDocumento());
         }
 
-        Agencia agencia = agenciaRepository.findById(request.getIdAgencia())
-                .orElseThrow(() -> new RuntimeException("Agencia no encontrada con ID: " + request.getIdAgencia()));
+        Sede sede = sedeRepository.findById(request.getIdSede())
+                .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getIdSede()));
 
         Puesto puesto = puestoRepository.findById(request.getIdPuesto())
                 .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + request.getIdPuesto()));
@@ -51,11 +47,10 @@ public class PracticanteServiceImpl implements PracticanteService {
                 .orElseThrow(() -> new RuntimeException("Cargo no encontrado con ID: " + request.getIdCargo()));
 
         Practicante practicante = new Practicante();
-        practicante.setCodigoTrabajador(request.getCodigoTrabajador());
         practicante.setNombre(request.getNombre());
         practicante.setApellido(request.getApellido());
         practicante.setDocumento(request.getDocumento());
-        practicante.setAgencia(agencia);
+        practicante.setSede(sede);
         practicante.setPuesto(puesto);
         practicante.setTipoInstituto(tipoInstituto);
         practicante.setCargo(cargo);
@@ -78,8 +73,8 @@ public class PracticanteServiceImpl implements PracticanteService {
         Practicante practicante = practicanteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Practicante no encontrado con ID: " + id));
 
-        Agencia agencia = agenciaRepository.findById(request.getIdAgencia())
-                .orElseThrow(() -> new RuntimeException("Agencia no encontrada con ID: " + request.getIdAgencia()));
+        Sede sede = sedeRepository.findById(request.getIdSede())
+                .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getIdSede()));
 
         Puesto puesto = puestoRepository.findById(request.getIdPuesto())
                 .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + request.getIdPuesto()));
@@ -93,7 +88,7 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setNombre(request.getNombre());
         practicante.setApellido(request.getApellido());
         practicante.setDocumento(request.getDocumento());
-        practicante.setAgencia(agencia);
+        practicante.setSede(sede);
         practicante.setPuesto(puesto);
         practicante.setTipoInstituto(tipoInstituto);
         practicante.setCargo(cargo);
@@ -103,7 +98,7 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setFechaFinPracticas(request.getFechaFinPracticas());
 
         Practicante updated = practicanteRepository.save(practicante);
-        log.info("Practicante actualizado: {}", updated.getCodigoTrabajador());
+        log.info("Practicante actualizado: {}", updated.getDocumento());
 
         return convertToResponse(updated);
     }
@@ -123,8 +118,9 @@ public class PracticanteServiceImpl implements PracticanteService {
 
     @Override
     public PracticanteResponse obtenerPorCodigo(String codigo) {
-        Practicante practicante = practicanteRepository.findByCodigoTrabajador(codigo)
-                .orElseThrow(() -> new RuntimeException("Practicante no encontrado con código: " + codigo));
+        // Compatibilidad: codigo ahora es documento
+        Practicante practicante = practicanteRepository.findByDocumento(codigo)
+                .orElseThrow(() -> new RuntimeException("Practicante no encontrado con código/documento: " + codigo));
         return convertToResponse(practicante);
     }
 
@@ -162,10 +158,10 @@ public class PracticanteServiceImpl implements PracticanteService {
     }
 
     @Override
-    public Long contarPorAgencia(Long idAgencia) {
-        Agencia agencia = agenciaRepository.findById(idAgencia)
-                .orElseThrow(() -> new RuntimeException("Agencia no encontrada con ID: " + idAgencia));
-        return practicanteRepository.countActivosByAgencia(agencia);
+    public Long contarPorSede(Long idSede) {
+        Sede sede = sedeRepository.findById(idSede)
+                .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + idSede));
+        return practicanteRepository.countActivosBySede(sede);
     }
 
     @Override
@@ -174,7 +170,7 @@ public class PracticanteServiceImpl implements PracticanteService {
                 .orElseThrow(() -> new RuntimeException("Practicante no encontrado con ID: " + id));
         practicante.setSituacion(nuevaSituacion);
         practicanteRepository.save(practicante);
-        log.info("Situación cambiada a {} para practicante: {}", nuevaSituacion, practicante.getCodigoTrabajador());
+        log.info("Situación cambiada a {} para practicante: {}", nuevaSituacion, practicante.getDocumento());
     }
 
     @Override
@@ -194,10 +190,9 @@ public class PracticanteServiceImpl implements PracticanteService {
     private PracticanteResponse convertToResponse(Practicante practicante) {
         PracticanteResponse response = new PracticanteResponse();
         response.setIdPracticante(practicante.getIdPracticante());
-        response.setCodigoTrabajador(practicante.getCodigoTrabajador());
         response.setNombreCompleto(practicante.getNombre() + " " + practicante.getApellido());
         response.setDocumento(practicante.getDocumento());
-        response.setAgencia(practicante.getAgencia().getNombre());
+        response.setSede(practicante.getSede().getNombre());
         response.setPuesto(practicante.getPuesto().getNombrePuesto());
         response.setArea(practicante.getPuesto().getArea());
         response.setTipoInstituto(practicante.getTipoInstituto().getNombre());

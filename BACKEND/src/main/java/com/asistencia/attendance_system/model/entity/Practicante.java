@@ -21,9 +21,6 @@ public class Practicante {
     @Column(name = "id_practicante")
     private Long idPracticante;
 
-    @Column(name = "codigo_trabajador", unique = true, nullable = false, length = 10)
-    private String codigoTrabajador;
-
     @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
@@ -34,15 +31,15 @@ public class Practicante {
     private String documento;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_agencia", nullable = false)
-    private Agencia agencia;
+    @JoinColumn(name = "id_sede", nullable = false)
+    private Sede sede;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_puesto", nullable = false)
+    @JoinColumn(name = "id_area", nullable = false)
     private Puesto puesto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_tipo_instituto", nullable = false)
+    @JoinColumn(name = "id_centro_estudios", nullable = false)
     private TipoInstituto tipoInstituto;
 
     @ManyToOne(fetch = FetchType.LAZY)

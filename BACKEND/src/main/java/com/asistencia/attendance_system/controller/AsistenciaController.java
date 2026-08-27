@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/asistencias")
@@ -31,15 +32,19 @@ public class AsistenciaController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/entrada/{codigoTrabajador}")
-    public ResponseEntity<MarcacionResponse> registrarEntrada(@PathVariable String codigoTrabajador) {
-        MarcacionResponse response = asistenciaService.registrarEntrada(codigoTrabajador);
+    @PostMapping({"/entrada/{documento}", "/entrada/{codigoTrabajador}"})
+    public ResponseEntity<MarcacionResponse> registrarEntrada(@PathVariable Map<String, String> pathVars) {
+        String doc = pathVars.get("documento");
+        if (doc == null) doc = pathVars.get("codigoTrabajador");
+        MarcacionResponse response = asistenciaService.registrarEntrada(doc);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @PostMapping("/salida/{codigoTrabajador}")
-    public ResponseEntity<MarcacionResponse> registrarSalida(@PathVariable String codigoTrabajador) {
-        MarcacionResponse response = asistenciaService.registrarSalida(codigoTrabajador);
+    @PostMapping({"/salida/{documento}", "/salida/{codigoTrabajador}"})
+    public ResponseEntity<MarcacionResponse> registrarSalida(@PathVariable Map<String, String> pathVars) {
+        String doc = pathVars.get("documento");
+        if (doc == null) doc = pathVars.get("codigoTrabajador");
+        MarcacionResponse response = asistenciaService.registrarSalida(doc);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -118,7 +123,7 @@ public class AsistenciaController {
         return ResponseEntity.ok(resumen);
     }
 
-    @GetMapping("/reporte/semanal/agencia/{agencia}")
+    @GetMapping({"/reporte/semanal/agencia/{agencia}", "/reporte/semanal/sede/{agencia}"})
     public ResponseEntity<List<ResumenAsistenciaDTO>> obtenerResumenSemanalPorAgencia(
             @PathVariable String agencia,
             @RequestParam String fechaInicio) {

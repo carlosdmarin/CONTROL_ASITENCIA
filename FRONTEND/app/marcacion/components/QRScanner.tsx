@@ -68,9 +68,9 @@ export default function QRScanner({
     if (!isActive || !isCameraReady || isResultVisible) return;
 
     const timeout = setTimeout(() => {
-      const codigos = ["25033", "25050", "25060", "25070", "25080"];
-      const codigoAleatorio = codigos[Math.floor(Math.random() * codigos.length)];
-      onScan(codigoAleatorio);
+      const documentos = ["70000001", "70000002", "70000003", "70000004", "70000005"];
+      const docAleatorio = documentos[Math.floor(Math.random() * documentos.length)];
+      onScan(docAleatorio);
     }, 3000 + Math.random() * 2000);
 
     return () => clearTimeout(timeout);

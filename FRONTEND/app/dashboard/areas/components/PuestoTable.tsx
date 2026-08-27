@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Pencil, Trash2, Search } from "lucide-react";
-import { Puesto } from "@/types/puesto";
+import { Puesto } from "@/types/puestos";
 
 interface PuestoTableProps {
   puestos: Puesto[];
@@ -163,7 +163,7 @@ export default function PuestoTable({
                         </Button>
 
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                          <DropdownMenuTrigger>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4 text-gray-600" />
                             </Button>

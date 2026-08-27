@@ -1,5 +1,6 @@
 package com.asistencia.attendance_system.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,10 +17,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class PracticanteRequest {
 
-    @NotBlank(message = "El código del trabajador es obligatorio")
-    @Length(min = 3, max = 10, message = "El código debe tener entre 3 y 10 caracteres")
-    private String codigoTrabajador;
-
     @NotBlank(message = "El nombre es obligatorio")
     @Length(max = 100, message = "El nombre no puede tener más de 100 caracteres")
     private String nombre;
@@ -32,8 +29,13 @@ public class PracticanteRequest {
     @Pattern(regexp = "^[0-9]{8,15}$", message = "El documento debe contener solo números (8-15 dígitos)")
     private String documento;
 
-    @NotNull(message = "El ID de la agencia es obligatorio")
-    private Long idAgencia;
+    @NotNull(message = "El ID de la sede es obligatorio")
+    @JsonAlias({"idAgencia", "id_agencia"})
+    private Long idSede;
+
+    // Compatibilidad: frontend aún envía idAgencia
+    public Long getIdAgencia() { return idSede; }
+    public void setIdAgencia(Long idAgencia) { this.idSede = idAgencia; }
 
     @NotNull(message = "El ID del puesto es obligatorio")
     private Long idPuesto;

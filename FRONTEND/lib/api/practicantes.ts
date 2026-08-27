@@ -2,9 +2,6 @@ import { api, handleApiError } from './axios';
 import { Practicante, NuevoPracticante } from '@/types/practicante';
 
 export const practicantesApi = {
-  // ============================================
-  // OBTENER TODOS LOS PRACTICANTES
-  // ============================================
   getAll: async (): Promise<Practicante[]> => {
     try {
       const response = await api.get('/practicantes');
@@ -13,10 +10,6 @@ export const practicantesApi = {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // OBTENER PRACTICANTES ACTIVOS
-  // ============================================
   getActivos: async (): Promise<Practicante[]> => {
     try {
       const response = await api.get('/practicantes/activos');
@@ -25,10 +18,6 @@ export const practicantesApi = {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // OBTENER PRACTICANTE POR ID
-  // ============================================
   getById: async (id: number): Promise<Practicante> => {
     try {
       const response = await api.get(`/practicantes/${id}`);
@@ -37,22 +26,29 @@ export const practicantesApi = {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // OBTENER PRACTICANTE POR CÓDIGO DE TRABAJADOR
-  // ============================================
-  getByCodigo: async (codigo: string): Promise<Practicante> => {
+  // Obtener por documento (nuevo, reemplaza codigo)
+  getByDocumento: async (documento: string): Promise<Practicante> => {
     try {
-      const response = await api.get(`/practicantes/codigo/${codigo}`);
+      const response = await api.get(`/practicantes/documento/${documento}`);
       return response.data;
     } catch (error) {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // BUSCAR PRACTICANTES POR NOMBRE O DOCUMENTO
-  // ============================================
+  // Compatibilidad: antiguo getByCodigo (ahora busca por documento)
+  getByCodigo: async (codigo: string): Promise<Practicante> => {
+    try {
+      const response = await api.get(`/practicantes/documento/${codigo}`);
+      return response.data;
+    } catch {
+      try {
+        const response = await api.get(`/practicantes/codigo/${codigo}`);
+        return response.data;
+      } catch (error) {
+        throw new Error(handleApiError(error));
+      }
+    }
+  },
   buscar: async (termino: string): Promise<Practicante[]> => {
     try {
       const response = await api.get(`/practicantes/buscar?termino=${termino}`);
@@ -61,34 +57,32 @@ export const practicantesApi = {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // CREAR NUEVO PRACTICANTE
-  // ============================================
   create: async (data: NuevoPracticante): Promise<Practicante> => {
+    // Enviar tanto idSede como idAgencia para compatibilidad backend
+    const payload: any = { ...data };
+    if (payload.idSede && !payload.idAgencia) payload.idAgencia = payload.idSede;
+    if (payload.idAgencia && !payload.idSede) payload.idSede = payload.idAgencia;
+    // Remover codigoTrabajador si existe (backend ya no lo espera)
+    delete payload.codigoTrabajador;
     try {
-      const response = await api.post('/practicantes', data);
+      const response = await api.post('/practicantes', payload);
       return response.data;
     } catch (error) {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // ACTUALIZAR PRACTICANTE
-  // ============================================
   update: async (id: number, data: Partial<NuevoPracticante>): Promise<Practicante> => {
+    const payload: any = { ...data };
+    if (payload.idSede && !payload.idAgencia) payload.idAgencia = payload.idSede;
+    if (payload.idAgencia && !payload.idSede) payload.idSede = payload.idAgencia;
+    delete payload.codigoTrabajador;
     try {
-      const response = await api.put(`/practicantes/${id}`, data);
+      const response = await api.put(`/practicantes/${id}`, payload);
       return response.data;
     } catch (error) {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // ACTIVAR PRACTICANTE
-  // ============================================
   activar: async (id: number): Promise<Practicante> => {
     try {
       const response = await api.patch(`/practicantes/${id}/activar`);
@@ -97,10 +91,6 @@ export const practicantesApi = {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // DESACTIVAR PRACTICANTE
-  // ============================================
   desactivar: async (id: number): Promise<Practicante> => {
     try {
       const response = await api.patch(`/practicantes/${id}/desactivar`);
@@ -109,10 +99,6 @@ export const practicantesApi = {
       throw new Error(handleApiError(error));
     }
   },
-
-  // ============================================
-  // ELIMINAR PRACTICANTE
-  // ============================================
   eliminar: async (id: number): Promise<void> => {
     try {
       await api.delete(`/practicantes/${id}`);
