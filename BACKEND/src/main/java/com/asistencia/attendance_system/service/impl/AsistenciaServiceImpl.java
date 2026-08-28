@@ -60,14 +60,32 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         //     throw new RuntimeException("Fuera de tu horario de trabajo. Verifica tu bloque horario.");
         // }
 
-        TipoMarcacion tipo = TipoMarcacion.valueOf(request.getTipoMarcacion());
+        // Lógica automática ENTRADA/SALIDA: si ya marcó entrada, la siguiente es salida
+        TipoMarcacion tipo;
+        try {
+            tipo = TipoMarcacion.valueOf(request.getTipoMarcacion());
+        } catch (Exception e) {
+            // Si no viene tipo o es inválido, determinar automáticamente
+            tipo = yaMarcoEntradaHoy(practicante.getIdPracticante()) ? TipoMarcacion.SALIDA : TipoMarcacion.ENTRADA;
+        }
 
+        // Auto-switch: si pide ENTRADA pero ya tiene entrada, cambiar a SALIDA
         if (tipo == TipoMarcacion.ENTRADA && yaMarcoEntradaHoy(practicante.getIdPracticante())) {
-            throw new RuntimeException("El practicante ya marcó entrada hoy");
+            if (!yaMarcoSalidaHoy(practicante.getIdPracticante())) {
+                tipo = TipoMarcacion.SALIDA;
+                log.info("Cambiando a SALIDA automáticamente para {}", practicante.getDocumento());
+            } else {
+                throw new RuntimeException("Ya registraste entrada y salida hoy. No puedes volver a marcar.");
+            }
         }
 
         if (tipo == TipoMarcacion.SALIDA && yaMarcoSalidaHoy(practicante.getIdPracticante())) {
-            throw new RuntimeException("El practicante ya marcó salida hoy");
+            throw new RuntimeException("Ya registraste tu salida hoy");
+        }
+
+        // Si pide SALIDA sin haber marcado ENTRADA, permitir igual pero advertir
+        if (tipo == TipoMarcacion.SALIDA && !yaMarcoEntradaHoy(practicante.getIdPracticante())) {
+            log.warn("Marcando SALIDA sin ENTRADA previa para {}", practicante.getDocumento());
         }
 
         Marcacion marcacion = new Marcacion();

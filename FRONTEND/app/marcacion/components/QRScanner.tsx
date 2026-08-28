@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface QRScannerProps {
   onScan: (data: string) => void;
@@ -15,98 +16,143 @@ export default function QRScanner({
   isActive,
   isResultVisible = false
 }: QRScannerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
-  const streamRef = useRef<MediaStream | null>(null);
+  const containerId = "qr-reader-container";
 
-  const stopStream = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+  const stopScanner = useCallback(async () => {
+    try {
+      if (scannerRef.current) {
+        const state = scannerRef.current.getState();
+        // 2 = SCANNING
+        if (state === 2) {
+          await scannerRef.current.stop();
+        }
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+    } catch (e) {
+      // ignorar errores al detener
     }
+    setIsCameraReady(false);
   }, []);
 
-  // Iniciar cámara
+  // Iniciar / detener escáner real
   useEffect(() => {
     let mounted = true;
-    const startCamera = async () => {
+
+    const startScanner = async () => {
       try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-        if (!mounted) {
-          mediaStream.getTracks().forEach((t) => t.stop());
+        // Esperar a que el DOM exista
+        await new Promise((r) => setTimeout(r, 100));
+        if (!mounted) return;
+
+        const el = document.getElementById(containerId);
+        if (!el) {
+          if (isActive && !isResultVisible) setTimeout(startScanner, 200);
           return;
         }
-        streamRef.current = mediaStream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          await videoRef.current.play();
-          setIsCameraReady(true);
+
+        if (scannerRef.current) await stopScanner();
+
+        const html5QrCode = new Html5Qrcode(containerId);
+        scannerRef.current = html5QrCode;
+
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+          },
+          (decodedText) => {
+            // Decodificado con éxito - extraer documento
+            let documento = decodedText.trim();
+            // Si es JSON {"documento":"70000001"} o {"dni":"..."} intentar parsear
+            try {
+              const obj = JSON.parse(decodedText);
+              documento = obj.documento || obj.dni || obj.codigo || obj.documentoPracticante || decodedText;
+            } catch {
+              // Si es URL con ?doc= o ?codigo=, extraer param
+              try {
+                const url = new URL(decodedText);
+                documento = url.searchParams.get("documento") || url.searchParams.get("dni") || url.searchParams.get("codigo") || decodedText;
+              } catch {
+                // texto plano, usar tal cual
+              }
+            }
+            // Limpiar: solo dígitos del documento
+            documento = documento.toString().trim();
+            if (documento) {
+              onScan(documento);
+            }
+          },
+          () => {
+            // error de frame, ignorar (no hay QR en este frame)
+          }
+        );
+
+        if (mounted) setIsCameraReady(true);
+      } catch (error: any) {
+        console.error("Error al iniciar escáner QR:", error);
+        // Mensaje más útil según el error
+        const msg = error?.message || "";
+        if (msg.includes("Permission")) {
+          onError("Permiso de cámara denegado. Actívalo en el navegador.");
+        } else if (msg.includes("NotFound") || msg.includes("No camera")) {
+          onError("No se encontró cámara. Verifica que tengas cámara disponible.");
+        } else {
+          onError("No se pudo iniciar la cámara. Verifica permisos y que uses HTTPS.");
         }
-      } catch (error) {
-        console.error("Error al acceder a la cámara:", error);
-        onError("No se pudo acceder a la cámara. Verifica los permisos.");
       }
     };
 
     if (isActive && !isResultVisible) {
-      startCamera();
+      startScanner();
     } else {
-      setIsCameraReady(false);
-      stopStream();
+      stopScanner();
     }
 
     return () => {
       mounted = false;
-      stopStream();
+      stopScanner();
     };
-  }, [isActive, isResultVisible, onError, stopStream]);
-
-  // Simular escaneo (solo cuando está activo y no hay resultado visible)
-  useEffect(() => {
-    if (!isActive || !isCameraReady || isResultVisible) return;
-
-    const timeout = setTimeout(() => {
-      const documentos = ["70000001", "70000002", "70000003", "70000004", "70000005"];
-      const docAleatorio = documentos[Math.floor(Math.random() * documentos.length)];
-      onScan(docAleatorio);
-    }, 3000 + Math.random() * 2000);
-
-    return () => clearTimeout(timeout);
-  }, [isActive, isCameraReady, isResultVisible, onScan]);
+  }, [isActive, isResultVisible, onError, stopScanner]);
 
   return (
-    <div className="relative w-full h-full">
-      <video
-        ref={videoRef}
-        className="w-full h-full object-cover"
-        playsInline
-        muted
+    <div className="relative w-full h-full bg-black">
+      {/* Contenedor real de html5-qrcode - ocupa todo */}
+      <div
+        id={containerId}
+        className="w-full h-full [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_canvas]:hidden"
       />
-      
-      {/* ====== OVERLAY DEL QR ====== */}
+
+      {/* Overlay visual */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Marco del QR */}
         <div className="absolute inset-0 border-4 border-blue-500/60 rounded-xl m-8">
           <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></div>
           <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-blue-500 rounded-tr-lg"></div>
           <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-blue-500 rounded-bl-lg"></div>
           <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-blue-500 rounded-br-lg"></div>
         </div>
-        
-        {/* Texto inferior */}
         <div className="absolute bottom-6 left-0 right-0 text-center">
           <span className="inline-block bg-black/60 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-lg">
             {isCameraReady ? "📷 Coloca el QR dentro del recuadro" : "⏳ Iniciando cámara..."}
           </span>
         </div>
-
-        {/* Línea de escaneo animada (solo si no hay resultado visible) */}
         {isCameraReady && !isResultVisible && (
-          <div className="absolute left-12 right-12 h-0.5 bg-blue-400/80 animate-scan-line rounded-full shadow-lg shadow-blue-500/50"></div>
+          <div className="absolute left-12 right-12 h-0.5 bg-blue-400/80 animate-scan-line rounded-full shadow-lg shadow-blue-500/50 top-1/2"></div>
         )}
       </div>
+
+      {/* Ayuda para HTTPS */}
+      {!isCameraReady && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4">
+          <p className="text-white text-xs text-center">
+            Si la cámara no inicia, asegúrate de usar <b>https://</b> o <b>localhost</b> y dar permiso de cámara.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { PracticanteTable } from "./components/PracticanteTable";
 import { PracticanteDeleteDialog } from "./components/PracticanteDeleteDialog";
 import { PracticanteCreateDialog } from "./components/PracticanteCreateDialog";
 import { PracticanteEditDialog } from "./components/PracticanteEditDialog";
+import { PracticanteQRDialog } from "./components/PracticanteQRDialog";
 import { practicantesApi } from "@/lib/api/practicantes";
 import { Practicante, NuevoPracticante } from "@/types/practicante";
 
@@ -20,8 +21,10 @@ export default function PracticantesPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [dialogEditarAbierto, setDialogEditarAbierto] = useState(false);
   const [dialogEliminarAbierto, setDialogEliminarAbierto] = useState(false);
+  const [dialogQRabierto, setDialogQRabierto] = useState(false);
   const [practicanteAEditar, setPracticanteAEditar] = useState<Practicante | null>(null);
   const [practicanteAEliminar, setPracticanteAEliminar] = useState<Practicante | null>(null);
+  const [practicanteAQR, setPracticanteAQR] = useState<Practicante | null>(null);
 
   // ====== CARGAR PRACTICANTES ======
   const cargarPracticantes = async () => {
@@ -171,6 +174,10 @@ export default function PracticantesPage() {
             setPracticanteAEliminar(p);
             setDialogEliminarAbierto(true);
           }}
+          onShowQR={(p) => {
+            setPracticanteAQR(p);
+            setDialogQRabierto(true);
+          }}
           getStatusColor={getStatusColor}
           busqueda={busqueda}
         />
@@ -188,6 +195,12 @@ export default function PracticantesPage() {
         onOpenChange={setDialogEliminarAbierto}
         practicante={practicanteAEliminar}
         onDelete={eliminarPracticante}
+      />
+
+      <PracticanteQRDialog
+        open={dialogQRabierto}
+        onOpenChange={setDialogQRabierto}
+        practicante={practicanteAQR}
       />
     </div>
   );

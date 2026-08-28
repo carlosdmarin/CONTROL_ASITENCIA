@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2, Search, Users, MoreHorizontal, ClipboardList } from "lucide-react";
+import { Pencil, Trash2, Search, Users, MoreHorizontal, ClipboardList, QrCode } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +29,7 @@ interface PracticanteTableProps {
   practicantes: Practicante[];
   onEdit: (practicante: Practicante) => void;
   onDelete: (practicante: Practicante) => void;
+  onShowQR?: (practicante: Practicante) => void;
   getStatusColor: (status: string) => string;
   busqueda: string;
   loading?: boolean;
@@ -70,6 +71,7 @@ export function PracticanteTable({
   practicantes,
   onEdit,
   onDelete,
+  onShowQR,
   getStatusColor,
   busqueda,
   loading = false,
@@ -179,6 +181,18 @@ export function PracticanteTable({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {onShowQR && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                            onClick={() => onShowQR(practicante)}
+                            title="Ver QR"
+                          >
+                            <QrCode className="h-4 w-4" />
+                            <span className="sr-only">QR</span>
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -209,6 +223,11 @@ export function PracticanteTable({
                             <DropdownMenuGroup>
                               <DropdownMenuLabel>Más acciones</DropdownMenuLabel>
                               <DropdownMenuSeparator />
+                              {onShowQR && (
+                                <DropdownMenuItem onClick={() => onShowQR(practicante)}>
+                                  <QrCode className="h-4 w-4 mr-2" /> Ver QR
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem>Ver detalles</DropdownMenuItem>
                               <DropdownMenuItem>Historial</DropdownMenuItem>
                               <DropdownMenuItem>Reportes</DropdownMenuItem>

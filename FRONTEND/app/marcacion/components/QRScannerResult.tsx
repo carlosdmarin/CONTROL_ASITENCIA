@@ -5,116 +5,132 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Building2, Briefcase, Clock, User, Sparkles } from "lucide-react";
+import { CheckCircle, XCircle, Building2, Briefcase, Clock, User, Sparkles, AlertTriangle } from "lucide-react";
+import { practicantesApi } from "@/lib/api/practicantes";
 
 interface QRScannerResultProps {
-  codigo: string;
+  codigo: string; // ahora es documento
   onClose: () => void;
 }
 
-// Datos simulados del practicante (ahora por documento, sin codigoTrabajador)
-const getPracticanteData = (documento: string) => {
-  const practicantes: Record<string, { nombre: string; apellido: string; documento: string; sede: string; puesto: string; cargo: string; horas: number; foto: string }> = {
-    "70000001": {
-      nombre: "Carlos",
-      apellido: "Ramirez Torres",
-      documento: "70000001",
-      sede: "OFICINA PUCALLPA",
-      puesto: "Tecnología de la Información",
-      cargo: "PRACTICANTE PRE PROFESIONAL",
-      horas: 30,
-      foto: "",
-    },
-    "70000002": {
-      nombre: "Daniela",
-      apellido: "Flores Mendoza",
-      documento: "70000002",
-      sede: "OFICINA PUCALLPA",
-      puesto: "Recursos Humanos",
-      cargo: "PRACTICANTE PRE PROFESIONAL",
-      horas: 30,
-      foto: "",
-    },
-    "70000003": {
-      nombre: "Miguel",
-      apellido: "Sanchez Lopez",
-      documento: "70000003",
-      sede: "PLANTA NESHUYA",
-      puesto: "Mantenimiento",
-      cargo: "PRACTICANTE PRE PROFESIONAL",
-      horas: 30,
-      foto: "",
-    },
-  };
-
-  return practicantes[documento] || null;
-};
-
-type PracticanteData = NonNullable<ReturnType<typeof getPracticanteData>>;
+type PracticanteReal = {
+  idPracticante: number;
+  nombreCompleto: string;
+  documento: string;
+  sede: string;
+  puesto: string;
+  cargo: string;
+  situacion: string;
+} | null;
 
 export default function QRScannerResult({ codigo, onClose }: QRScannerResultProps) {
-  const [practicante, setPracticante] = useState<PracticanteData | null>(null);
+  const [practicante, setPracticante] = useState<PracticanteReal>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [hora, setHora] = useState("");
   const [fecha, setFecha] = useState("");
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    // Obtener datos del practicante (simulado)
-    const data = getPracticanteData(codigo);
-    setPracticante(data);
+    let mounted = true;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        // Intentar obtener datos reales del backend por documento
+        const data = await practicantesApi.getByDocumento(codigo);
+        if (!mounted) return;
+        setPracticante({
+          idPracticante: data.idPracticante,
+          nombreCompleto: data.nombreCompleto,
+          documento: data.documento,
+          sede: (data as any).sede || (data as any).agencia || "—",
+          puesto: data.puesto,
+          cargo: data.cargo,
+          situacion: data.situacion,
+        });
+      } catch (e: any) {
+        if (!mounted) return;
+        // Fallback a mock si backend no responde (para demo con QRs de prueba)
+        const mock: Record<string, PracticanteReal> = {
+          "70000001": { idPracticante: 1, nombreCompleto: "Carlos Ramirez Torres", documento: "70000001", sede: "OFICINA PUCALLPA", puesto: "Tecnología de la Información", cargo: "PRACTICANTE PRE PROFESIONAL", situacion: "ACTIVO" },
+          "70000002": { idPracticante: 2, nombreCompleto: "Daniela Flores Mendoza", documento: "70000002", sede: "OFICINA PUCALLPA", puesto: "Recursos Humanos", cargo: "PRACTICANTE PRE PROFESIONAL", situacion: "ACTIVO" },
+          "70000003": { idPracticante: 3, nombreCompleto: "Miguel Sanchez Lopez", documento: "70000003", sede: "PLANTA NESHUYA", puesto: "Mantenimiento", cargo: "PRACTICANTE PRE PROFESIONAL", situacion: "ACTIVO" },
+        };
+        const mockData = mock[codigo];
+        if (mockData) {
+          setPracticante(mockData);
+          setError(null);
+        } else {
+          setError(`No se encontró practicante con documento ${codigo}. Verifica que el QR contenga el DNI correcto.`);
+          setPracticante(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
 
-    // Obtener hora y fecha actual
+    fetchData();
+
     const now = new Date();
     setHora(now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     setFecha(now.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }));
 
-    // Auto-cerrar después de 4 segundos
     const timer = setTimeout(() => {
       setVisible(false);
       setTimeout(onClose, 300);
-    }, 4000);
+    }, 5000);
 
-    return () => clearTimeout(timer);
-   
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, [codigo, onClose]);
 
   if (!visible) return null;
 
-  if (!practicante) {
+  if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-        <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl animate-in zoom-in-95 duration-300">
+      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+        <Card className="max-w-sm w-full mx-4 p-8 text-center">
+          <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-slate-600">Buscando practicante...</p>
+          <p className="text-xs text-slate-400 mt-1 font-mono">{codigo}</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !practicante) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+        <Card className="max-w-sm w-full mx-4 border-amber-200 shadow-2xl">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
-              <XCircle className="h-10 w-10 text-red-600" />
+            <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-2">
+              <AlertTriangle className="h-8 w-8 text-amber-600" />
             </div>
-            <CardTitle className="text-xl text-red-600">❌ Practicante no encontrado</CardTitle>
+            <CardTitle className="text-lg text-amber-700">No encontrado</CardTitle>
           </CardHeader>
-          <CardContent className="text-center pb-6">
-            <p className="text-gray-500 mb-4">
-              No se encontró ningún practicante con el documento:
-            </p>
-            <code className="bg-gray-100 px-4 py-2 rounded-lg font-mono text-sm">{codigo}</code>
-            <Button 
-              className="w-full mt-4"
-              onClick={onClose}
-            >
-              Intentar de nuevo
-            </Button>
+          <CardContent className="text-center pb-6 space-y-3">
+            <p className="text-sm text-slate-600">{error || "Practicante no encontrado"}</p>
+            <code className="block bg-slate-100 px-3 py-2 rounded-lg font-mono text-xs break-all">{codigo}</code>
+            <p className="text-xs text-slate-500">Verifica que el QR contenga solo el DNI (ej. 70000001) o un JSON con &quot;documento&quot;.</p>
+            <Button className="w-full mt-2" onClick={onClose}>Intentar de nuevo</Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Obtener iniciales para el avatar
   const getInitials = () => {
-    return (practicante.nombre?.charAt(0) || "") + (practicante.apellido?.charAt(0) || "");
+    return practicante.nombreCompleto.split(" ").map(p => p[0]).slice(0,2).join("").toUpperCase();
   };
+
+  const isInactive = practicante.situacion !== "ACTIVO";
 
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           setVisible(false);
@@ -122,36 +138,33 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
         }
       }}
     >
-      <Card className="max-w-sm w-full mx-4 border-green-200 shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
-        {/* ====== BANNER SUPERIOR ====== */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 flex items-center justify-center gap-2">
-          <Sparkles className="h-5 w-5 text-white animate-pulse" />
-          <span className="text-white font-semibold text-sm">¡Marcación exitosa!</span>
-          <Sparkles className="h-5 w-5 text-white animate-pulse" />
+      <Card className="max-w-sm w-full mx-4 border-green-200 shadow-2xl overflow-hidden">
+        <div className={`px-6 py-3 flex items-center justify-center gap-2 ${isInactive ? 'bg-amber-500' : 'bg-gradient-to-r from-green-500 to-green-600'}`}>
+          <Sparkles className="h-5 w-5 text-white" />
+          <span className="text-white font-semibold text-sm">{isInactive ? "Practicante inactivo" : "¡Marcación exitosa!"}</span>
+          <Sparkles className="h-5 w-5 text-white" />
         </div>
 
-        {/* ====== CONTENIDO ====== */}
         <CardHeader className="text-center pb-2">
           <div className="mx-auto relative">
             <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2 relative">
               <Avatar className="w-20 h-20 border-4 border-green-200">
-                <AvatarImage src={practicante.foto} />
+                <AvatarImage src="" />
                 <AvatarFallback className="text-2xl bg-green-200 text-green-700">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <CheckCircle className="h-4 w-4 text-white" />
+              <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${isInactive ? 'bg-amber-500' : 'bg-green-500'}`}>
+                {isInactive ? <AlertTriangle className="h-4 w-4 text-white" /> : <CheckCircle className="h-4 w-4 text-white" />}
               </div>
             </div>
           </div>
           <CardTitle className="text-xl font-bold text-gray-800">
-            {practicante.nombre} {practicante.apellido}
+            {practicante.nombreCompleto}
           </CardTitle>
           <div className="flex items-center justify-center gap-2 mt-1">
-            <Badge className="bg-green-100 text-green-700 border-green-200">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              PRESENTE
+            <Badge className={isInactive ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-green-100 text-green-700 border-green-200"}>
+              {practicante.situacion}
             </Badge>
             <Badge variant="outline" className="text-gray-500">
               {fecha}
@@ -160,7 +173,6 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
         </CardHeader>
 
         <CardContent className="space-y-3">
-          {/* ====== DETALLES ====== */}
           <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-gray-500">
@@ -169,7 +181,6 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
               </div>
               <span className="font-medium text-gray-800">{practicante.sede}</span>
             </div>
-
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <Briefcase className="h-4 w-4" />
@@ -177,7 +188,6 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
               </div>
               <span className="font-medium text-gray-800">{practicante.cargo}</span>
             </div>
-
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <User className="h-4 w-4" />
@@ -185,7 +195,6 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
               </div>
               <span className="font-medium text-gray-800">{practicante.documento}</span>
             </div>
-
             <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
               <div className="flex items-center gap-2 text-gray-500">
                 <Clock className="h-4 w-4" />
@@ -195,32 +204,16 @@ export default function QRScannerResult({ codigo, onClose }: QRScannerResultProp
             </div>
           </div>
 
-          {/* ====== BOTONES ====== */}
           <div className="flex gap-3 pt-2">
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 300);
-              }}
-            >
+            <Button variant="outline" className="flex-1" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>
               Cerrar
             </Button>
-            <Button 
-              className="flex-1 bg-green-600 hover:bg-green-700"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 300);
-              }}
-            >
+            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>
               Escanear otro
             </Button>
           </div>
-
-          {/* ====== TEXTO DE AUTO-CIERRE ====== */}
-          <p className="text-center text-xs text-gray-400 animate-pulse">
-            Esta ventana se cerrará automáticamente en 3 segundos...
+          <p className="text-center text-xs text-gray-400">
+            Ventana se cierra en 5 segundos...
           </p>
         </CardContent>
       </Card>

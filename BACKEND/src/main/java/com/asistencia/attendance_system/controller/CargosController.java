@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/cargo")
+@RequestMapping({"/api/cargos", "/api/cargo", "/cargos", "/cargo"})
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 public class CargosController {
