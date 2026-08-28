@@ -2,6 +2,27 @@
 import { Puesto } from './puestos';
 export type { Puesto } from './puestos';
 
+// ====== BLOQUE HORARIO ======
+export type BloqueHorarioRequest = {
+  diaSemana: string;   // "LUNES", "MARTES", etc.
+  horaInicio: string;  // "07:00"
+  horaFin: string;     // "17:00"
+  activo: boolean;
+};
+
+export type BloqueHorarioResponse = {
+  idBloque: number;
+  idPracticante: number;
+  diaSemana: string;
+  horaInicio: string;
+  horaFin: string;
+  tipoBloque: string;
+  activo: boolean;
+  fechaInicio: string;
+  fechaFin?: string;
+};
+
+// ====== SEDE ======
 export type Sede = {
   idSede: number;
   nombre: string;
@@ -13,6 +34,7 @@ export type Sede = {
 // Alias compatibilidad: código antiguo usa Agencia
 export type Agencia = Sede;
 
+// ====== CARGO ======
 export type Cargo = {
   idCargo: number;
   nombre: string;
@@ -22,6 +44,7 @@ export type Cargo = {
   fechaCreacion?: string;
 };
 
+// ====== TIPO INSTITUTO ======
 export type TipoInstituto = {
   idTipoInstituto: number;
   nombre: string;
@@ -30,6 +53,7 @@ export type TipoInstituto = {
   fechaCreacion?: string;
 };
 
+// ====== PRACTICANTE ======
 export type Practicante = {
   idPracticante: number;
   nombreCompleto: string;
@@ -54,8 +78,10 @@ export type Practicante = {
   puestoObj?: Puesto;
   tipoInstitutoObj?: TipoInstituto;
   cargoObj?: Cargo;
+  horario?: BloqueHorarioRequest[];
 };
 
+// ====== NUEVO PRACTICANTE ======
 export type NuevoPracticante = {
   nombre: string;
   apellido: string;
@@ -68,7 +94,8 @@ export type NuevoPracticante = {
   telefono?: string;
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
-  // Alias para compatibilidad si frontend antiguo envía idAgencia/codigoTrabajador
+  horario?: BloqueHorarioRequest[];  // ← NUEVO
+  // Alias para compatibilidad
   idAgencia?: number;
   codigoTrabajador?: string;
 };

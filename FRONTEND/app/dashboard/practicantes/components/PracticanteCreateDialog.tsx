@@ -125,7 +125,7 @@ export function PracticanteCreateDialog({
   const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>(MOCK_TIPOS_INSTITUTO);
   const [loadingSelects, setLoadingSelects] = useState(false);
 
-  // Datos del practicante
+  // Datos del practicante (SIN código de trabajador)
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -212,7 +212,7 @@ export function PracticanteCreateDialog({
     }));
   };
 
-  // ====== VALIDACIÓN POR PASO ======
+  // ====== VALIDACIÓN POR PASO (SIN código de trabajador) ======
   const validateStep1 = (): boolean => {
     return !!(
       formData.nombre.trim() &&
@@ -241,23 +241,32 @@ export function PracticanteCreateDialog({
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  // ====== ENVÍO ======
+  // ====== ENVÍO (CON HORARIO) ======
   const handleSubmit = () => {
     if (!validateStep1()) return;
 
-    onSave({
+    // Construir el objeto con los datos del practicante + horario
+    const nuevoPracticante = {
       nombre: formData.nombre,
       apellido: formData.apellido,
       documento: formData.documento,
       idSede: formData.idSede,
-      idCargo: formData.idCargo,
       idPuesto: formData.idPuesto,
       idTipoInstituto: formData.idTipoInstituto,
+      idCargo: formData.idCargo,
       correoElectronico: formData.correoElectronico || undefined,
       telefono: formData.telefono || undefined,
       fechaInicioPracticas: formData.fechaInicioPracticas,
       fechaFinPracticas: formData.fechaFinPracticas || undefined,
-    });
+      horario: Object.entries(horario).map(([dia, data]) => ({
+        diaSemana: dia,
+        horaInicio: data.entrada,
+        horaFin: data.salida,
+        activo: data.activo
+      }))
+    };
+
+    onSave(nuevoPracticante);
 
     // Resetear
     setFormData({
@@ -278,7 +287,7 @@ export function PracticanteCreateDialog({
     onOpenChange(false);
   };
 
-  // ====== RENDER STEP INDICATOR (VERSIÓN ARREGLADA) ======
+  // ====== RENDER STEP INDICATOR ======
   const renderStepIndicator = () => {
     const steps = [
       { num: 1, label: "Datos" },
@@ -334,7 +343,6 @@ export function PracticanteCreateDialog({
     return (
       <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
           {/* Documento */}
           <div className="grid gap-1.5">
             <Label htmlFor="documento" className="text-xs font-medium">
@@ -424,10 +432,10 @@ export function PracticanteCreateDialog({
             </div>
           </div>
 
-          {/* Puesto */}
+          {/* Puesto / Área */}
           <div className="grid gap-1.5">
             <Label htmlFor="idPuesto" className="text-xs font-medium">
-              Area *
+              Área *
             </Label>
             <div className="relative">
               <BriefcaseBusiness className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -483,7 +491,7 @@ export function PracticanteCreateDialog({
           {/* Tipo Instituto */}
           <div className="grid gap-1.5">
             <Label htmlFor="idTipoInstituto" className="text-xs font-medium">
-              Tipo de instituto *
+              Centro de Estudios *
             </Label>
             <div className="relative">
               <School className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -712,7 +720,7 @@ export function PracticanteCreateDialog({
           <div className="grid grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3">
             <span className="text-gray-500">Sede:</span>
             <span className="font-medium">{sedeNombre}</span>
-            <span className="text-gray-500">Puesto:</span>
+            <span className="text-gray-500">Área:</span>
             <span className="font-medium">{puestoNombre}</span>
             <span className="text-gray-500">Cargo:</span>
             <span className="font-medium">{cargoNombre}</span>
@@ -777,7 +785,7 @@ export function PracticanteCreateDialog({
             <Button
               type="button"
               onClick={goToNextStep}
-              className={`flex-1 sm:flex-none ${!isStep1Valid || !isStep2Valid ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 ${!isStep1Valid || !isStep2Valid ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
             >
               Continuar
@@ -825,7 +833,7 @@ export function PracticanteCreateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden px-6">
+        <div className="flex-1 p-5 overflow-hidden px-6">
           {/* Step Indicator - Centrado y sin cortes */}
           {renderStepIndicator()}
 

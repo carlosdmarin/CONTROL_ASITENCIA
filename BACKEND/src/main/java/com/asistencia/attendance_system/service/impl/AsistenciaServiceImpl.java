@@ -51,12 +51,14 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         LocalTime hora = LocalTime.now();
 
         if (!horarioService.esDiaLaborable(practicante.getIdPracticante(), fecha)) {
-            throw new RuntimeException("El practicante no tiene actividades programadas para hoy");
+            throw new RuntimeException("Hoy es tu día de descanso según tu horario. No puedes marcar asistencia.");
         }
 
-        if (!horarioService.debeEstarEnEmpresa(practicante.getIdPracticante(), fecha, hora.toString())) {
-            throw new RuntimeException("El practicante no debe estar en la empresa en este momento");
-        }
+        // Validación de horario opcional: solo advierte si está fuera de su bloque TRABAJO
+        // Si quieres bloquear también fuera de hora, descomenta:
+        // if (!horarioService.debeEstarEnEmpresa(practicante.getIdPracticante(), fecha, hora.toString())) {
+        //     throw new RuntimeException("Fuera de tu horario de trabajo. Verifica tu bloque horario.");
+        // }
 
         TipoMarcacion tipo = TipoMarcacion.valueOf(request.getTipoMarcacion());
 

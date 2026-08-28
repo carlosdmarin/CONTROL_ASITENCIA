@@ -1,5 +1,6 @@
 package com.asistencia.attendance_system.model.entity;
 
+import com.asistencia.attendance_system.model.enums.DiaSemana;
 import com.asistencia.attendance_system.model.enums.TipoBloque;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -25,8 +26,9 @@ public class BloqueHorario {
     @JoinColumn(name = "id_practicante", nullable = false)
     private Practicante practicante;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "dia_semana", nullable = false, length = 10)
-    private String diaSemana;
+    private DiaSemana diaSemana;
 
     @Column(name = "hora_inicio", nullable = false)
     private LocalTime horaInicio;
@@ -36,7 +38,7 @@ public class BloqueHorario {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_bloque", nullable = false)
-    private TipoBloque tipoBloque;
+    private TipoBloque tipoBloque = TipoBloque.TRABAJO;
 
     @Column(name = "descripcion", length = 100)
     private String descripcion;

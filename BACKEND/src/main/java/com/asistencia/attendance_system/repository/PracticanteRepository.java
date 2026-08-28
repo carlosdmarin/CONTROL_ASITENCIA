@@ -23,6 +23,9 @@ public interface PracticanteRepository extends JpaRepository<Practicante, Long> 
 
     List<Practicante> findBySituacion(Situacion situacion);
 
+    // ====== NUEVO MÉTODO ======
+    long countBySituacion(Situacion situacion);
+
     @Query("SELECT p FROM Practicante p WHERE LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR LOWER(p.apellido) LIKE LOWER(CONCAT('%', :termino, '%'))")
     List<Practicante> buscarPorNombreOApellido(@Param("termino") String termino);
 

@@ -51,12 +51,25 @@ export default function PracticantesPage() {
   );
 
   // ====== AGREGAR PRACTICANTE ======
-  const agregarPracticante = async (nuevoPracticante: NuevoPracticante) => {
+  const agregarPracticante = async (nuevoPracticante: NuevoPracticante & { horario?: any[] }) => {
     try {
-      await practicantesApi.create(nuevoPracticante);
+      const { horario, ...practicanteData } = nuevoPracticante as any;
+      const creado = await practicantesApi.create(practicanteData);
+      // Guardar horario si existe
+      if (horario && horario.length > 0 && creado?.idPracticante) {
+        try {
+          await practicantesApi.guardarHorario(creado.idPracticante, horario);
+        } catch (e) {
+          console.warn("Practicante creado pero horario no se pudo guardar:", e);
+          toast.warning("Practicante creado, pero el horario no se pudo guardar");
+        }
+      } else if (horario && horario.length > 0) {
+        // Si el backend no devuelve id, intentar con el horario en el payload (compat)
+        console.warn("Horario recibido pero sin idPracticante, se ignora");
+      }
       await cargarPracticantes();
       setModalAbierto(false);
-      toast.success(" Practicante agregado correctamente");
+      toast.success("Practicante agregado correctamente");
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error al crear el practicante";
       console.error("Error:", error);
@@ -65,10 +78,9 @@ export default function PracticantesPage() {
   };
 
   // ====== EDITAR PRACTICANTE ======
-  const guardarCambios = async (practicanteEditado: Practicante) => {
+  const guardarCambios = async (practicanteEditado: Practicante & { horario?: any[] }) => {
     try {
-      // Convertir Practicante a NuevoPracticante para el update (sin codigoTrabajador)
-      const data = {
+      const data: any = {
         nombre: practicanteEditado.nombreCompleto.split(" ")[0] || "",
         apellido: practicanteEditado.nombreCompleto.split(" ").slice(1).join(" ") || "",
         documento: practicanteEditado.documento,
@@ -82,6 +94,15 @@ export default function PracticantesPage() {
         fechaFinPracticas: practicanteEditado.fechaFinPracticas,
       };
       await practicantesApi.update(practicanteEditado.idPracticante, data);
+      // Actualizar horario si viene
+      const horario = (practicanteEditado as any).horario;
+      if (horario && horario.length > 0) {
+        try {
+          await practicantesApi.updateHorario(practicanteEditado.idPracticante, horario);
+        } catch (e) {
+          console.warn("Horario no se pudo actualizar:", e);
+        }
+      }
       await cargarPracticantes();
       setDialogEditarAbierto(false);
       toast.success("Practicante actualizado correctamente");

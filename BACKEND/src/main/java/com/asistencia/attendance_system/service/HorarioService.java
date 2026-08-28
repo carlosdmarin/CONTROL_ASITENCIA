@@ -1,44 +1,41 @@
 package com.asistencia.attendance_system.service;
 
 import com.asistencia.attendance_system.model.dto.BloqueHorarioRequest;
-import com.asistencia.attendance_system.model.dto.BloqueHorarioResponse;
-import com.asistencia.attendance_system.model.dto.HorarioSemanalDTO;
-import com.asistencia.attendance_system.model.enums.TipoBloque;
+import com.asistencia.attendance_system.model.entity.BloqueHorario;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public interface HorarioService {
 
-    // ========== CRUD DE BLOQUES ==========
+    /**
+     * Obtiene todo el horario de un practicante
+     */
+    List<BloqueHorario> obtenerHorarioPorPracticante(Long idPracticante);
 
-    BloqueHorarioResponse crearBloque(BloqueHorarioRequest request);
+    /**
+     * Obtiene solo el horario activo de un practicante
+     */
+    List<BloqueHorario> obtenerHorarioActivoPorPracticante(Long idPracticante);
 
-    BloqueHorarioResponse actualizarBloque(Long id, BloqueHorarioRequest request);
+    /**
+     * Guarda el horario de un practicante (elimina el anterior y crea el nuevo)
+     */
+    void guardarHorario(Long idPracticante, List<BloqueHorarioRequest> horarioRequests);
 
-    void eliminarBloque(Long id);
+    /**
+     * Elimina todo el horario de un practicante
+     */
+    void eliminarHorario(Long idPracticante);
 
-    BloqueHorarioResponse obtenerBloquePorId(Long id);
-
-    List<BloqueHorarioResponse> obtenerBloquesPorPracticante(Long idPracticante);
-
-    List<BloqueHorarioResponse> obtenerBloquesActivosPorPracticante(Long idPracticante);
-
-    // ========== HORARIO SEMANAL ==========
-
-    HorarioSemanalDTO obtenerHorarioSemanal(Long idPracticante);
-
-    List<BloqueHorarioResponse> obtenerBloquesPorDia(Long idPracticante, String diaSemana);
-
-    // ========== VALIDACIONES ==========
-
+    /**
+     * Verifica si un día es laborable (tiene bloque TRABAJO activo)
+     * Si es descanso (sin bloque TRABAJO o solo DESCANSO), retorna false
+     */
     boolean esDiaLaborable(Long idPracticante, LocalDate fecha);
 
+    /**
+     * Verifica si el practicante debe estar en empresa a esa hora
+     */
     boolean debeEstarEnEmpresa(Long idPracticante, LocalDate fecha, String hora);
-
-    String obtenerEstadoDia(Long idPracticante, LocalDate fecha);
-
-    // ========== COPIA DE HORARIO ==========
-
-    void copiarHorarioSemana(Long idPracticante, LocalDate fechaInicio, LocalDate fechaFin);
 }

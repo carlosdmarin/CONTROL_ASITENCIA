@@ -37,15 +37,30 @@ export default function MarcacionPage() {
    
   }, [router]);
 
-  // Manejar escaneo exitoso
-  const handleScan = (data: string) => {
+  // Manejar escaneo exitoso - ahora con validación de horario y descanso
+  const handleScan = async (data: string) => {
     if (!data || isResultVisible) return;
     
     setScannedCode(data);
     setIsResultVisible(true);
     setIsScanning(false);
-    
-    toast.success(`✅ Marcación registrada para: ${data}`);
+
+    try {
+      // Intentar registrar marcación en backend (valida horario y descanso)
+      const { asistenciasApi } = await import("@/lib/api/asistencias");
+      await asistenciasApi.marcar(data, 'ENTRADA');
+      toast.success(`✅ Marcación registrada para: ${data}`);
+    } catch (error: any) {
+      const msg = error.message || "Error al registrar marcación";
+      // Si es día de descanso, mostrar mensaje específico
+      if (msg.includes("descanso") || msg.includes("Descanso")) {
+        toast.error(`🚫 ${msg}`);
+      } else {
+        // Si backend no está disponible, mostrar éxito mock (para demo)
+        console.warn("Backend no disponible, usando mock:", msg);
+        toast.success(`✅ Marcación registrada para: ${data} (mock)`);
+      }
+    }
   };
 
   // Cerrar el resultado

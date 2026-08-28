@@ -1,10 +1,9 @@
 package com.asistencia.attendance_system.service.impl;
 
 import com.asistencia.attendance_system.model.dto.BloqueHorarioRequest;
-import com.asistencia.attendance_system.model.dto.BloqueHorarioResponse;
-import com.asistencia.attendance_system.model.dto.HorarioSemanalDTO;
 import com.asistencia.attendance_system.model.entity.BloqueHorario;
 import com.asistencia.attendance_system.model.entity.Practicante;
+import com.asistencia.attendance_system.model.enums.DiaSemana;
 import com.asistencia.attendance_system.model.enums.TipoBloque;
 import com.asistencia.attendance_system.repository.BloqueHorarioRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
@@ -30,223 +29,107 @@ public class HorarioServiceImpl implements HorarioService {
     private final PracticanteRepository practicanteRepository;
 
     @Override
-    public BloqueHorarioResponse crearBloque(BloqueHorarioRequest request) {
-        log.info("Creando bloque horario para practicante ID: {}", request.getIdPracticante());
-
-        Practicante practicante = practicanteRepository.findById(request.getIdPracticante())
-                .orElseThrow(() -> new RuntimeException("Practicante no encontrado con ID: " + request.getIdPracticante()));
-
-        BloqueHorario bloque = new BloqueHorario();
-        bloque.setPracticante(practicante);
-        bloque.setDiaSemana(request.getDiaSemana());
-        bloque.setHoraInicio(request.getHoraInicio());
-        bloque.setHoraFin(request.getHoraFin());
-        bloque.setTipoBloque(TipoBloque.valueOf(request.getTipoBloque()));
-        bloque.setDescripcion(request.getDescripcion());
-        bloque.setFechaInicio(request.getFechaInicio());
-        bloque.setFechaFin(request.getFechaFin());
-        bloque.setActivo(true);
-
-        BloqueHorario saved = bloqueHorarioRepository.save(bloque);
-        log.info("Bloque horario creado con ID: {}", saved.getIdBloque());
-
-        return convertToResponse(saved);
+    public List<BloqueHorario> obtenerHorarioPorPracticante(Long idPracticante) {
+        log.info("Obteniendo horario del practicante ID: {}", idPracticante);
+        return bloqueHorarioRepository.findByPracticanteIdPracticante(idPracticante);
     }
 
     @Override
-    public BloqueHorarioResponse actualizarBloque(Long id, BloqueHorarioRequest request) {
-        log.info("Actualizando bloque horario ID: {}", id);
-
-        BloqueHorario bloque = bloqueHorarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bloque horario no encontrado con ID: " + id));
-
-        bloque.setDiaSemana(request.getDiaSemana());
-        bloque.setHoraInicio(request.getHoraInicio());
-        bloque.setHoraFin(request.getHoraFin());
-        bloque.setTipoBloque(TipoBloque.valueOf(request.getTipoBloque()));
-        bloque.setDescripcion(request.getDescripcion());
-        bloque.setFechaInicio(request.getFechaInicio());
-        bloque.setFechaFin(request.getFechaFin());
-
-        BloqueHorario updated = bloqueHorarioRepository.save(bloque);
-        return convertToResponse(updated);
+    public List<BloqueHorario> obtenerHorarioActivoPorPracticante(Long idPracticante) {
+        log.info("Obteniendo horario activo del practicante ID: {}", idPracticante);
+        return bloqueHorarioRepository.findByPracticanteIdPracticanteAndActivoTrue(idPracticante);
     }
 
     @Override
-    public void eliminarBloque(Long id) {
-        log.info("Eliminando bloque horario ID: {}", id);
-        bloqueHorarioRepository.deleteById(id);
-    }
+    public void guardarHorario(Long idPracticante, List<BloqueHorarioRequest> horarioRequests) {
+        log.info("Guardando horario para practicante ID: {}", idPracticante);
 
-    @Override
-    public BloqueHorarioResponse obtenerBloquePorId(Long id) {
-        BloqueHorario bloque = bloqueHorarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bloque horario no encontrado con ID: " + id));
-        return convertToResponse(bloque);
-    }
+        // 1. Eliminar horario existente
+        bloqueHorarioRepository.deleteByPracticanteIdPracticante(idPracticante);
+        log.info("Horario anterior eliminado para practicante ID: {}", idPracticante);
 
-    @Override
-    public List<BloqueHorarioResponse> obtenerBloquesPorPracticante(Long idPracticante) {
-        return bloqueHorarioRepository.findByPracticante_IdPracticante(idPracticante).stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<BloqueHorarioResponse> obtenerBloquesActivosPorPracticante(Long idPracticante) {
-        return bloqueHorarioRepository.findByPracticante_IdPracticanteAndActivoTrue(idPracticante).stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public HorarioSemanalDTO obtenerHorarioSemanal(Long idPracticante) {
-        log.info("Obteniendo horario semanal para practicante ID: {}", idPracticante);
-
+        // 2. Obtener el practicante
         Practicante practicante = practicanteRepository.findById(idPracticante)
                 .orElseThrow(() -> new RuntimeException("Practicante no encontrado con ID: " + idPracticante));
 
-        List<BloqueHorario> bloques = bloqueHorarioRepository.findHorarioSemanalCompleto(idPracticante);
+        // 3. Guardar nuevo horario
+        if (horarioRequests != null && !horarioRequests.isEmpty()) {
+            List<BloqueHorario> bloques = new ArrayList<>();
 
-        HorarioSemanalDTO horario = new HorarioSemanalDTO();
-        horario.setIdPracticante(idPracticante);
-        horario.setNombreCompleto(practicante.getNombre() + " " + practicante.getApellido());
-        horario.setDocumento(practicante.getDocumento());
+            for (BloqueHorarioRequest req : horarioRequests) {
+                // Solo guardar si está activo (trabaja ese día)
+                if (req.getActivo() != null && req.getActivo()) {
+                    try {
+                        BloqueHorario bloque = new BloqueHorario();
+                        bloque.setPracticante(practicante);
+                        // CONVERTIR String → Enum
+                        bloque.setDiaSemana(DiaSemana.valueOf(req.getDiaSemana()));
+                        bloque.setHoraInicio(LocalTime.parse(req.getHoraInicio()));
+                        bloque.setHoraFin(LocalTime.parse(req.getHoraFin()));
+                        bloque.setTipoBloque(TipoBloque.TRABAJO);
+                        bloque.setActivo(true);
+                        bloque.setFechaInicio(practicante.getFechaInicioPracticas());
+                        bloque.setFechaFin(practicante.getFechaFinPracticas());
 
-        horario.setLunes(new ArrayList<>());
-        horario.setMartes(new ArrayList<>());
-        horario.setMiercoles(new ArrayList<>());
-        horario.setJueves(new ArrayList<>());
-        horario.setViernes(new ArrayList<>());
-        horario.setSabado(new ArrayList<>());
-        horario.setDomingo(new ArrayList<>());
+                        bloques.add(bloque);
+                    } catch (IllegalArgumentException e) {
+                        log.warn("Día de semana inválido '{}' para practicante ID {}: {}",
+                                req.getDiaSemana(), idPracticante, e.getMessage());
+                    } catch (Exception e) {
+                        log.warn("Error al procesar bloque horario para día {}: {}", req.getDiaSemana(), e.getMessage());
+                    }
+                }
+            }
 
-        for (BloqueHorario bloque : bloques) {
-            BloqueHorarioResponse response = convertToResponse(bloque);
-            switch (bloque.getDiaSemana().toUpperCase()) {
-                case "LUNES":
-                    horario.getLunes().add(response);
-                    break;
-                case "MARTES":
-                    horario.getMartes().add(response);
-                    break;
-                case "MIERCOLES":
-                    horario.getMiercoles().add(response);
-                    break;
-                case "JUEVES":
-                    horario.getJueves().add(response);
-                    break;
-                case "VIERNES":
-                    horario.getViernes().add(response);
-                    break;
-                case "SABADO":
-                    horario.getSabado().add(response);
-                    break;
-                case "DOMINGO":
-                    horario.getDomingo().add(response);
-                    break;
+            if (!bloques.isEmpty()) {
+                bloqueHorarioRepository.saveAll(bloques);
+                log.info("Guardados {} bloques horarios para practicante ID: {}", bloques.size(), idPracticante);
             }
         }
-
-        return horario;
     }
 
     @Override
-    public List<BloqueHorarioResponse> obtenerBloquesPorDia(Long idPracticante, String diaSemana) {
-        return bloqueHorarioRepository.findByIdPracticanteAndDiaSemana(idPracticante, diaSemana).stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+    public void eliminarHorario(Long idPracticante) {
+        log.info("Eliminando horario del practicante ID: {}", idPracticante);
+        bloqueHorarioRepository.deleteByPracticanteIdPracticante(idPracticante);
     }
 
     @Override
     public boolean esDiaLaborable(Long idPracticante, LocalDate fecha) {
-        String diaSemana = getDiaSemana(fecha);
-        return bloqueHorarioRepository.existeBloqueEnFecha(idPracticante, diaSemana, fecha);
+        DiaSemana dia = mapToDiaSemana(fecha);
+        if (dia == null) return false;
+        List<BloqueHorario> bloques = bloqueHorarioRepository
+                .findByPracticanteIdPracticanteAndDiaSemanaAndActivoTrue(idPracticante, dia);
+        // Si no hay bloque TRABAJO activo ese día, es descanso
+        return bloques.stream().anyMatch(b -> b.getTipoBloque() == TipoBloque.TRABAJO);
     }
 
     @Override
     public boolean debeEstarEnEmpresa(Long idPracticante, LocalDate fecha, String hora) {
-        String diaSemana = getDiaSemana(fecha);
-        LocalTime horaActual = LocalTime.parse(hora);
-
-        List<BloqueHorario> bloques = bloqueHorarioRepository.findByIdPracticanteAndDiaSemana(idPracticante, diaSemana);
-
-        for (BloqueHorario bloque : bloques) {
-            if (bloque.getTipoBloque() == TipoBloque.TRABAJO &&
-                    !horaActual.isBefore(bloque.getHoraInicio()) &&
-                    !horaActual.isAfter(bloque.getHoraFin())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public String obtenerEstadoDia(Long idPracticante, LocalDate fecha) {
-        String diaSemana = getDiaSemana(fecha);
-        List<BloqueHorario> bloques = bloqueHorarioRepository.findByIdPracticanteAndDiaSemana(idPracticante, diaSemana);
-
-        if (bloques.isEmpty()) {
-            return "DIA_LIBRE";
-        }
-
-        boolean tieneTrabajo = bloques.stream().anyMatch(b -> b.getTipoBloque() == TipoBloque.TRABAJO);
-        boolean tieneClases = bloques.stream().anyMatch(b -> b.getTipoBloque() == TipoBloque.CLASES);
-
-        if (tieneTrabajo && tieneClases) {
-            return "DIA_MIXTO";
-        } else if (tieneTrabajo) {
-            return "DIA_TRABAJO";
-        } else if (tieneClases) {
-            return "DIA_CLASES";
-        } else {
-            return "DIA_DESCANSO";
+        try {
+            LocalTime horaActual = LocalTime.parse(hora);
+            DiaSemana dia = mapToDiaSemana(fecha);
+            if (dia == null) return true;
+            List<BloqueHorario> bloques = bloqueHorarioRepository
+                    .findByPracticanteIdPracticanteAndDiaSemanaAndActivoTrue(idPracticante, dia);
+            return bloques.stream()
+                    .filter(b -> b.getTipoBloque() == TipoBloque.TRABAJO)
+                    .anyMatch(b -> !horaActual.isBefore(b.getHoraInicio()) && !horaActual.isAfter(b.getHoraFin()));
+        } catch (Exception e) {
+            log.warn("Error al validar horario para practicante {}: {}", idPracticante, e.getMessage());
+            return true; // Si no se puede parsear hora, permitir marcación
         }
     }
 
-    @Override
-    public void copiarHorarioSemana(Long idPracticante, LocalDate fechaInicio, LocalDate fechaFin) {
-        log.info("Copiando horario semanal para practicante ID: {}", idPracticante);
-
-        List<BloqueHorario> bloques = bloqueHorarioRepository.findByPracticante_IdPracticanteAndActivoTrue(idPracticante);
-
-        for (BloqueHorario bloque : bloques) {
-            BloqueHorario nuevaCopia = new BloqueHorario();
-            nuevaCopia.setPracticante(bloque.getPracticante());
-            nuevaCopia.setDiaSemana(bloque.getDiaSemana());
-            nuevaCopia.setHoraInicio(bloque.getHoraInicio());
-            nuevaCopia.setHoraFin(bloque.getHoraFin());
-            nuevaCopia.setTipoBloque(bloque.getTipoBloque());
-            nuevaCopia.setDescripcion(bloque.getDescripcion());
-            nuevaCopia.setFechaInicio(fechaInicio);
-            nuevaCopia.setFechaFin(fechaFin);
-            nuevaCopia.setActivo(true);
-
-            bloqueHorarioRepository.save(nuevaCopia);
-        }
-
-        log.info("Horario copiado exitosamente para el rango: {} - {}", fechaInicio, fechaFin);
-    }
-
-    // ========== MÉTODOS PRIVADOS ==========
-
-    private String getDiaSemana(LocalDate fecha) {
-        return fecha.getDayOfWeek().toString();
-    }
-
-    private BloqueHorarioResponse convertToResponse(BloqueHorario bloque) {
-        BloqueHorarioResponse response = new BloqueHorarioResponse();
-        response.setIdBloque(bloque.getIdBloque());
-        response.setIdPracticante(bloque.getPracticante().getIdPracticante());
-        response.setPracticanteNombre(bloque.getPracticante().getNombre() + " " + bloque.getPracticante().getApellido());
-        response.setDiaSemana(bloque.getDiaSemana());
-        response.setHoraInicio(bloque.getHoraInicio());
-        response.setHoraFin(bloque.getHoraFin());
-        response.setTipoBloque(bloque.getTipoBloque().toString());
-        response.setDescripcion(bloque.getDescripcion());
-        response.setActivo(bloque.getActivo());
-        response.setFechaInicio(bloque.getFechaInicio());
-        response.setFechaFin(bloque.getFechaFin());
-        return response;
+    private DiaSemana mapToDiaSemana(LocalDate fecha) {
+        return switch (fecha.getDayOfWeek()) {
+            case MONDAY -> DiaSemana.LUNES;
+            case TUESDAY -> DiaSemana.MARTES;
+            case WEDNESDAY -> DiaSemana.MIERCOLES;
+            case THURSDAY -> DiaSemana.JUEVES;
+            case FRIDAY -> DiaSemana.VIERNES;
+            case SATURDAY -> DiaSemana.SABADO;
+            case SUNDAY -> DiaSemana.DOMINGO;
+        };
     }
 }
