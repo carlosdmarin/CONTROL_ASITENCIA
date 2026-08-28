@@ -13,10 +13,24 @@ import {
 } from "@/components/ui/select";
 
 interface AsistenciaFiltersProps {
+  busqueda: string;
+  onBusquedaChange: (v: string) => void;
+  filtroEstado: string;
+  onFiltroEstadoChange: (v: string) => void;
+  filtroArea: string;
+  onFiltroAreaChange: (v: string) => void;
   loading?: boolean;
 }
 
-export default function AsistenciaFilters({ loading = false }: AsistenciaFiltersProps) {
+export default function AsistenciaFilters({
+  busqueda,
+  onBusquedaChange,
+  filtroEstado,
+  onFiltroEstadoChange,
+  filtroArea,
+  onFiltroAreaChange,
+  loading = false,
+}: AsistenciaFiltersProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
       <div className="relative w-full sm:w-80">
@@ -27,7 +41,8 @@ export default function AsistenciaFilters({ loading = false }: AsistenciaFilters
           <Input
             placeholder="Buscar practicante..."
             className="pl-9 h-10 bg-white"
-            disabled
+            value={busqueda}
+            onChange={(e) => onBusquedaChange(e.target.value)}
           />
         )}
       </div>
@@ -40,7 +55,7 @@ export default function AsistenciaFilters({ loading = false }: AsistenciaFilters
           </>
         ) : (
           <>
-            <Select disabled>
+            <Select value={filtroEstado} onValueChange={(v) => onFiltroEstadoChange(v ?? "todos")}>
               <SelectTrigger className="w-36 h-10 bg-white">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Estado" />
@@ -50,21 +65,21 @@ export default function AsistenciaFilters({ loading = false }: AsistenciaFilters
                 <SelectItem value="presente">Presente</SelectItem>
                 <SelectItem value="tardanza">Tardanza</SelectItem>
                 <SelectItem value="ausente">Ausente</SelectItem>
-                <SelectItem value="jornada">En jornada</SelectItem>
+                <SelectItem value="en_jornada">En jornada</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select disabled>
+            <Select value={filtroArea} onValueChange={(v) => onFiltroAreaChange(v ?? "todas")}>
               <SelectTrigger className="w-36 h-10 bg-white">
                 <ChevronDown className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Área" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="ti">TI</SelectItem>
-                <SelectItem value="rrhh">RR. HH.</SelectItem>
-                <SelectItem value="contabilidad">Contabilidad</SelectItem>
-                <SelectItem value="sistemas">Sistemas</SelectItem>
+                <SelectItem value="TI">TI</SelectItem>
+                <SelectItem value="RR. HH.">RR. HH.</SelectItem>
+                <SelectItem value="Contabilidad">Contabilidad</SelectItem>
+                <SelectItem value="Sistemas">Sistemas</SelectItem>
               </SelectContent>
             </Select>
           </>

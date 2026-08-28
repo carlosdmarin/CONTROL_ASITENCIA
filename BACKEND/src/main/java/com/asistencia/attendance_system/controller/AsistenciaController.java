@@ -74,6 +74,22 @@ public class AsistenciaController {
 
     // ========== ASISTENCIA DIARIA ==========
 
+    @GetMapping("/diaria")
+    public ResponseEntity<List<AsistenciaDiariaResponse>> obtenerAsistenciasDelDia(
+            @RequestParam String fecha) {
+        LocalDate fechaLocal = LocalDate.parse(fecha);
+        List<AsistenciaDiariaResponse> responses = asistenciaService.obtenerAsistenciasDelDia(fechaLocal);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/resumen/diario")
+    public ResponseEntity<ResumenAsistenciaDTO> obtenerResumenDiario(
+            @RequestParam String fecha) {
+        LocalDate fechaLocal = LocalDate.parse(fecha);
+        ResumenAsistenciaDTO resumen = asistenciaService.obtenerResumenDiario(fechaLocal);
+        return ResponseEntity.ok(resumen);
+    }
+
     @GetMapping("/diaria/practicante/{idPracticante}/fecha/{fecha}")
     public ResponseEntity<AsistenciaDiariaResponse> obtenerAsistenciaDiaria(
             @PathVariable Long idPracticante,

@@ -324,6 +324,54 @@ public class AsistenciaServiceImpl implements AsistenciaService {
     }
 
     @Override
+    public List<AsistenciaDiariaResponse> obtenerAsistenciasDelDia(LocalDate fecha) {
+        List<Practicante> activos = practicanteRepository.findBySituacion(com.asistencia.attendance_system.model.enums.Situacion.ACTIVO);
+        return activos.stream().map(p -> {
+            AsistenciaDiaria ad = asistenciaDiariaRepository.findByPracticante_IdPracticanteAndFecha(p.getIdPracticante(), fecha).orElse(null);
+            if (ad == null) {
+                // Virtual FALTA si no hay registro y es día laborable, sino DESCANSO
+                boolean esLaborable = false;
+                try { esLaborable = horarioService.esDiaLaborable(p.getIdPracticante(), fecha); } catch (Exception ignored) {}
+                AsistenciaDiaria virtual = new AsistenciaDiaria();
+                virtual.setPracticante(p);
+                virtual.setFecha(fecha);
+                virtual.setEstadoDia(esLaborable ? EstadoDia.FALTA : EstadoDia.DESCANSO);
+                virtual.setHorasTrabajadas(BigDecimal.ZERO);
+                virtual.setMinutosTardanza(0);
+                return convertAsistenciaToResponse(virtual);
+            }
+            return convertAsistenciaToResponse(ad);
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public ResumenAsistenciaDTO obtenerResumenDiario(LocalDate fecha) {
+        List<AsistenciaDiariaResponse> delDia = obtenerAsistenciasDelDia(fecha);
+        long total = delDia.size();
+        long presentes = delDia.stream().filter(a -> "PRESENTE".equals(a.getEstadoDia())).count();
+        long tardes = delDia.stream().filter(a -> "TARDE".equals(a.getEstadoDia())).count();
+        long faltas = delDia.stream().filter(a -> "FALTA".equals(a.getEstadoDia())).count();
+        long descansos = delDia.stream().filter(a -> "DESCANSO".equals(a.getEstadoDia())).count();
+        // Para compatibilidad con ResumenAsistenciaDTO (usa diasFalta para ausentes)
+        ResumenAsistenciaDTO r = new ResumenAsistenciaDTO();
+        // Reusar campos existentes: horasCumplidas etc no aplica diario, poner 0
+        r.setIdPracticante(0L);
+        r.setNombreCompleto("Resumen Diario");
+        r.setSede("");
+        r.setCargo("");
+        r.setHorasSemanalesRequeridas(0);
+        r.setHorasCumplidas((int) presentes);
+        r.setHorasPendientes((int) faltas);
+        r.setDiasPresente((int) presentes);
+        r.setDiasTarde((int) tardes);
+        r.setDiasFalta((int) (faltas + descansos));
+        r.setDiasJustificado(0);
+        r.setPorcentajeCumplimiento(total == 0 ? 0 : (presentes * 100.0 / total));
+        r.setEstadoSemanal(total == 0 ? "INCOMPLETO" : (faltas == 0 ? "CUMPLIDO" : "INCOMPLETO"));
+        return r;
+    }
+
+    @Override
     public void procesarAsistenciasPendientes(LocalDate fecha) {
         log.info("Procesando asistencias pendientes para fecha: {}", fecha);
     }

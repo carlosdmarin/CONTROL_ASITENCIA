@@ -21,25 +21,17 @@ interface AsistenciaTableProps {
 
 export default function AsistenciaTable({ asistencias, loading = false }: AsistenciaTableProps) {
   const getEstadoBadge = (estado: string) => {
-    const config: Record<string, { label: string; className: string; icon?: string }> = {
-      'PRESENTE': { 
-        label: 'Presente', 
-        className: 'bg-green-100 text-green-700 border-green-200' 
-      },
-      'TARDANZA': { 
-        label: 'Tardanza', 
-        className: 'bg-yellow-100 text-yellow-700 border-yellow-200' 
-      },
-      'AUSENTE': { 
-        label: 'Ausente', 
-        className: 'bg-red-100 text-red-700 border-red-200' 
-      },
-      'EN_JORNADA': { 
-        label: 'En jornada', 
-        className: 'bg-blue-100 text-blue-700 border-blue-200' 
-      },
+    const config: Record<string, { label: string; className: string }> = {
+      'PRESENTE': { label: 'Presente', className: 'bg-green-100 text-green-700 border-green-200' },
+      'TARDE': { label: 'Tardanza', className: 'bg-amber-100 text-amber-700 border-amber-200' },
+      'TARDANZA': { label: 'Tardanza', className: 'bg-amber-100 text-amber-700 border-amber-200' },
+      'FALTA': { label: 'Ausente', className: 'bg-red-100 text-red-700 border-red-200' },
+      'AUSENTE': { label: 'Ausente', className: 'bg-red-100 text-red-700 border-red-200' },
+      'DESCANSO': { label: 'Descanso', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+      'JUSTIFICADO': { label: 'Justificado', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+      'EN_JORNADA': { label: 'En jornada', className: 'bg-blue-100 text-blue-700 border-blue-200' },
     };
-    return config[estado] || { label: estado, className: 'bg-gray-100 text-gray-700' };
+    return config[estado] || { label: estado, className: 'bg-gray-100 text-gray-700 border-gray-200' };
   };
 
   // Skeletons para filas de la tabla

@@ -78,12 +78,12 @@ const DIAS_SEMANA = [
 
 // ====== HORARIO POR DEFECTO ======
 const HORARIO_DEFAULT: HorarioSemanal = {
-  LUNES: { activo: true, entrada: '08:00', salida: '17:00' },
-  MARTES: { activo: true, entrada: '08:00', salida: '17:00' },
-  MIERCOLES: { activo: true, entrada: '08:00', salida: '17:00' },
-  JUEVES: { activo: true, entrada: '08:00', salida: '17:00' },
-  VIERNES: { activo: true, entrada: '08:00', salida: '17:00' },
-  SABADO: { activo: false, entrada: '08:00', salida: '13:00' },
+  LUNES: { activo: true, entrada: '07:00', salida: '17:00' },
+  MARTES: { activo: true, entrada: '07:00', salida: '17:00' },
+  MIERCOLES: { activo: true, entrada: '07:00', salida: '17:00' },
+  JUEVES: { activo: true, entrada: '07:00', salida: '17:00' },
+  VIERNES: { activo: true, entrada: '07:00', salida: '17:00' },
+  SABADO: { activo: false, entrada: '07:00', salida: '13:00' },
 };
 
 // ====== DATOS MOCK PARA PRUEBAS ======

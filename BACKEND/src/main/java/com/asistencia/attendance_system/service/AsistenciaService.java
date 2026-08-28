@@ -44,6 +44,11 @@ public interface AsistenciaService {
 
     List<AsistenciaDiariaResponse> obtenerAsistenciasPorPracticanteYMes(Long idPracticante, Integer mes, Integer anio);
 
+    List<AsistenciaDiariaResponse> obtenerAsistenciasDelDia(LocalDate fecha);
+
+    // Resumen diario para stats (total, presentes, tardanzas, ausentes)
+    ResumenAsistenciaDTO obtenerResumenDiario(LocalDate fecha);
+
     // ========== VALIDACIONES ==========
 
     boolean yaMarcoEntradaHoy(Long idPracticante);
