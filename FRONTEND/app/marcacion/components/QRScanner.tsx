@@ -94,16 +94,11 @@ export default function QRScanner({
 
         if (mounted) setIsCameraReady(true);
       } catch (error: any) {
-        console.error("Error al iniciar escáner QR:", error);
-        // Mensaje más útil según el error
-        const msg = error?.message || "";
-        if (msg.includes("Permission")) {
-          onError("Permiso de cámara denegado. Actívalo en el navegador.");
-        } else if (msg.includes("NotFound") || msg.includes("No camera")) {
-          onError("No se encontró cámara. Verifica que tengas cámara disponible.");
-        } else {
-          onError("No se pudo iniciar la cámara. Verifica permisos y que uses HTTPS.");
-        }
+        console.error("❌ ERROR COMPLETO AL INICIAR CÁMARA:", error);
+
+         const msg = error?.message || String(error);
+         onError(`Error de cámara: ${msg}`);
+       
       }
     };
 

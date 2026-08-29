@@ -13,13 +13,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/asistencias", "/asistencias"})
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 public class AsistenciaController {
 
     private final AsistenciaService asistenciaService;
@@ -27,11 +28,38 @@ public class AsistenciaController {
     // ========== MARCACIONES ==========
 
     @PostMapping("/marcar")
-    public ResponseEntity<MarcacionResponse> registrarMarcacion(@Valid @RequestBody MarcacionRequest request) {
-        MarcacionResponse response = asistenciaService.registrarMarcacion(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+    public ResponseEntity<?> registrarMarcacion(@Valid @RequestBody MarcacionRequest request) {
+        try {
+            MarcacionResponse response = asistenciaService.registrarMarcacion(request);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            // Capturar errores de negocio y devolver mensaje claro
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("error", true);
 
+            // Determinar tipo de error para el frontend
+            String mensaje = e.getMessage().toLowerCase();
+            if (mensaje.contains("descanso") || mensaje.contains("día de descanso")) {
+                errorResponse.put("tipo", "DESCANSO");
+            } else if (mensaje.contains("ya registraste") || mensaje.contains("ya has registrado")) {
+                errorResponse.put("tipo", "YA_REGISTRADO");
+            } else if (mensaje.contains("no encontrado")) {
+                errorResponse.put("tipo", "NOT_FOUND");
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Error interno del servidor: " + e.getMessage());
+            errorResponse.put("error", true);
+            errorResponse.put("tipo", "ERROR");
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
     @PostMapping({"/entrada/{documento}", "/entrada/{codigoTrabajador}"})
     public ResponseEntity<MarcacionResponse> registrarEntrada(@PathVariable Map<String, String> pathVars) {
         String doc = pathVars.get("documento");

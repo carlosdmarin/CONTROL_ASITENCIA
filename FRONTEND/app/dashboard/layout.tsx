@@ -52,7 +52,7 @@ export default function DashboardLayout({
               <span className="text-white font-bold text-xs">OA</span>
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-800">ONE Attendance</h2>
+              <h2 className="text-sm font-bold text-slate-800">PRACITCANTE</h2>
               <p className="text-[9px] text-slate-400 uppercase tracking-wider">Control de asistencias</p>
             </div>
           </div>
@@ -70,7 +70,7 @@ export default function DashboardLayout({
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-800 tracking-tight">
-                    ONE Attendance
+                   PRACTICANTE
                   </h2>
                   <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
                     Control de asistencias

@@ -256,7 +256,7 @@ export function PracticanteQRDialog({
           <div className="bg-[#0A2F6B] px-6 py-4 text-center">
             <p className="text-xs font-medium text-white">Somos una gran familia sostenible</p>
             <p className="text-xs font-medium text-orange-400">
-              de palmicultores de ucayali
+              de palmicultores de Ucayali
             </p>
           </div>
         </div>
