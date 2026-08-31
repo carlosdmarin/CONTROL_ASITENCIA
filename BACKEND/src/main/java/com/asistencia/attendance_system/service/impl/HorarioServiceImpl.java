@@ -1,6 +1,7 @@
 package com.asistencia.attendance_system.service.impl;
 
 import com.asistencia.attendance_system.model.dto.BloqueHorarioRequest;
+import com.asistencia.attendance_system.model.dto.BloqueHorarioResponseDTO;
 import com.asistencia.attendance_system.model.entity.BloqueHorario;
 import com.asistencia.attendance_system.model.entity.Practicante;
 import com.asistencia.attendance_system.model.enums.DiaSemana;
@@ -29,15 +30,28 @@ public class HorarioServiceImpl implements HorarioService {
     private final PracticanteRepository practicanteRepository;
 
     @Override
-    public List<BloqueHorario> obtenerHorarioPorPracticante(Long idPracticante) {
+    public List<BloqueHorarioResponseDTO> obtenerHorarioPorPracticante(Long idPracticante) {
         log.info("Obteniendo horario del practicante ID: {}", idPracticante);
-        return bloqueHorarioRepository.findByPracticanteIdPracticante(idPracticante);
+        List<BloqueHorario> entidades = bloqueHorarioRepository.findByPracticante_IdPracticante(idPracticante);
+        return entidades.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override
-    public List<BloqueHorario> obtenerHorarioActivoPorPracticante(Long idPracticante) {
+    public List<BloqueHorarioResponseDTO> obtenerHorarioActivoPorPracticante(Long idPracticante) {
         log.info("Obteniendo horario activo del practicante ID: {}", idPracticante);
-        return bloqueHorarioRepository.findByPracticanteIdPracticanteAndActivoTrue(idPracticante);
+        List<BloqueHorario> entidades = bloqueHorarioRepository.findByPracticante_IdPracticanteAndActivoTrue(idPracticante);
+        return entidades.stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    private BloqueHorarioResponseDTO toDTO(BloqueHorario e) {
+        BloqueHorarioResponseDTO dto = new BloqueHorarioResponseDTO();
+        dto.setIdBloque(e.getIdBloque());
+        dto.setDiaSemana(e.getDiaSemana() != null ? e.getDiaSemana().name() : null);
+        dto.setHoraInicio(e.getHoraInicio() != null ? e.getHoraInicio().toString() : null);
+        dto.setHoraFin(e.getHoraFin() != null ? e.getHoraFin().toString() : null);
+        dto.setActivo(e.getActivo());
+        dto.setTipoBloque(e.getTipoBloque() != null ? e.getTipoBloque().name() : null);
+        return dto;
     }
 
     @Override

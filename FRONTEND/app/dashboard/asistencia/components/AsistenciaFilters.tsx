@@ -1,8 +1,7 @@
 "use client";
 
-import { Search, Filter, ChevronDown } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -17,8 +16,6 @@ interface AsistenciaFiltersProps {
   onBusquedaChange: (v: string) => void;
   filtroEstado: string;
   onFiltroEstadoChange: (v: string) => void;
-  filtroArea: string;
-  onFiltroAreaChange: (v: string) => void;
   loading?: boolean;
 }
 
@@ -27,8 +24,6 @@ export default function AsistenciaFilters({
   onBusquedaChange,
   filtroEstado,
   onFiltroEstadoChange,
-  filtroArea,
-  onFiltroAreaChange,
   loading = false,
 }: AsistenciaFiltersProps) {
   return (
@@ -49,40 +44,24 @@ export default function AsistenciaFilters({
 
       <div className="flex gap-2 w-full sm:w-auto">
         {loading ? (
-          <>
-            <Skeleton className="h-10 w-36 rounded-md" />
-            <Skeleton className="h-10 w-36 rounded-md" />
-          </>
+          <Skeleton className="h-10 w-36 rounded-md" />
         ) : (
-          <>
-            <Select value={filtroEstado} onValueChange={(v) => onFiltroEstadoChange(v ?? "todos")}>
-              <SelectTrigger className="w-36 h-10 bg-white">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="presente">Presente</SelectItem>
-                <SelectItem value="tardanza">Tardanza</SelectItem>
-                <SelectItem value="ausente">Ausente</SelectItem>
-                <SelectItem value="en_jornada">En jornada</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filtroArea} onValueChange={(v) => onFiltroAreaChange(v ?? "todas")}>
-              <SelectTrigger className="w-36 h-10 bg-white">
-                <ChevronDown className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Área" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="TI">TI</SelectItem>
-                <SelectItem value="RR. HH.">RR. HH.</SelectItem>
-                <SelectItem value="Contabilidad">Contabilidad</SelectItem>
-                <SelectItem value="Sistemas">Sistemas</SelectItem>
-              </SelectContent>
-            </Select>
-          </>
+          <Select value={filtroEstado} onValueChange={(v) => onFiltroEstadoChange(v ?? "todos")}>
+            <SelectTrigger className="w-36 h-10 bg-white">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="presente">✅ Presente</SelectItem>
+              <SelectItem value="tardanza">⏰ Tardanza</SelectItem>
+              <SelectItem value="ausente">❌ Ausente</SelectItem>
+              <SelectItem value="clases">📚 Clases</SelectItem>
+              <SelectItem value="descanso">🛌 Descanso</SelectItem>
+              <SelectItem value="justificado">📝 Justificado</SelectItem>
+              <SelectItem value="mixto">🔀 Mixto</SelectItem>
+            </SelectContent>
+          </Select>
         )}
       </div>
     </div>

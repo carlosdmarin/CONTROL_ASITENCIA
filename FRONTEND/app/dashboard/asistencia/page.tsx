@@ -7,7 +7,7 @@ import AsistenciaStats from "./components/AsistenciaStats";
 import AsistenciaFilters from "./components/AsistenciaFilters";
 import AsistenciaTable from "./components/AsistenciaTable";
 import { asistenciasApi } from "@/lib/api/asistencias";
-import { AsistenciaDiariaResponse } from "./types";
+import { AsistenciaDiaria, AsistenciaDiariaResponse } from "@/types/asistencia";
 
 function formatFechaISO(date: Date): string {
   return date.toISOString().split("T")[0];
@@ -20,52 +20,68 @@ function formatHoras(horas: number | null | undefined): string | null {
   return `${h}h ${m}m`;
 }
 
-function mapEstado(estadoDia: string): "PRESENTE" | "TARDANZA" | "AUSENTE" | "EN_JORNADA" {
+// ====== MAPEO DE ESTADOS - cubre los 7 valores documentados en AsistenciaDiariaResponse.java ======
+// Propuesta si CLASES/MIXTO no tienen semántica distinta confirmada:
+// - CLASES: día con clases académicas programadas (similar a DESCANSO pero con connotación formativa) → badge azul claro
+// - MIXTO: día con bloques TRABAJO + CLASES → badge violeta
+// Si en tu negocio CLASES debe contar como PRESENTE o MIXTO como EN_JORNADA, ajusta aquí.
+function mapEstado(estadoDia: AsistenciaDiariaResponse["estadoDia"]): AsistenciaDiaria["estado"] {
   switch (estadoDia) {
     case "PRESENTE": return "PRESENTE";
     case "TARDE": return "TARDANZA";
     case "FALTA": return "AUSENTE";
-    case "DESCANSO": return "AUSENTE";
-    case "JUSTIFICADO": return "AUSENTE";
-    default: return "EN_JORNADA";
+    case "CLASES": return "CLASES";
+    case "DESCANSO": return "DESCANSO";
+    case "JUSTIFICADO": return "JUSTIFICADO";
+    case "MIXTO": return "MIXTO";
+    default: {
+      // Exhaustiveness check: si añades un nuevo estado en Java y no lo mapeas, TypeScript avisará aquí
+      const _exhaustiveCheck: never = estadoDia;
+      void _exhaustiveCheck;
+      return "AUSENTE";
+    }
   }
 }
 
 export default function AsistenciaPage() {
   const [fecha, setFecha] = useState<Date>(new Date());
   const [asistencias, setAsistencias] = useState<AsistenciaDiariaResponse[]>([]);
-  const [resumen, setResumen] = useState({ total: 0, presentes: 0, tardanzas: 0, ausentes: 0 });
+  const [resumen, setResumen] = useState({ 
+    total: 0, 
+    presentes: 0, 
+    tardanzas: 0, 
+    ausentes: 0,
+    descansos: 0 
+  });
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [filtroArea, setFiltroArea] = useState("todas");
 
   const fechaISO = formatFechaISO(fecha);
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const [data, res] = await Promise.all([
-        asistenciasApi.getAsistenciasDelDia(fechaISO).catch(() => []),
-        asistenciasApi.getResumenDiario(fechaISO).catch(() => null),
-      ]);
-      setAsistencias(Array.isArray(data) ? data : []);
-      if (res) {
-        setResumen({
-          total: res.diasPresente + res.diasTarde + res.diasFalta + (res.diasJustificado || 0) || data.length,
-          presentes: res.diasPresente || 0,
-          tardanzas: res.diasTarde || 0,
-          ausentes: res.diasFalta || 0,
-        });
-      } else {
-        // Calcular desde asistencias si no hay resumen
-        const presentes = data.filter((a: any) => a.estadoDia === "PRESENTE").length;
-        const tardanzas = data.filter((a: any) => a.estadoDia === "TARDE").length;
-        const ausentes = data.filter((a: any) => a.estadoDia === "FALTA" || a.estadoDia === "DESCANSO").length;
-        setResumen({ total: data.length, presentes, tardanzas, ausentes });
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Error al cargar asistencias");
+      const data = await asistenciasApi.getAsistenciasDelDia(fechaISO).catch(() => [] as AsistenciaDiariaResponse[]);
+      
+      const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data) ? data : [];
+      setAsistencias(dataArray);
+      
+      // TODO: Si se quiere evitar el cálculo manual en el cliente, crear endpoint backend
+      // GET /asistencias/resumen/dia-agregado?fecha=YYYY-MM-DD que devuelva
+      // {total, presentes, tardanzas, ausentes, descansos} ya agregado.
+      // Por ahora se calcula en cliente porque ResumenAsistenciaDTO.java es semanal por practicante, no agregado diario.
+      const total = dataArray.length;
+      const presentes = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "PRESENTE").length;
+      const tardanzas = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "TARDE").length;
+      const descansos = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "DESCANSO").length;
+      const ausentes = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "FALTA").length;
+      
+      setResumen({ total, presentes, tardanzas, ausentes, descansos });
+      
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al cargar asistencias";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -79,28 +95,26 @@ export default function AsistenciaPage() {
   const handleNext = () => setFecha((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; });
   const handleFechaChange = (iso: string) => setFecha(new Date(iso + "T12:00:00"));
 
-  // Mapear backend -> UI para tabla
+  // Mapear backend -> UI para tabla (sin area/sede, AsistenciaDiariaResponse no lo trae)
   const asistenciasUI = useMemo(() => {
     return asistencias.map((a) => ({
       id: a.idAsistencia || a.idPracticante,
       practicante: a.nombreCompleto,
-      area: "—", // El backend no devuelve area directa, se puede enriquecer con practicante.sede si se añade
-      entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : null,
-      salida: a.salidaReal ? a.salidaReal.substring(0, 5) : null,
-      horas: formatHoras(a.horasTrabajadas as any),
+      entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : (a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : null),
+      salida: a.salidaReal ? a.salidaReal.substring(0, 5) : (a.salidaEsperada ? a.salidaEsperada.substring(0, 5) : null),
+      horas: formatHoras(a.horasTrabajadas),
       estado: mapEstado(a.estadoDia),
     }));
   }, [asistencias]);
 
-  // Filtros en memoria
+  // Filtros en memoria (sin filtro por área)
   const filtradas = useMemo(() => {
     return asistenciasUI.filter((a) => {
       const matchBusqueda = !busqueda || a.practicante.toLowerCase().includes(busqueda.toLowerCase());
       const matchEstado = filtroEstado === "todos" || a.estado.toLowerCase() === filtroEstado;
-      const matchArea = filtroArea === "todas" || a.area === filtroArea;
-      return matchBusqueda && matchEstado && matchArea;
+      return matchBusqueda && matchEstado;
     });
-  }, [asistenciasUI, busqueda, filtroEstado, filtroArea]);
+  }, [asistenciasUI, busqueda, filtroEstado]);
 
   return (
     <div className="space-y-6">
@@ -119,8 +133,6 @@ export default function AsistenciaPage() {
         onBusquedaChange={setBusqueda}
         filtroEstado={filtroEstado}
         onFiltroEstadoChange={setFiltroEstado}
-        filtroArea={filtroArea}
-        onFiltroAreaChange={setFiltroArea}
         loading={loading}
       />
 

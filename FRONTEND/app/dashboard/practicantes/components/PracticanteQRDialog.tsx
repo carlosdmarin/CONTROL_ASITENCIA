@@ -26,7 +26,7 @@ export function PracticanteQRDialog({
 }: PracticanteQRDialogProps) {
   const carnetRef = useRef<HTMLDivElement>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false); // 👈 NUEVO
+  const [isDownloading, setIsDownloading] = useState(false); // 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!practicante) return null;
@@ -101,7 +101,7 @@ export function PracticanteQRDialog({
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="#d3d3d3"
-          className="h-18 w-18" // 👈 antes h-14 w-14, ahora más proporcionado
+          className="h-18 w-18" // ahora más proporcionado
         >
           <circle cx="12" cy="12" r="11" />
           <circle cx="12" cy="9.5" r="3.5" fill="white" />

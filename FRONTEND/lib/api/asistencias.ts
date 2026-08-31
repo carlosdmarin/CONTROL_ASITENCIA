@@ -1,8 +1,9 @@
 // lib/api/asistencias.ts
 import { api, handleApiError } from './axios';
+import type { AsistenciaDiariaResponse, ResumenAsistenciaDTO } from '@/types/asistencia';
 
 export const asistenciasApi = {
-  getAsistenciasDelDia: async (fecha: string): Promise<any[]> => {
+  getAsistenciasDelDia: async (fecha: string): Promise<AsistenciaDiariaResponse[]> => {
     try {
       const response = await api.get(`/asistencias/diaria?fecha=${fecha}`);
       return response.data;
@@ -11,7 +12,7 @@ export const asistenciasApi = {
     }
   },
 
-  getResumenDiario: async (fecha: string): Promise<any> => {
+  getResumenDiario: async (fecha: string): Promise<ResumenAsistenciaDTO> => {
     try {
       const response = await api.get(`/asistencias/resumen/diario?fecha=${fecha}`);
       return response.data;

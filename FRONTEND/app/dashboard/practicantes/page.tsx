@@ -10,6 +10,7 @@ import { PracticanteDeleteDialog } from "./components/PracticanteDeleteDialog";
 import { PracticanteCreateDialog } from "./components/PracticanteCreateDialog";
 import { PracticanteEditDialog } from "./components/PracticanteEditDialog";
 import { PracticanteQRDialog } from "./components/PracticanteQRDialog";
+import { PracticanteDetailDialog } from "./components/PracticanteDetailDialog";
 import { practicantesApi } from "@/lib/api/practicantes";
 import { Practicante, NuevoPracticante } from "@/types/practicante";
 
@@ -22,9 +23,16 @@ export default function PracticantesPage() {
   const [dialogEditarAbierto, setDialogEditarAbierto] = useState(false);
   const [dialogEliminarAbierto, setDialogEliminarAbierto] = useState(false);
   const [dialogQRabierto, setDialogQRabierto] = useState(false);
-  const [practicanteAEditar, setPracticanteAEditar] = useState<Practicante | null>(null);
-  const [practicanteAEliminar, setPracticanteAEliminar] = useState<Practicante | null>(null);
-  const [practicanteAQR, setPracticanteAQR] = useState<Practicante | null>(null);
+  const [practicanteAEditar, setPracticanteAEditar] =
+    useState<Practicante | null>(null);
+  const [practicanteAEliminar, setPracticanteAEliminar] =
+    useState<Practicante | null>(null);
+  const [practicanteAQR, setPracticanteAQR] = useState<Practicante | null>(
+    null,
+  );
+  const [dialogDetalleAbierto, setDialogDetalleAbierto] = useState(false);
+  const [practicanteDetalle, setPracticanteDetalle] =
+    useState<Practicante | null>(null);
 
   // ====== CARGAR PRACTICANTES ======
   const cargarPracticantes = async () => {
@@ -33,7 +41,10 @@ export default function PracticantesPage() {
       const data = await practicantesApi.getAll();
       setPracticantes(data);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Error al cargar los practicantes";
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Error al cargar los practicantes";
       console.error("Error:", error);
       toast.error(msg);
     } finally {
@@ -50,11 +61,15 @@ export default function PracticantesPage() {
     (p) =>
       p.nombreCompleto?.toLowerCase().includes(busqueda.toLowerCase()) ||
       p.documento?.includes(busqueda) ||
-      (p.sede || (p as any).agencia || "").toLowerCase().includes(busqueda.toLowerCase())
+      (p.sede || (p as any).agencia || "")
+        .toLowerCase()
+        .includes(busqueda.toLowerCase()),
   );
 
   // ====== AGREGAR PRACTICANTE ======
-  const agregarPracticante = async (nuevoPracticante: NuevoPracticante & { horario?: any[] }) => {
+  const agregarPracticante = async (
+    nuevoPracticante: NuevoPracticante & { horario?: any[] },
+  ) => {
     try {
       const { horario, ...practicanteData } = nuevoPracticante as any;
       const creado = await practicantesApi.create(practicanteData);
@@ -63,8 +78,13 @@ export default function PracticantesPage() {
         try {
           await practicantesApi.guardarHorario(creado.idPracticante, horario);
         } catch (e) {
-          console.warn("Practicante creado pero horario no se pudo guardar:", e);
-          toast.warning("Practicante creado, pero el horario no se pudo guardar");
+          console.warn(
+            "Practicante creado pero horario no se pudo guardar:",
+            e,
+          );
+          toast.warning(
+            "Practicante creado, pero el horario no se pudo guardar",
+          );
         }
       } else if (horario && horario.length > 0) {
         // Si el backend no devuelve id, intentar con el horario en el payload (compat)
@@ -74,18 +94,24 @@ export default function PracticantesPage() {
       setModalAbierto(false);
       toast.success("Practicante agregado correctamente");
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Error al crear el practicante";
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Error al crear el practicante";
       console.error("Error:", error);
       toast.error(msg);
     }
   };
 
   // ====== EDITAR PRACTICANTE ======
-  const guardarCambios = async (practicanteEditado: Practicante & { horario?: any[] }) => {
+  const guardarCambios = async (
+    practicanteEditado: Practicante & { horario?: any[] },
+  ) => {
     try {
       const data: any = {
         nombre: practicanteEditado.nombreCompleto.split(" ")[0] || "",
-        apellido: practicanteEditado.nombreCompleto.split(" ").slice(1).join(" ") || "",
+        apellido:
+          practicanteEditado.nombreCompleto.split(" ").slice(1).join(" ") || "",
         documento: practicanteEditado.documento,
         idSede: 1,
         idPuesto: 1,
@@ -101,7 +127,10 @@ export default function PracticantesPage() {
       const horario = (practicanteEditado as any).horario;
       if (horario && horario.length > 0) {
         try {
-          await practicantesApi.updateHorario(practicanteEditado.idPracticante, horario);
+          await practicantesApi.updateHorario(
+            practicanteEditado.idPracticante,
+            horario,
+          );
         } catch (e) {
           console.warn("Horario no se pudo actualizar:", e);
         }
@@ -110,7 +139,10 @@ export default function PracticantesPage() {
       setDialogEditarAbierto(false);
       toast.success("Practicante actualizado correctamente");
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Error al actualizar el practicante";
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Error al actualizar el practicante";
       console.error("Error:", error);
       toast.error(msg);
     }
@@ -124,7 +156,10 @@ export default function PracticantesPage() {
       setDialogEliminarAbierto(false);
       toast.success("✅ Practicante eliminado correctamente");
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Error al eliminar el practicante";
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Error al eliminar el practicante";
       console.error("Error:", error);
       toast.error(msg);
     }
@@ -154,10 +189,7 @@ export default function PracticantesPage() {
 
       <PracticanteCards practicantes={practicantes} />
 
-      <PracticanteFilters
-        busqueda={busqueda}
-        onBusquedaChange={setBusqueda}
-      />
+      <PracticanteFilters busqueda={busqueda} onBusquedaChange={setBusqueda} />
 
       {loading ? (
         <div className="flex justify-center items-center h-32">
@@ -180,6 +212,10 @@ export default function PracticantesPage() {
           }}
           getStatusColor={getStatusColor}
           busqueda={busqueda}
+          onShowDetail={(p) => {
+            setPracticanteDetalle(p);
+            setDialogDetalleAbierto(true);
+          }}
         />
       )}
 
@@ -201,6 +237,12 @@ export default function PracticantesPage() {
         open={dialogQRabierto}
         onOpenChange={setDialogQRabierto}
         practicante={practicanteAQR}
+      />
+
+      <PracticanteDetailDialog
+        open={dialogDetalleAbierto}
+        onOpenChange={setDialogDetalleAbierto}
+        practicante={practicanteDetalle}
       />
     </div>
   );

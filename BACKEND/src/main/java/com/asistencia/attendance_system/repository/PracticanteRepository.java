@@ -36,4 +36,6 @@ public interface PracticanteRepository extends JpaRepository<Practicante, Long> 
     default Long countActivosByAgencia(Sede sede) {
         return countActivosBySede(sede);
     }
+
+    boolean existsById(Long id);
 }

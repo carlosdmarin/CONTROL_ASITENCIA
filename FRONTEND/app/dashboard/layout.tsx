@@ -22,7 +22,6 @@ import {
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { title: "Turnos", icon: ClipboardClock, href: "/dashboard/turnos" },
   { title: "Areas", icon: BriefcaseBusiness, href: "/dashboard/areas" },
   { title: "Practicantes", icon: Users, href: "/dashboard/practicantes" },
   { title: "Asistencia", icon: Users, href: "/dashboard/asistencia" },

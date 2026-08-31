@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2, Search, Users, MoreHorizontal, ClipboardList, QrCode } from "lucide-react";
+import { Pencil, Trash2, Search, Users, MoreHorizontal, ClipboardList, QrCode, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +33,7 @@ interface PracticanteTableProps {
   getStatusColor: (status: string) => string;
   busqueda: string;
   loading?: boolean;
+  onShowDetail?: (practicante: Practicante) => void;
 }
 
 // Función para generar iniciales
@@ -75,6 +76,7 @@ export function PracticanteTable({
   getStatusColor,
   busqueda,
   loading = false,
+   onShowDetail,
 }: PracticanteTableProps) {
   return (
     <Card>
@@ -228,7 +230,9 @@ export function PracticanteTable({
                                   <QrCode className="h-4 w-4 mr-2" /> Ver QR
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem>Ver detalles</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => onShowDetail?.(practicante)}>
+                                  <User className="h-4 w-4 mr-2" /> Ver detalles
+                                </DropdownMenuItem>
                               <DropdownMenuItem>Historial</DropdownMenuItem>
                               <DropdownMenuItem>Reportes</DropdownMenuItem>
                             </DropdownMenuGroup>

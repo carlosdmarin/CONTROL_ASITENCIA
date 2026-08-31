@@ -1,8 +1,7 @@
 package com.asistencia.attendance_system.service;
 
 import com.asistencia.attendance_system.model.dto.BloqueHorarioRequest;
-import com.asistencia.attendance_system.model.entity.BloqueHorario;
-
+import com.asistencia.attendance_system.model.dto.BloqueHorarioResponseDTO;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,12 +10,12 @@ public interface HorarioService {
     /**
      * Obtiene todo el horario de un practicante
      */
-    List<BloqueHorario> obtenerHorarioPorPracticante(Long idPracticante);
+    List<BloqueHorarioResponseDTO> obtenerHorarioPorPracticante(Long idPracticante);
 
     /**
      * Obtiene solo el horario activo de un practicante
      */
-    List<BloqueHorario> obtenerHorarioActivoPorPracticante(Long idPracticante);
+    List<BloqueHorarioResponseDTO> obtenerHorarioActivoPorPracticante(Long idPracticante);
 
     /**
      * Guarda el horario de un practicante (elimina el anterior y crea el nuevo)

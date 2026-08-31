@@ -34,6 +34,7 @@ import {
   Zap,
 } from "lucide-react";
 
+
 // ====== DATOS FICTICIOS ======
 const stats = [
   {

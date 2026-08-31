@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Users, Clock } from "lucide-react";
-import { AsistenciaDiaria } from "../types";
+import { AsistenciaDiaria } from "@/types/asistencia";
 
 interface AsistenciaTableProps {
   asistencias: AsistenciaDiaria[];
@@ -40,7 +40,6 @@ export default function AsistenciaTable({ asistencias, loading = false }: Asiste
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index}>
           <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
           <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
           <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
           <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
@@ -74,7 +73,6 @@ export default function AsistenciaTable({ asistencias, loading = false }: Asiste
           <TableHeader>
             <TableRow className="bg-gray-100 hover:bg-gray-50/80">
               <TableHead className="font-semibold">Practicante</TableHead>
-              <TableHead className="font-semibold">Área</TableHead>
               <TableHead className="font-semibold text-center">Entrada</TableHead>
               <TableHead className="font-semibold text-center">Salida</TableHead>
               <TableHead className="font-semibold text-center">Horas</TableHead>
@@ -91,9 +89,6 @@ export default function AsistenciaTable({ asistencias, loading = false }: Asiste
                   <TableRow key={asistencia.id} className="hover:bg-slate-50 h-12">
                     <TableCell className="font-medium">
                       {asistencia.practicante}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {asistencia.area}
                     </TableCell>
                     <TableCell className="text-center font-mono text-sm">
                       {asistencia.entrada || "—"}
