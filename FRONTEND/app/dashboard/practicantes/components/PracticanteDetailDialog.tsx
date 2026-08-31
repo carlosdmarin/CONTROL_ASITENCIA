@@ -81,14 +81,15 @@ const DIAS_MAP: Record<string, string> = {
 };
 
 // Colores para badges de días
+
 const DIA_COLORS: Record<string, string> = {
-  LUNES: "border-blue-200 bg-blue-50 text-blue-700",
-  MARTES: "border-indigo-200 bg-indigo-50 text-indigo-700",
-  MIERCOLES: "border-purple-200 bg-purple-50 text-purple-700",
-  JUEVES: "border-cyan-200 bg-cyan-50 text-cyan-700",
-  VIERNES: "border-green-200 bg-green-50 text-green-700",
-  SABADO: "border-amber-200 bg-amber-50 text-amber-700",
-  DOMINGO: "border-rose-200 bg-rose-50 text-rose-700",
+  LUNES: "border-gray-200 bg-gray-50/80 text-gray-700 hover:bg-gray-100",
+  MARTES: "border-gray-200 bg-gray-50/80 text-gray-700 hover:bg-gray-100",
+  MIERCOLES: "border-gray-200 bg-gray-50/80 text-gray-700 hover:bg-gray-100",
+  JUEVES: "border-gray-200 bg-gray-50/80 text-gray-700 hover:bg-gray-100",
+  VIERNES: "border-gray-200 bg-gray-50/80 text-gray-700 hover:bg-gray-100",
+  SABADO: "border-gray-200 bg-gray-50/80 text-gray-700 hover:bg-gray-100",
+  DOMINGO: "border-gray-200 bg-gray-50/80 text-gray-700 hover:bg-gray-100",
 };
 
 export function PracticanteDetailDialog({
@@ -105,7 +106,9 @@ export function PracticanteDetailDialog({
       const cargarHorario = async () => {
         try {
           setLoading(true);
-          const data = await practicantesApi.getHorario(practicante.idPracticante);
+          const data = await practicantesApi.getHorario(
+            practicante.idPracticante,
+          );
           if (data && data.length > 0) {
             setHorario(data);
           }
@@ -165,7 +168,7 @@ export function PracticanteDetailDialog({
       icon: BadgeCheck,
     },
     {
-      label: "Tipo de instituto",
+      label: "Centro de Estudios",
       value: practicante.tipoInstituto || "—",
       icon: School,
     },
@@ -179,41 +182,51 @@ export function PracticanteDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!max-w-4xl max-h-[90vh] p-0 overflow-hidden gap-0">
-        {/* HEADER CON GRADIENTE */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-700 p-6 rounded-t-xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
-          
-          <div className="relative z-10 flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <Avatar className="h-16 w-16 border-2 border-white/30 ring-4 ring-white/20">
-                <AvatarFallback className="text-blue-700 bg-white/90 text-xl font-bold shadow-lg">
-                  {getInitials(practicante.nombreCompleto)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-white">
-                <h2 className="text-xl font-bold tracking-tight">
-                  {practicante.nombreCompleto}
-                </h2>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <Badge 
-                    variant="outline" 
-                    className={`${
-                      isActivo 
-                        ? 'bg-green-500/20 text-green-300 border-green-400/30' 
-                        : 'bg-red-500/20 text-red-300 border-red-400/30'
-                    } backdrop-blur-sm`}
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isActivo ? 'bg-green-300' : 'bg-red-300'}`} />
-                    {isActivo ? "ACTIVO" : "INACTIVO"}
-                  </Badge>
-                  <span className="text-sm text-white/70 font-mono">
-                    #{practicante.idPracticante}
-                  </span>
+        {/* HEADER - CON LÍNEA DE ACENTO LATERAL */}
+        <div className="border-b border-gray-200 bg-white p-6">
+          <div className="flex items-start gap-4">
+            {/* Línea de acento lateral */}
+            <div
+              className={`w-1 h-16 rounded-full flex-shrink-0 ${isActivo ? "bg-emerald-500" : "bg-rose-500"}`}
+            />
+
+            <div className="flex-1 flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-14 w-14 border-2 border-gray-200">
+                  <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
+                    {getInitials(practicante.nombreCompleto)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {practicante.nombreCompleto}
+                  </h2>
+                  <div className="flex items-center gap-3 mt-1">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-normal ${isActivo ? "border-emerald-200 text-emerald-700 bg-emerald-50" : "border-rose-200 text-rose-700 bg-rose-50"}`}
+                    >
+                      {isActivo ? "Activo" : "Inactivo"}
+                    </Badge>
+                    <span className="text-sm text-gray-400 font-mono">
+                      #{practicante.idPracticante}
+                    </span>
+                    <span className="text-sm text-gray-300">•</span>
+                    <span className="text-sm text-gray-400">
+                      {practicante.documento}
+                    </span>
+                  </div>
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-           
           </div>
         </div>
 
@@ -226,7 +239,9 @@ export function PracticanteDetailDialog({
                 <div className="p-1.5 rounded-lg bg-blue-50">
                   <User className="h-4 w-4 text-blue-600" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-700">Datos personales</h3>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Datos personales
+                </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {infoItems.map((item) => (
@@ -239,7 +254,9 @@ export function PracticanteDetailDialog({
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">{item.label}</p>
-                      <p className="text-sm font-medium text-gray-900">{item.value}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {item.value}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -254,7 +271,9 @@ export function PracticanteDetailDialog({
                 <div className="p-1.5 rounded-lg bg-indigo-50">
                   <BriefcaseBusiness className="h-4 w-4 text-indigo-600" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-700">Información laboral</h3>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Información laboral
+                </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {laboralItems.map((item) => (
@@ -267,7 +286,9 @@ export function PracticanteDetailDialog({
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">{item.label}</p>
-                      <p className="text-sm font-medium text-gray-900">{item.value}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {item.value}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -282,7 +303,9 @@ export function PracticanteDetailDialog({
                 <div className="p-1.5 rounded-lg bg-emerald-50">
                   <Calendar className="h-4 w-4 text-emerald-600" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-700">Fechas de contrato</h3>
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Fechas de contrato
+                </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex items-center gap-3 p-3 rounded-lg border bg-emerald-50/50">
@@ -292,11 +315,13 @@ export function PracticanteDetailDialog({
                   <div>
                     <p className="text-xs text-gray-500">Fecha de inicio</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {practicante.fechaInicioPracticas 
-                        ? new Date(practicante.fechaInicioPracticas).toLocaleDateString('es-PE', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric'
+                      {practicante.fechaInicioPracticas
+                        ? new Date(
+                            practicante.fechaInicioPracticas,
+                          ).toLocaleDateString("es-PE", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
                           })
                         : "—"}
                     </p>
@@ -309,11 +334,13 @@ export function PracticanteDetailDialog({
                   <div>
                     <p className="text-xs text-gray-500">Fecha de fin</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {practicante.fechaFinPracticas 
-                        ? new Date(practicante.fechaFinPracticas).toLocaleDateString('es-PE', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric'
+                      {practicante.fechaFinPracticas
+                        ? new Date(
+                            practicante.fechaFinPracticas,
+                          ).toLocaleDateString("es-PE", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
                           })
                         : "—"}
                     </p>
@@ -331,11 +358,16 @@ export function PracticanteDetailDialog({
                   <div className="p-1.5 rounded-lg bg-purple-50">
                     <Clock className="h-4 w-4 text-purple-600" />
                   </div>
-                  <h3 className="text-sm font-semibold text-gray-700">Horario semanal</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    Horario semanal
+                  </h3>
                 </div>
                 {!loading && horario.length > 0 && (
-                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
-                    {horario.filter(h => h.activo).length} días activos
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                  >
+                    {horario.filter((h) => h.activo).length} días activos
                   </Badge>
                 )}
               </div>
@@ -350,9 +382,11 @@ export function PracticanteDetailDialog({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {horario.map((bloque, index) => {
                     const diaKey = bloque.diaSemana;
-                    const colorClass = DIA_COLORS[diaKey] || "border-gray-200 bg-gray-50 text-gray-700";
+                    const colorClass =
+                      DIA_COLORS[diaKey] ||
+                      "border-gray-200 bg-gray-50 text-gray-700";
                     const diaLabel = DIAS_MAP[diaKey] || diaKey;
-                    
+
                     return (
                       <div
                         key={index}
@@ -364,7 +398,8 @@ export function PracticanteDetailDialog({
                         </span>
                         {bloque.activo ? (
                           <span className="text-sm font-mono bg-white/60 px-2.5 py-0.5 rounded-md">
-                            {bloque.horaInicio.substring(0, 5)} - {bloque.horaFin.substring(0, 5)}
+                            {bloque.horaInicio.substring(0, 5)} -{" "}
+                            {bloque.horaFin.substring(0, 5)}
                           </span>
                         ) : (
                           <span className="text-sm text-gray-400 italic flex items-center gap-1">
@@ -379,8 +414,12 @@ export function PracticanteDetailDialog({
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 px-4 rounded-lg border border-dashed bg-gray-50/50">
                   <AlertCircle className="h-10 w-10 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500">No se encontró horario configurado</p>
-                  <p className="text-xs text-gray-400 mt-1">El practicante aún no tiene un horario asignado</p>
+                  <p className="text-sm text-gray-500">
+                    No se encontró horario configurado
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    El practicante aún no tiene un horario asignado
+                  </p>
                 </div>
               )}
             </div>
@@ -389,8 +428,8 @@ export function PracticanteDetailDialog({
 
         {/* FOOTER */}
         <div className="flex-shrink-0 px-6 py-4 border-t bg-gray-50/50 flex justify-end">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
             className="gap-2 hover:bg-gray-100"
           >
