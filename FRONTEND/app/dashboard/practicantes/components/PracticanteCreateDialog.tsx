@@ -52,6 +52,7 @@ import { sedeApi } from "@/lib/api/agencias";
 import { cargosApi } from "@/lib/api/cargos";
 import { puestosApi } from "@/lib/api/puestos";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
+import { calcularMinutosTrabajados, formatHorasMinutos } from "@/lib/utils/horas";
 
 interface PracticanteCreateDialogProps {
   open: boolean;
@@ -95,26 +96,10 @@ const HORARIO_DEFAULT: HorarioSemanal = {
   SABADO: { activo: false, entrada: '07:00', salida: '13:00' },
 };
 
-// ====== HELPERS DE CÁLCULO (TRABAJAN EN MINUTOS PARA EVITAR DECIMALES) ======
-const timeToMinutes = (hhmm: string): number => {
-  const [h, m] = hhmm.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return NaN;
-  return h * 60 + m;
-};
-
-const formatHorasMinutos = (minutos: number): string => {
-  const h = Math.floor(minutos / 60);
-  const m = minutos % 60;
-  if (m === 0) return `${h} h`;
-  return `${h} h ${m} min`;
-};
-
+// ====== HELPERS CENTRALIZADOS (almuerzo 13:00-14:00 descontado por solapamiento) ======
 const minutosDelDia = (dia: DiaHorario): number => {
   if (!dia.activo) return 0;
-  const ini = timeToMinutes(dia.entrada);
-  const fin = timeToMinutes(dia.salida);
-  if (Number.isNaN(ini) || Number.isNaN(fin) || ini >= fin) return NaN;
-  return fin - ini;
+  return calcularMinutosTrabajados(dia.entrada, dia.salida);
 };
 
 // ====== DATOS MOCK PARA PRUEBAS ======

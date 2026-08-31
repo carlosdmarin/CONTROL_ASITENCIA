@@ -17,6 +17,7 @@ import com.asistencia.attendance_system.repository.MarcacionRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
 import com.asistencia.attendance_system.service.HorarioService;
+import com.asistencia.attendance_system.utils.HorarioUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -292,8 +293,10 @@ public class AsistenciaServiceImpl implements AsistenciaService {
 
         BigDecimal horasTrabajadas = BigDecimal.ZERO;
         if (entradaReal != null && salidaReal != null) {
-            long minutos = java.time.Duration.between(entradaReal, salidaReal).toMinutes();
-            horasTrabajadas = BigDecimal.valueOf(minutos / 60.0);
+            long minutosTrabajados = HorarioUtils.calcularMinutosTrabajados(entradaReal, salidaReal);
+            if (minutosTrabajados >= 0) {
+                horasTrabajadas = BigDecimal.valueOf(minutosTrabajados / 60.0);
+            }
         }
 
         EstadoDia estado = EstadoDia.PRESENTE;
