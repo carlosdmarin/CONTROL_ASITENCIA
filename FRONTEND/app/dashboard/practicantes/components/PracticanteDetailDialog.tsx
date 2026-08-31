@@ -187,7 +187,7 @@ export function PracticanteDetailDialog({
           <div className="flex items-start gap-4">
             {/* Línea de acento lateral */}
             <div
-              className={`w-1 h-16 rounded-full flex-shrink-0 ${isActivo ? "bg-emerald-500" : "bg-rose-500"}`}
+              className={`w-1 h-16 rounded-full flex-shrink-0 ${isActivo ? "bg-blue-500" : "bg-rose-500"}`}
             />
 
             <div className="flex-1 flex items-start justify-between">
@@ -218,14 +218,6 @@ export function PracticanteDetailDialog({
                   </div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-              >
-                <X className="h-5 w-5" />
-              </Button>
             </div>
           </div>
         </div>
@@ -426,17 +418,6 @@ export function PracticanteDetailDialog({
           </div>
         </ScrollArea>
 
-        {/* FOOTER */}
-        <div className="flex-shrink-0 px-6 py-4 border-t bg-gray-50/50 flex justify-end">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="gap-2 hover:bg-gray-100"
-          >
-            <X className="h-4 w-4" />
-            Cerrar
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

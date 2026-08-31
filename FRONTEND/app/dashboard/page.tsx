@@ -34,80 +34,13 @@ import {
   Zap,
 } from "lucide-react";
 
+import { practicantesApi } from "@/lib/api/practicantes";
+import { asistenciasApi } from "@/lib/api/asistencias";
+import { Practicante } from "@/types/practicante";
 
-// ====== DATOS FICTICIOS ======
-const stats = [
-  {
-    title: "Total Practicantes",
-    value: "124",
-    change: "+12%",
-    trend: "up" as const,
-    icon: Users,
-    gradient: "from-blue-500 to-blue-600",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-  },
-  {
-    title: "Practicantes Activos",
-    value: "98",
-    change: "+5%",
-    trend: "up" as const,
-    icon: UserCheck,
-    gradient: "from-emerald-500 to-emerald-600",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-  },
-  {
-    title: "Ausencias",
-    value: "12",
-    change: "-3%",
-    trend: "down" as const,
-    icon: UserX,
-    gradient: "from-rose-500 to-rose-600",
-    iconBg: "bg-rose-50",
-    iconColor: "text-rose-600",
-  },
-  {
-    title: "Horas Totales",
-    value: "8,432",
-    change: "+8%",
-    trend: "up" as const,
-    icon: Clock,
-    gradient: "from-violet-500 to-violet-600",
-    iconBg: "bg-violet-50",
-    iconColor: "text-violet-600",
-  },
-];
-
-const asistenciaSemanal = [
-  { day: "Lunes", value: 85 },
-  { day: "Martes", value: 92 },
-  { day: "Miércoles", value: 78 },
-  { day: "Jueves", value: 95 },
-  { day: "Viernes", value: 88 },
-  { day: "Sábado", value: 45 },
-  { day: "Domingo", value: 20 },
-];
-
-const chartConfig: ChartConfig = {
-  value: {
-    label: "Asistencia",
-    color: "hsl(221, 83%, 53%)",
-  },
-};
-
-const actividades = [
-  { usuario: "Carlos Marín", accion: "Registró entrada", hora: "08:15 AM", tipo: "entrada" },
-  { usuario: "Ana García", accion: "Registró salida", hora: "06:30 PM", tipo: "salida" },
-  { usuario: "Luis Pérez", accion: "Solicitó vacaciones", hora: "10:00 AM", tipo: "solicitud" },
-  { usuario: "Marta López", accion: "Marcó tardanza", hora: "09:20 AM", tipo: "tardanza" },
-];
-
-const turnos = [
-  { nombre: "Mañana", total: 42, color: "text-blue-600", bg: "bg-blue-50" },
-  { nombre: "Tarde", total: 38, color: "text-orange-600", bg: "bg-orange-50" },
-  { nombre: "Noche", total: 44, color: "text-purple-600", bg: "bg-purple-50" },
-];
+function formatFechaISO(date: Date): string {
+  return date.toISOString().split("T")[0];
+}
 
 function iniciales(nombre: string) {
   return nombre
@@ -118,20 +51,139 @@ function iniciales(nombre: string) {
     .toUpperCase();
 }
 
-// Anchos estables para las barras (evita Math.random en render - react-hooks/purity)
-const statWidths = ["72%", "85%", "64%", "91%"];
-
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
+  const [practicantes, setPracticantes] = useState<Practicante[]>([]);
+  const [resumenAsistencia, setResumenAsistencia] = useState({
+    presentes: 0,
+    tardes: 0,
+    faltas: 0,
+    total: 0,
+  });
+
+  // ====== CARGAR DATOS ======
+  const cargarDatos = async () => {
+    try {
+      setLoading(true);
+
+      // 1. Obtener practicantes
+      const practicantesData = await practicantesApi.getAll();
+      setPracticantes(practicantesData);
+
+      // 2. Obtener resumen de asistencia de hoy
+      const fecha = formatFechaISO(new Date());
+      try {
+        const resumen = await asistenciasApi.getResumenDiario(fecha);
+        if (resumen) {
+          setResumenAsistencia({
+            presentes: resumen.diasPresente || 0,
+            tardes: resumen.diasTarde || 0,
+            faltas: resumen.diasFalta || 0,
+            total: (resumen.diasPresente || 0) + (resumen.diasTarde || 0) + (resumen.diasFalta || 0),
+          });
+        }
+      } catch (error) {
+        console.warn("No se pudo cargar el resumen de asistencia:", error);
+      }
+    } catch (error) {
+      console.error("Error al cargar datos del dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
+    cargarDatos();
   }, []);
+
+  // ====== CALCULAR ESTADÍSTICAS ======
+  const totalPracticantes = practicantes.length;
+  const activos = practicantes.filter(p => p.situacion === "ACTIVO").length;
+  const ausentes = resumenAsistencia.faltas || 0;
+  const horasTotales = "—"; // Para calcular necesitas sumar horas de asistencias
+
+  // ====== STATS REALES ======
+  const stats = [
+    {
+      title: "Total Practicantes",
+      value: totalPracticantes.toLocaleString(),
+      change: `${Math.round((activos / (totalPracticantes || 1)) * 100)}% activos`,
+      trend: "up" as const,
+      icon: Users,
+      gradient: "from-blue-500 to-blue-600",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-600",
+    },
+    {
+      title: "Practicantes Activos",
+      value: activos.toLocaleString(),
+      change: `${activos} de ${totalPracticantes}`,
+      trend: "up" as const,
+      icon: UserCheck,
+      gradient: "from-emerald-500 to-emerald-600",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-600",
+    },
+    {
+      title: "Ausencias Hoy",
+      value: ausentes.toLocaleString(),
+      change: `${resumenAsistencia.total > 0 ? Math.round((ausentes / resumenAsistencia.total) * 100) : 0}% del total`,
+      trend: "down" as const,
+      icon: UserX,
+      gradient: "from-rose-500 to-rose-600",
+      iconBg: "bg-rose-50",
+      iconColor: "text-rose-600",
+    },
+    {
+      title: "Horas Totales",
+      value: horasTotales,
+      change: "Calculando...",
+      trend: "up" as const,
+      icon: Clock,
+      gradient: "from-violet-500 to-violet-600",
+      iconBg: "bg-violet-50",
+      iconColor: "text-violet-600",
+    },
+  ];
+
+  // ====== DATOS DE ASISTENCIA SEMANAL (Mock por ahora) ======
+  const asistenciaSemanal = [
+    { day: "Lunes", value: 85 },
+    { day: "Martes", value: 92 },
+    { day: "Miércoles", value: 78 },
+    { day: "Jueves", value: 95 },
+    { day: "Viernes", value: 88 },
+    { day: "Sábado", value: 45 },
+    { day: "Domingo", value: 20 },
+  ];
+
+  const chartConfig: ChartConfig = {
+    value: {
+      label: "Asistencia",
+      color: "hsl(221, 83%, 53%)",
+    },
+  };
+
+  // ====== ACTIVIDADES RECIENTES (Mock por ahora) ======
+  const actividades = [
+    { usuario: "Carlos Marín", accion: "Registró entrada", hora: "08:15 AM", tipo: "entrada" },
+    { usuario: "Ana García", accion: "Registró salida", hora: "06:30 PM", tipo: "salida" },
+    { usuario: "Luis Pérez", accion: "Solicitó vacaciones", hora: "10:00 AM", tipo: "solicitud" },
+    { usuario: "Marta López", accion: "Marcó tardanza", hora: "09:20 AM", tipo: "tardanza" },
+  ];
+
+  // ====== TURNOS (Mock por ahora) ======
+  const turnos = [
+    { nombre: "Mañana", total: 42, color: "text-blue-600", bg: "bg-blue-50" },
+    { nombre: "Tarde", total: 38, color: "text-orange-600", bg: "bg-orange-50" },
+    { nombre: "Noche", total: 44, color: "text-purple-600", bg: "bg-purple-50" },
+  ];
+
+  const statWidths = ["72%", "85%", "64%", "91%"];
 
   return (
     <div className="space-y-6">
-      {/* ====== HEADER CON GRADIENTE SUTIL ====== */}
+      {/* ====== HEADER ====== */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-50 via-white to-slate-50 p-6 border shadow-sm">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
@@ -175,7 +227,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ====== TARJETAS DE ESTADÍSTICAS CON ESTILOS ====== */}
+      {/* ====== TARJETAS DE ESTADÍSTICAS ====== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -188,7 +240,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             ))
-          : stats.map((stat) => (
+          : stats.map((stat, index) => (
               <Card
                 key={stat.title}
                 className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white/80 backdrop-blur-sm"
@@ -219,7 +271,7 @@ export default function DashboardPage() {
                   <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full bg-gradient-to-r ${stat.gradient}`}
-                      style={{ width: statWidths[stats.indexOf(stat) % statWidths.length] }}
+                      style={{ width: statWidths[index % statWidths.length] }}
                     />
                   </div>
                 </CardContent>
@@ -229,7 +281,6 @@ export default function DashboardPage() {
 
       {/* ====== GRÁFICO + ACTIVIDAD ====== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* GRÁFICO */}
         <Card className="lg:col-span-2 border-0 shadow-sm hover:shadow-lg transition-all duration-300">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -273,7 +324,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* ACTIVIDAD RECIENTE */}
         <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -319,7 +369,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* ====== TURNOS CON TARJETAS MEJORADAS ====== */}
+      {/* ====== TURNOS ====== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {turnos.map((turno) => (
           <Card

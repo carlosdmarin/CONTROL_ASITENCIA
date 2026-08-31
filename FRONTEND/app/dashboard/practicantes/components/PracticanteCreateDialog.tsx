@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   IdCard,
   BriefcaseBusiness,
@@ -17,6 +17,13 @@ import {
   Mail,
   Phone,
   User,
+  AlertTriangle,
+  AlertCircle,
+  TrendingUp,
+  Target,
+  Check,
+  X,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +31,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -86,6 +95,28 @@ const HORARIO_DEFAULT: HorarioSemanal = {
   SABADO: { activo: false, entrada: '07:00', salida: '13:00' },
 };
 
+// ====== HELPERS DE CÁLCULO (TRABAJAN EN MINUTOS PARA EVITAR DECIMALES) ======
+const timeToMinutes = (hhmm: string): number => {
+  const [h, m] = hhmm.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return NaN;
+  return h * 60 + m;
+};
+
+const formatHorasMinutos = (minutos: number): string => {
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+};
+
+const minutosDelDia = (dia: DiaHorario): number => {
+  if (!dia.activo) return 0;
+  const ini = timeToMinutes(dia.entrada);
+  const fin = timeToMinutes(dia.salida);
+  if (Number.isNaN(ini) || Number.isNaN(fin) || ini >= fin) return NaN;
+  return fin - ini;
+};
+
 // ====== DATOS MOCK PARA PRUEBAS ======
 const MOCK_SEDES: Sede[] = [
   { idSede: 1, nombre: "OFICINA PUCALLPA", descripcion: "Oficina principal", activo: true },
@@ -142,6 +173,53 @@ export function PracticanteCreateDialog({
 
   // Horario semanal
   const [horario, setHorario] = useState<HorarioSemanal>(HORARIO_DEFAULT);
+
+  // ====== CÁLCULO REACTIVO DE HORAS (NO QUEMA 48/30, USA cargoSeleccionado) ======
+  const cargoSeleccionado = cargos.find((c) => c.idCargo === Number(formData.idCargo));
+  const horasObjetivo = cargoSeleccionado?.horasSemanales ?? 0;
+  const horasObjetivoMinutos = horasObjetivo * 60;
+
+  const resumenHorario = useMemo(() => {
+    let minutosTotales = 0;
+    let diasActivos = 0;
+    let horasValidas = true;
+    const erroresPorDia: Record<string, string> = {};
+
+    for (const [key, dia] of Object.entries(horario)) {
+      if (!dia.activo) continue;
+      diasActivos++;
+      const min = minutosDelDia(dia);
+      if (Number.isNaN(min)) {
+        horasValidas = false;
+        erroresPorDia[key] = "Entrada debe ser menor que salida";
+      } else {
+        minutosTotales += min;
+      }
+    }
+
+    const diffMinutos = minutosTotales - horasObjetivoMinutos;
+    const porcentaje = horasObjetivoMinutos > 0 ? Math.min((minutosTotales / horasObjetivoMinutos) * 100, 100) : 0;
+
+    let estado: "vacio" | "incompleto" | "completo" | "excedido" | "invalido" = "vacio";
+    if (!horasValidas) estado = "invalido";
+    else if (diasActivos === 0) estado = "vacio";
+    else if (minutosTotales < horasObjetivoMinutos) estado = "incompleto";
+    else if (minutosTotales === horasObjetivoMinutos) estado = "completo";
+    else estado = "excedido";
+
+    return {
+      minutosTotales,
+      horasConfiguradas: minutosTotales / 60,
+      horasObjetivo,
+      horasObjetivoMinutos,
+      diffMinutos,
+      porcentaje,
+      diasActivos,
+      horasValidas,
+      erroresPorDia,
+      estado,
+    };
+  }, [horario, horasObjetivo, horasObjetivoMinutos]);
 
   // ====== CARGAR SELECTS DESDE API ======
   useEffect(() => {
@@ -223,7 +301,8 @@ export function PracticanteCreateDialog({
   };
 
   const validateStep2 = (): boolean => {
-    return Object.values(horario).some((dia) => dia.activo);
+    const { diasActivos, horasValidas, minutosTotales, horasObjetivoMinutos } = resumenHorario;
+    return diasActivos > 0 && horasValidas && horasObjetivoMinutos > 0 && minutosTotales === horasObjetivoMinutos;
   };
 
   // ====== NAVEGACIÓN ======
@@ -606,19 +685,151 @@ export function PracticanteCreateDialog({
     );
   };
 
-  // ====== RENDER STEP 2: HORARIO ======
+  // ====== RENDER STEP 2: HORARIO CON TARJETA DE PROGRESO MEJORADA ======
   const renderStep2 = () => {
+    const { minutosTotales, horasObjetivo, horasObjetivoMinutos, diffMinutos, porcentaje, estado, erroresPorDia } = resumenHorario;
+    const horasConfigFmt = formatHorasMinutos(minutosTotales);
+    const horasObjetivoFmt = `${horasObjetivo} h`;
+    const diffAbsFmt = formatHorasMinutos(Math.abs(diffMinutos));
+
+    // Configuración de colores según estado
+    const estadoConfig = {
+      incompleto: {
+        color: "text-amber-600",
+        progressColor: "bg-amber-500",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+        message: `Faltan ${diffAbsFmt} para completar`,
+        icon: AlertTriangle,
+        iconColor: "text-amber-600",
+      },
+      completo: {
+        color: "text-emerald-600",
+        progressColor: "bg-emerald-500",
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+        message: "Horario completo",
+        icon: Check,
+        iconColor: "text-emerald-600",
+      },
+      excedido: {
+        color: "text-rose-600",
+        progressColor: "bg-rose-500",
+        bg: "bg-rose-50",
+        border: "border-rose-200",
+        message: `Excede por ${diffAbsFmt}`,
+        icon: AlertCircle,
+        iconColor: "text-rose-600",
+      },
+      invalido: {
+        color: "text-red-600",
+        progressColor: "bg-red-500",
+        bg: "bg-red-50",
+        border: "border-red-200",
+        message: "Corrige horarios inválidos",
+        icon: X,
+        iconColor: "text-red-600",
+      },
+      vacio: {
+        color: "text-slate-500",
+        progressColor: "bg-slate-300",
+        bg: "bg-slate-50",
+        border: "border-slate-200",
+        message: "Selecciona al menos un día",
+        icon: Info,
+        iconColor: "text-slate-500",
+      },
+    };
+
+    const currentEstado = estado || "vacio";
+    const config = estadoConfig[currentEstado as keyof typeof estadoConfig] || estadoConfig.vacio;
+    const IconComponent = config.icon;
+    const progressValue = horasObjetivo > 0 ? (estado === "excedido" ? 100 : Math.min(porcentaje, 100)) : 0;
+
     return (
-      <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+      <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+        {/* ====== TARJETA DE PROGRESO MEJORADA ====== */}
+        <div className={`rounded-xl border p-5 ${config.bg} ${config.border} transition-all duration-300`}>
+          {/* Cabecera: título + porcentaje */}
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                Horas semanales
+              </p>
+              <p className="text-sm font-medium text-slate-700">
+                {cargoSeleccionado?.nombre || "Selecciona un cargo"}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className={`text-2xl font-bold ${config.color} transition-all duration-300`}>
+                {horasObjetivo > 0 ? `${Math.round(progressValue)}%` : "—"}
+              </p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Progreso</p>
+            </div>
+          </div>
+
+          {/* Resumen principal: Configuradas vs Objetivo */}
+          <div className="mt-4 flex items-end gap-6">
+            <div>
+              <p className="text-3xl font-bold text-slate-900 transition-all duration-300">
+                {horasConfigFmt}
+              </p>
+              <p className="text-xs text-slate-500">Configuradas</p>
+            </div>
+            <div className="pb-1">
+              <p className="text-xl font-medium text-slate-400">
+                {horasObjetivo > 0 ? horasObjetivoFmt : "—"}
+              </p>
+              <p className="text-xs text-slate-400">Objetivo</p>
+            </div>
+            {horasObjetivo > 0 && (
+              <div className="ml-auto flex items-center gap-1.5">
+                <TrendingUp className={`h-4 w-4 ${config.color}`} />
+                <span className={`text-sm font-medium ${config.color}`}>
+                  {estado === "completo" && <Check className="h-4 w-4 text-emerald-600" />}
+                  {estado === "incompleto" ? `-${diffAbsFmt}` : ""}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Barra de progreso */}
+          <div className="mt-4">
+            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-200/70">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ease-out ${config.progressColor}`}
+                style={{ width: `${progressValue}%` }}
+              />
+            </div>
+            {/* Mensaje contextual */}
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <IconComponent className={`h-4 w-4 ${config.iconColor}`} />
+                <p className={`text-sm font-medium ${config.color} transition-all duration-300`}>
+                  {horasObjetivo > 0 ? config.message : "Selecciona un cargo para ver el objetivo"}
+                </p>
+              </div>
+              {horasObjetivo > 0 && (
+                <span className="text-xs text-slate-400">
+                  {horasConfigFmt} / {horasObjetivoFmt}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
         <p className="text-sm text-gray-500">
-          Configura el horario semanal del practicante. Los días desactivados se marcarán como &quot;Descanso&quot;.
+          Activa los días y ajusta entrada/salida. La duración por día se calcula al instante.
         </p>
 
         <div className="space-y-2">
           {DIAS_SEMANA.map((dia) => {
             const diaData = horario[dia.key as keyof HorarioSemanal];
+            const minutosDia = minutosDelDia(diaData);
+            const duracionFmt = Number.isNaN(minutosDia) ? null : formatHorasMinutos(minutosDia);
+            const tieneError = !!erroresPorDia[dia.key];
             return (
-              <Card key={dia.key} className="border">
+              <Card key={dia.key} className={`border ${tieneError ? "border-red-200 bg-red-50/30" : ""}`}>
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex items-center gap-2 min-w-[100px]">
@@ -635,7 +846,7 @@ export function PracticanteCreateDialog({
                     </div>
 
                     {diaData.activo ? (
-                      <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                      <div className="flex items-center gap-2 flex-1 min-w-[260px] flex-wrap">
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5 text-gray-400" />
                           <Input
@@ -644,7 +855,7 @@ export function PracticanteCreateDialog({
                             onChange={(e) =>
                               handleHorarioChange(dia.key, 'entrada', e.target.value)
                             }
-                            className="w-28 h-8 text-sm"
+                            className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                           />
                         </div>
                         <span className="text-xs text-gray-400">—</span>
@@ -656,9 +867,12 @@ export function PracticanteCreateDialog({
                             onChange={(e) =>
                               handleHorarioChange(dia.key, 'salida', e.target.value)
                             }
-                            className="w-28 h-8 text-sm"
+                            className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                           />
                         </div>
+                        <span className={`ml-1 text-xs font-medium px-2 py-0.5 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : "bg-slate-100 text-slate-700 border-slate-200"}`}>
+                          {tieneError ? "Inválido" : duracionFmt}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-sm text-gray-400 italic">
@@ -666,17 +880,16 @@ export function PracticanteCreateDialog({
                       </span>
                     )}
                   </div>
+                  {tieneError && (
+                    <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {erroresPorDia[dia.key]}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
         </div>
-
-        {!validateStep2() && (
-          <p className="text-xs text-amber-600 mt-1">
-            * Debe seleccionar al menos un día de trabajo
-          </p>
-        )}
       </div>
     );
   };
