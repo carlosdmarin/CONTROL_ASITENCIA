@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   IdCard,
   BriefcaseBusiness,
@@ -24,6 +24,7 @@ import {
   Check,
   X,
   Info,
+  CircleCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,18 +42,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { 
-  NuevoPracticante, 
-  Sede, 
-  Cargo, 
-  Puesto, 
-  TipoInstituto 
+import {
+  NuevoPracticante,
+  Sede,
+  Cargo,
+  Puesto,
+  TipoInstituto,
 } from "@/types/practicante";
 import { sedeApi } from "@/lib/api/agencias";
 import { cargosApi } from "@/lib/api/cargos";
 import { puestosApi } from "@/lib/api/puestos";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
-import { calcularMinutosTrabajados, formatHorasMinutos } from "@/lib/utils/horas";
+import {
+  calcularMinutosTrabajados,
+  formatHorasMinutos,
+} from "@/lib/utils/horas";
 
 interface PracticanteCreateDialogProps {
   open: boolean;
@@ -78,22 +82,22 @@ interface HorarioSemanal {
 
 // ====== DIAS DE LA SEMANA ======
 const DIAS_SEMANA = [
-  { key: 'LUNES', label: 'Lunes' },
-  { key: 'MARTES', label: 'Martes' },
-  { key: 'MIERCOLES', label: 'Miércoles' },
-  { key: 'JUEVES', label: 'Jueves' },
-  { key: 'VIERNES', label: 'Viernes' },
-  { key: 'SABADO', label: 'Sábado' },
+  { key: "LUNES", label: "Lunes" },
+  { key: "MARTES", label: "Martes" },
+  { key: "MIERCOLES", label: "Miércoles" },
+  { key: "JUEVES", label: "Jueves" },
+  { key: "VIERNES", label: "Viernes" },
+  { key: "SABADO", label: "Sábado" },
 ];
 
 // ====== HORARIO POR DEFECTO ======
 const HORARIO_DEFAULT: HorarioSemanal = {
-  LUNES: { activo: true, entrada: '07:00', salida: '17:00' },
-  MARTES: { activo: true, entrada: '07:00', salida: '17:00' },
-  MIERCOLES: { activo: true, entrada: '07:00', salida: '17:00' },
-  JUEVES: { activo: true, entrada: '07:00', salida: '17:00' },
-  VIERNES: { activo: true, entrada: '07:00', salida: '17:00' },
-  SABADO: { activo: false, entrada: '07:00', salida: '13:00' },
+  LUNES: { activo: true, entrada: "07:30", salida: "17:00" },
+  MARTES: { activo: true, entrada: "07:30", salida: "17:00" },
+  MIERCOLES: { activo: true, entrada: "07:30", salida: "17:00" },
+  JUEVES: { activo: true, entrada: "07:30", salida: "17:00" },
+  VIERNES: { activo: true, entrada: "07:30", salida: "17:00" },
+  SABADO: { activo: false, entrada: "07:30", salida: "13:00" },
 };
 
 // ====== HELPERS CENTRALIZADOS (almuerzo 13:00-14:00 descontado por solapamiento) ======
@@ -104,26 +108,87 @@ const minutosDelDia = (dia: DiaHorario): number => {
 
 // ====== DATOS MOCK PARA PRUEBAS ======
 const MOCK_SEDES: Sede[] = [
-  { idSede: 1, nombre: "OFICINA PUCALLPA", descripcion: "Oficina principal", activo: true },
-  { idSede: 2, nombre: "PLANTA NESHUYA", descripcion: "Planta de producción", activo: true },
-  { idSede: 3, nombre: "PLANTA CAMPOVERDE", descripcion: "Planta de producción", activo: true },
+  {
+    idSede: 1,
+    nombre: "OFICINA PUCALLPA",
+    descripcion: "Oficina principal",
+    activo: true,
+  },
+  {
+    idSede: 2,
+    nombre: "PLANTA NESHUYA",
+    descripcion: "Planta de producción",
+    activo: true,
+  },
+  {
+    idSede: 3,
+    nombre: "PLANTA CAMPOVERDE",
+    descripcion: "Planta de producción",
+    activo: true,
+  },
 ];
 
 const MOCK_CARGOS: Cargo[] = [
-  { idCargo: 1, nombre: "PRACTICANTE PROFESIONAL", descripcion: "Nivel profesional", horasSemanales: 48, activo: true },
-  { idCargo: 2, nombre: "PRACTICANTE PRE PROFESIONAL", descripcion: "Nivel pre-profesional", horasSemanales: 30, activo: true },
+  {
+    idCargo: 1,
+    nombre: "PRACTICANTE PROFESIONAL",
+    descripcion: "Nivel profesional",
+    horasSemanales: 48,
+    activo: true,
+  },
+  {
+    idCargo: 2,
+    nombre: "PRACTICANTE PRE PROFESIONAL",
+    descripcion: "Nivel pre-profesional",
+    horasSemanales: 30,
+    activo: true,
+  },
 ];
 
 const MOCK_PUESTOS: Puesto[] = [
-  { idPuesto: 1, nombrePuesto: "Logística y servicios", area: "Logística", descripcion: "", activo: true },
-  { idPuesto: 2, nombrePuesto: "Mantenimiento", area: "Operaciones", descripcion: "", activo: true },
-  { idPuesto: 3, nombrePuesto: "Recursos Humanos", area: "Administración", descripcion: "", activo: true },
-  { idPuesto: 4, nombrePuesto: "Tecnología de la Información", area: "Sistemas", descripcion: "", activo: true },
+  {
+    idPuesto: 1,
+    nombrePuesto: "Logística y servicios",
+    area: "Logística",
+    descripcion: "",
+    activo: true,
+  },
+  {
+    idPuesto: 2,
+    nombrePuesto: "Mantenimiento",
+    area: "Operaciones",
+    descripcion: "",
+    activo: true,
+  },
+  {
+    idPuesto: 3,
+    nombrePuesto: "Recursos Humanos",
+    area: "Administración",
+    descripcion: "",
+    activo: true,
+  },
+  {
+    idPuesto: 4,
+    nombrePuesto: "Tecnología de la Información",
+    area: "Sistemas",
+    descripcion: "",
+    activo: true,
+  },
 ];
 
 const MOCK_TIPOS_INSTITUTO: TipoInstituto[] = [
-  { idTipoInstituto: 1, nombre: "SENATI", descripcion: "Servicio Nacional de Adiestramiento", activo: true },
-  { idTipoInstituto: 2, nombre: "UNIVERSIDAD", descripcion: "Estudios universitarios", activo: true },
+  {
+    idTipoInstituto: 1,
+    nombre: "SENATI",
+    descripcion: "Servicio Nacional de Adiestramiento",
+    activo: true,
+  },
+  {
+    idTipoInstituto: 2,
+    nombre: "UNIVERSIDAD",
+    descripcion: "Estudios universitarios",
+    activo: true,
+  },
 ];
 
 export function PracticanteCreateDialog({
@@ -133,12 +198,13 @@ export function PracticanteCreateDialog({
 }: PracticanteCreateDialogProps) {
   // ====== STATE ======
   const [currentStep, setCurrentStep] = useState(1);
-  
+
   // Datos de selects
   const [sedes, setSedes] = useState<Sede[]>(MOCK_SEDES);
   const [cargos, setCargos] = useState<Cargo[]>(MOCK_CARGOS);
   const [puestos, setPuestos] = useState<Puesto[]>(MOCK_PUESTOS);
-  const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>(MOCK_TIPOS_INSTITUTO);
+  const [tiposInstituto, setTiposInstituto] =
+    useState<TipoInstituto[]>(MOCK_TIPOS_INSTITUTO);
   const [loadingSelects, setLoadingSelects] = useState(false);
 
   // Datos del practicante (SIN código de trabajador)
@@ -156,11 +222,18 @@ export function PracticanteCreateDialog({
     fechaFinPracticas: "",
   });
 
+  // ======= Estados para errores ======
+  const [dniError, setDniError] = useState<string>("");
+  const [emailError, setEmailError] = useState<string>("");
+  const [telefonoError, setTelefonoError] = useState<string>("");
+
   // Horario semanal
   const [horario, setHorario] = useState<HorarioSemanal>(HORARIO_DEFAULT);
 
-  // ====== CÁLCULO REACTIVO DE HORAS (NO QUEMA 48/30, USA cargoSeleccionado) ======
-  const cargoSeleccionado = cargos.find((c) => c.idCargo === Number(formData.idCargo));
+  // ====== CÁLCULO REACTIVO DE HORAS ======
+  const cargoSeleccionado = cargos.find(
+    (c) => c.idCargo === Number(formData.idCargo),
+  );
   const horasObjetivo = cargoSeleccionado?.horasSemanales ?? 0;
   const horasObjetivoMinutos = horasObjetivo * 60;
 
@@ -183,9 +256,13 @@ export function PracticanteCreateDialog({
     }
 
     const diffMinutos = minutosTotales - horasObjetivoMinutos;
-    const porcentaje = horasObjetivoMinutos > 0 ? Math.min((minutosTotales / horasObjetivoMinutos) * 100, 100) : 0;
+    const porcentaje =
+      horasObjetivoMinutos > 0
+        ? Math.min((minutosTotales / horasObjetivoMinutos) * 100, 100)
+        : 0;
 
-    let estado: "vacio" | "incompleto" | "completo" | "excedido" | "invalido" = "vacio";
+    let estado: "vacio" | "incompleto" | "completo" | "excedido" | "invalido" =
+      "vacio";
     if (!horasValidas) estado = "invalido";
     else if (diasActivos === 0) estado = "vacio";
     else if (minutosTotales < horasObjetivoMinutos) estado = "incompleto";
@@ -213,19 +290,21 @@ export function PracticanteCreateDialog({
     const cargarSelects = async () => {
       try {
         setLoadingSelects(true);
-        const [sedesData, cargosData, puestosData, tiposData] = await Promise.all([
-          sedeApi.getAll().catch(() => MOCK_SEDES),
-          cargosApi.getAll().catch(() => MOCK_CARGOS),
-          puestosApi.getAll().catch(() => MOCK_PUESTOS),
-          tiposInstitutoApi.getAll().catch(() => MOCK_TIPOS_INSTITUTO),
-        ]);
+        const [sedesData, cargosData, puestosData, tiposData] =
+          await Promise.all([
+            sedeApi.getAll().catch(() => MOCK_SEDES),
+            cargosApi.getAll().catch(() => MOCK_CARGOS),
+            puestosApi.getAll().catch(() => MOCK_PUESTOS),
+            tiposInstitutoApi.getAll().catch(() => MOCK_TIPOS_INSTITUTO),
+          ]);
 
         setSedes(sedesData.length > 0 ? sedesData : MOCK_SEDES);
         setCargos(cargosData.length > 0 ? cargosData : MOCK_CARGOS);
         setPuestos(puestosData.length > 0 ? puestosData : MOCK_PUESTOS);
-        setTiposInstituto(tiposData.length > 0 ? tiposData : MOCK_TIPOS_INSTITUTO);
+        setTiposInstituto(
+          tiposData.length > 0 ? tiposData : MOCK_TIPOS_INSTITUTO,
+        );
 
-        // Setear valores por defecto si hay datos
         if (sedesData.length > 0) {
           setFormData((prev) => ({ ...prev, idSede: sedesData[0].idSede }));
         }
@@ -233,10 +312,16 @@ export function PracticanteCreateDialog({
           setFormData((prev) => ({ ...prev, idCargo: cargosData[0].idCargo }));
         }
         if (puestosData.length > 0) {
-          setFormData((prev) => ({ ...prev, idPuesto: puestosData[0].idPuesto }));
+          setFormData((prev) => ({
+            ...prev,
+            idPuesto: puestosData[0].idPuesto,
+          }));
         }
         if (tiposData.length > 0) {
-          setFormData((prev) => ({ ...prev, idTipoInstituto: tiposData[0].idTipoInstituto }));
+          setFormData((prev) => ({
+            ...prev,
+            idTipoInstituto: tiposData[0].idTipoInstituto,
+          }));
         }
       } catch (error) {
         console.error("Error al cargar selects, usando mock:", error);
@@ -252,7 +337,7 @@ export function PracticanteCreateDialog({
 
   // ====== HANDLERS ======
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData({
@@ -261,10 +346,96 @@ export function PracticanteCreateDialog({
     });
   };
 
+  // ====== Handler para DNI ======
+  const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const soloNumeros = value.replace(/\D/g, "");
+    const dniLimitado = soloNumeros.slice(0, 8);
+
+    if (dniLimitado.length > 0 && dniLimitado.length < 8) {
+      setDniError("El DNI debe tener 8 dígitos");
+    } else if (dniLimitado.length === 8 && dniLimitado === "00000000") {
+      setDniError("DNI inválido");
+    } else if (dniLimitado.length === 8) {
+      setDniError("");
+    } else {
+      setDniError("");
+    }
+
+    setFormData({
+      ...formData,
+      documento: dniLimitado,
+    });
+  };
+
+  // ====== Handler para Nombre ======
+  const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const soloLetra = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    const nombreLimitado = soloLetra.slice(0, 50);
+
+    setFormData({
+      ...formData,
+      nombre: nombreLimitado,
+    });
+  };
+
+  // ====== Handler para Apellido ======
+  const handleApellidoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const soloLetras = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    const apellidoLimitado = soloLetras.slice(0, 50);
+
+    setFormData({
+      ...formData,
+      apellido: apellidoLimitado,
+    });
+  };
+
+  // ====== Handler para Email ======
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const emailSinEspacios = value.replace(/\s/g, "");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (emailSinEspacios.length === 0) {
+      setEmailError("El email es obligatorio");
+    } else if (!emailRegex.test(emailSinEspacios)) {
+      setEmailError("Ingresa un email válido (ej: usuario@dominio.com)");
+    } else {
+      setEmailError("");
+    }
+
+    setFormData({
+      ...formData,
+      correoElectronico: emailSinEspacios,
+    });
+  };
+
+  // ====== Handler para Teléfono ======
+  const handleTelefonoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const soloNumeros = value.replace(/\D/g, "");
+    const telefonoLimitado = soloNumeros.slice(0, 15);
+
+    if (telefonoLimitado.length === 0) {
+      setTelefonoError("El teléfono es obligatorio");
+    } else if (telefonoLimitado.length < 9) {
+      setTelefonoError("El teléfono debe tener al menos 9 dígitos");
+    } else {
+      setTelefonoError("");
+    }
+
+    setFormData({
+      ...formData,
+      telefono: telefonoLimitado,
+    });
+  };
+
   const handleHorarioChange = (
     dia: string,
     campo: keyof DiaHorario,
-    valor: string | boolean
+    valor: string | boolean,
   ) => {
     setHorario((prev) => ({
       ...prev,
@@ -275,19 +446,34 @@ export function PracticanteCreateDialog({
     }));
   };
 
-  // ====== VALIDACIÓN POR PASO (SIN código de trabajador) ======
+  // ====== VALIDACIÓN POR PASO (TODOS LOS CAMPOS OBLIGATORIOS) ======
   const validateStep1 = (): boolean => {
-    return !!(
-      formData.nombre.trim() &&
-      formData.apellido.trim() &&
-      formData.documento.trim() &&
-      formData.fechaInicioPracticas
+    return (
+      formData.documento.length === 8 &&
+      formData.documento !== "00000000" &&
+      formData.nombre.trim().length >= 2 &&
+      formData.apellido.trim().length >= 2 &&
+      formData.correoElectronico.length > 0 &&
+      !emailError &&
+      formData.telefono.length >= 9 &&
+      !telefonoError &&
+      formData.fechaInicioPracticas !== "" &&
+      formData.idSede > 0 &&
+      formData.idPuesto > 0 &&
+      formData.idCargo > 0 &&
+      formData.idTipoInstituto > 0
     );
   };
 
   const validateStep2 = (): boolean => {
-    const { diasActivos, horasValidas, minutosTotales, horasObjetivoMinutos } = resumenHorario;
-    return diasActivos > 0 && horasValidas && horasObjetivoMinutos > 0 && minutosTotales === horasObjetivoMinutos;
+    const { diasActivos, horasValidas, minutosTotales, horasObjetivoMinutos } =
+      resumenHorario;
+    return (
+      diasActivos > 0 &&
+      horasValidas &&
+      horasObjetivoMinutos > 0 &&
+      minutosTotales === horasObjetivoMinutos
+    );
   };
 
   // ====== NAVEGACIÓN ======
@@ -309,7 +495,6 @@ export function PracticanteCreateDialog({
   const handleSubmit = () => {
     if (!validateStep1()) return;
 
-    // Construir el objeto con los datos del practicante + horario
     const nuevoPracticante = {
       nombre: formData.nombre,
       apellido: formData.apellido,
@@ -326,13 +511,12 @@ export function PracticanteCreateDialog({
         diaSemana: dia,
         horaInicio: data.entrada,
         horaFin: data.salida,
-        activo: data.activo
-      }))
+        activo: data.activo,
+      })),
     };
 
     onSave(nuevoPracticante);
 
-    // Resetear
     setFormData({
       nombre: "",
       apellido: "",
@@ -340,7 +524,8 @@ export function PracticanteCreateDialog({
       idSede: sedes.length > 0 ? sedes[0].idSede : 1,
       idCargo: cargos.length > 0 ? cargos[0].idCargo : 1,
       idPuesto: puestos.length > 0 ? puestos[0].idPuesto : 1,
-      idTipoInstituto: tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 1,
+      idTipoInstituto:
+        tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 1,
       correoElectronico: "",
       telefono: "",
       fechaInicioPracticas: new Date().toISOString().split("T")[0],
@@ -368,11 +553,12 @@ export function PracticanteCreateDialog({
                 <div
                   className={`
                     flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all shrink-0
-                    ${currentStep === step.num 
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-100' 
-                      : currentStep > step.num 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-gray-100 text-gray-400'
+                    ${
+                      currentStep === step.num
+                        ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                        : currentStep > step.num
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-100 text-gray-400"
                     }
                   `}
                 >
@@ -382,18 +568,22 @@ export function PracticanteCreateDialog({
                     step.num
                   )}
                 </div>
-                <span className={`
+                <span
+                  className={`
                   text-xs font-medium whitespace-nowrap
-                  ${currentStep === step.num ? 'text-blue-600 font-semibold' : 'text-gray-400'}
-                `}>
+                  ${currentStep === step.num ? "text-blue-600 font-semibold" : "text-gray-400"}
+                `}
+                >
                   {step.label}
                 </span>
               </div>
               {index < steps.length - 1 && (
-                <div className={`
+                <div
+                  className={`
                   w-10 h-0.5 mx-1 transition-colors
-                  ${currentStep > step.num ? 'bg-green-500' : 'bg-gray-200'}
-                `} />
+                  ${currentStep > step.num ? "bg-green-500" : "bg-gray-200"}
+                `}
+                />
               )}
             </div>
           ))}
@@ -409,8 +599,14 @@ export function PracticanteCreateDialog({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Documento */}
           <div className="grid gap-1.5">
-            <Label htmlFor="documento" className="text-xs font-medium">
+            <Label
+              htmlFor="documento"
+              className="text-xs font-medium flex items-center gap-1"
+            >
               Documento / DNI *
+              <span className="text-xs text-gray-400 font-normal">
+                (8 dígitos)
+              </span>
             </Label>
             <div className="relative">
               <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -418,11 +614,35 @@ export function PracticanteCreateDialog({
                 id="documento"
                 name="documento"
                 value={formData.documento}
-                onChange={handleChange}
+                onChange={handleDniChange}
                 placeholder="DNI del practicante"
-                className="w-full pl-9 h-9 text-sm"
+                className={`w-full pl-9 h-9 text-sm ${
+                  dniError
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : formData.documento.length === 8
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }`}
+                maxLength={8}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
               />
+            </div>
+            <div className="h-5 flex items-center gap-1 mt-0.5">
+              {dniError ? (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <span className="text-xs text-red-600">{dniError}</span>
+                </>
+              ) : formData.documento.length === 8 ? (
+                <>
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <span className="text-xs text-green-600">DNI válido</span>
+                </>
+              ) : (
+                <span className="text-xs text-gray-400">Ingresa 8 dígitos</span>
+              )}
             </div>
           </div>
 
@@ -437,11 +657,34 @@ export function PracticanteCreateDialog({
                 id="nombre"
                 name="nombre"
                 value={formData.nombre}
-                onChange={handleChange}
+                onChange={handleNombreChange}
                 placeholder="Nombre del practicante"
-                className="w-full pl-9 h-9 text-sm"
+                className={`w-full pl-9 h-9 text-sm ${
+                  formData.nombre.length > 0 && formData.nombre.length < 2
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : formData.nombre.length >= 2
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }`}
                 required
               />
+            </div>
+            <div className="h-5 flex items-center gap-1">
+              {formData.nombre.length > 0 && formData.nombre.length < 2 ? (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <span className="text-xs text-red-600">
+                    Mínimo 2 caracteres
+                  </span>
+                </>
+              ) : formData.nombre.length >= 2 ? (
+                <>
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <span className="text-xs text-green-600">Nombre válido</span>
+                </>
+              ) : (
+                <span className="text-xs text-gray-400">Obligatorio</span>
+              )}
             </div>
           </div>
 
@@ -456,11 +699,36 @@ export function PracticanteCreateDialog({
                 id="apellido"
                 name="apellido"
                 value={formData.apellido}
-                onChange={handleChange}
+                onChange={handleApellidoChange}
                 placeholder="Apellido del practicante"
-                className="w-full pl-9 h-9 text-sm"
+                className={`w-full pl-9 h-9 text-sm ${
+                  formData.apellido.length > 0 && formData.apellido.length < 2
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : formData.apellido.length >= 2
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }`}
                 required
               />
+            </div>
+            <div className="h-5 flex items-center gap-1">
+              {formData.apellido.length > 0 && formData.apellido.length < 2 ? (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <span className="text-xs text-red-600">
+                    Mínimo 2 caracteres
+                  </span>
+                </>
+              ) : formData.apellido.length >= 2 ? (
+                <>
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <span className="text-xs text-green-600">
+                    Apellido válido
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs text-gray-400">Obligatorio</span>
+              )}
             </div>
           </div>
         </div>
@@ -552,7 +820,7 @@ export function PracticanteCreateDialog({
             </div>
           </div>
 
-          {/* Tipo Instituto */}
+          {/* Centro de Estudios */}
           <div className="grid gap-1.5">
             <Label htmlFor="idTipoInstituto" className="text-xs font-medium">
               Centro de Estudios *
@@ -571,7 +839,10 @@ export function PracticanteCreateDialog({
                   <option value="0">Cargando...</option>
                 ) : (
                   tiposInstituto.map((tipo) => (
-                    <option key={tipo.idTipoInstituto} value={tipo.idTipoInstituto}>
+                    <option
+                      key={tipo.idTipoInstituto}
+                      value={tipo.idTipoInstituto}
+                    >
                       {tipo.nombre}
                     </option>
                   ))
@@ -587,7 +858,7 @@ export function PracticanteCreateDialog({
           {/* Email */}
           <div className="grid gap-1.5">
             <Label htmlFor="correoElectronico" className="text-xs font-medium">
-              Email
+              Email *
             </Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -595,18 +866,40 @@ export function PracticanteCreateDialog({
                 id="correoElectronico"
                 name="correoElectronico"
                 value={formData.correoElectronico}
-                onChange={handleChange}
+                onChange={handleEmailChange}
                 placeholder="correo@empresa.com"
                 type="email"
-                className="w-full pl-9 h-9 text-sm"
+                className={`w-full pl-9 h-9 text-sm ${
+                  emailError
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : formData.correoElectronico.length > 0 && !emailError
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }`}
+                required
               />
+            </div>
+            <div className="h-5 flex items-center gap-1">
+              {emailError ? (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <span className="text-xs text-red-600">{emailError}</span>
+                </>
+              ) : formData.correoElectronico.length > 0 && !emailError ? (
+                <>
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <span className="text-xs text-green-600">Email válido</span>
+                </>
+              ) : (
+                <span className="text-xs text-gray-400">Obligatorio</span>
+              )}
             </div>
           </div>
 
           {/* Teléfono */}
           <div className="grid gap-1.5">
             <Label htmlFor="telefono" className="text-xs font-medium">
-              Teléfono
+              Teléfono *
             </Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -614,10 +907,37 @@ export function PracticanteCreateDialog({
                 id="telefono"
                 name="telefono"
                 value={formData.telefono}
-                onChange={handleChange}
+                onChange={handleTelefonoChange}
                 placeholder="987654321"
-                className="w-full pl-9 h-9 text-sm"
+                className={`w-full pl-9 h-9 text-sm ${
+                  telefonoError
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : formData.telefono.length >= 9
+                      ? "border-green-500 focus-visible:ring-green-500"
+                      : ""
+                }`}
+                inputMode="numeric"
+                required
               />
+            </div>
+            <div className="h-5 flex items-center gap-1">
+              {telefonoError ? (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <span className="text-xs text-red-600">{telefonoError}</span>
+                </>
+              ) : formData.telefono.length >= 9 ? (
+                <>
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <span className="text-xs text-green-600">
+                    Teléfono válido
+                  </span>
+                </>
+              ) : formData.telefono.length > 0 ? (
+                <span className="text-xs text-gray-400">Faltan dígitos</span>
+              ) : (
+                <span className="text-xs text-gray-400">Obligatorio</span>
+              )}
             </div>
           </div>
         </div>
@@ -625,7 +945,10 @@ export function PracticanteCreateDialog({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Fecha Inicio */}
           <div className="grid gap-1.5">
-            <Label htmlFor="fechaInicioPracticas" className="text-xs font-medium">
+            <Label
+              htmlFor="fechaInicioPracticas"
+              className="text-xs font-medium"
+            >
               Fecha de inicio *
             </Label>
             <div className="relative">
@@ -663,21 +986,28 @@ export function PracticanteCreateDialog({
 
         {!validateStep1() && (
           <p className="text-xs text-amber-600 mt-1">
-            * Completa los campos obligatorios para continuar
+            * Completa todos los campos obligatorios para continuar
           </p>
         )}
       </div>
     );
   };
 
-  // ====== RENDER STEP 2: HORARIO CON TARJETA DE PROGRESO MEJORADA ======
+  // ====== RENDER STEP 2: HORARIO ======
   const renderStep2 = () => {
-    const { minutosTotales, horasObjetivo, horasObjetivoMinutos, diffMinutos, porcentaje, estado, erroresPorDia } = resumenHorario;
+    const {
+      minutosTotales,
+      horasObjetivo,
+      horasObjetivoMinutos,
+      diffMinutos,
+      porcentaje,
+      estado,
+      erroresPorDia,
+    } = resumenHorario;
     const horasConfigFmt = formatHorasMinutos(minutosTotales);
     const horasObjetivoFmt = `${horasObjetivo} h`;
     const diffAbsFmt = formatHorasMinutos(Math.abs(diffMinutos));
 
-    // Configuración de colores según estado
     const estadoConfig = {
       incompleto: {
         color: "text-amber-600",
@@ -727,15 +1057,22 @@ export function PracticanteCreateDialog({
     };
 
     const currentEstado = estado || "vacio";
-    const config = estadoConfig[currentEstado as keyof typeof estadoConfig] || estadoConfig.vacio;
+    const config =
+      estadoConfig[currentEstado as keyof typeof estadoConfig] ||
+      estadoConfig.vacio;
     const IconComponent = config.icon;
-    const progressValue = horasObjetivo > 0 ? (estado === "excedido" ? 100 : Math.min(porcentaje, 100)) : 0;
+    const progressValue =
+      horasObjetivo > 0
+        ? estado === "excedido"
+          ? 100
+          : Math.min(porcentaje, 100)
+        : 0;
 
     return (
-      <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
-        {/* ====== TARJETA DE PROGRESO MEJORADA ====== */}
-        <div className={`rounded-xl border p-5 ${config.bg} ${config.border} transition-all duration-300`}>
-          {/* Cabecera: título + porcentaje */}
+      <div className="space-y-4">
+        <div
+          className={`rounded-xl border p-5 ${config.bg} ${config.border} transition-all duration-300`}
+        >
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -746,14 +1083,17 @@ export function PracticanteCreateDialog({
               </p>
             </div>
             <div className="text-right">
-              <p className={`text-2xl font-bold ${config.color} transition-all duration-300`}>
+              <p
+                className={`text-2xl font-bold ${config.color} transition-all duration-300`}
+              >
                 {horasObjetivo > 0 ? `${Math.round(progressValue)}%` : "—"}
               </p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Progreso</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wider">
+                Progreso
+              </p>
             </div>
           </div>
 
-          {/* Resumen principal: Configuradas vs Objetivo */}
           <div className="mt-4 flex items-end gap-6">
             <div>
               <p className="text-3xl font-bold text-slate-900 transition-all duration-300">
@@ -771,14 +1111,15 @@ export function PracticanteCreateDialog({
               <div className="ml-auto flex items-center gap-1.5">
                 <TrendingUp className={`h-4 w-4 ${config.color}`} />
                 <span className={`text-sm font-medium ${config.color}`}>
-                  {estado === "completo" && <Check className="h-4 w-4 text-emerald-600" />}
+                  {estado === "completo" && (
+                    <Check className="h-4 w-4 text-emerald-600" />
+                  )}
                   {estado === "incompleto" ? `-${diffAbsFmt}` : ""}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Barra de progreso */}
           <div className="mt-4">
             <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-200/70">
               <div
@@ -786,12 +1127,15 @@ export function PracticanteCreateDialog({
                 style={{ width: `${progressValue}%` }}
               />
             </div>
-            {/* Mensaje contextual */}
             <div className="mt-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <IconComponent className={`h-4 w-4 ${config.iconColor}`} />
-                <p className={`text-sm font-medium ${config.color} transition-all duration-300`}>
-                  {horasObjetivo > 0 ? config.message : "Selecciona un cargo para ver el objetivo"}
+                <p
+                  className={`text-sm font-medium ${config.color} transition-all duration-300`}
+                >
+                  {horasObjetivo > 0
+                    ? config.message
+                    : "Selecciona un cargo para ver el objetivo"}
                 </p>
               </div>
               {horasObjetivo > 0 && (
@@ -802,78 +1146,101 @@ export function PracticanteCreateDialog({
             </div>
           </div>
         </div>
+        <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+          <p className="text-sm text-gray-500">
+            Activa los días y ajusta entrada/salida. La duración por día se
+            calcula al instante.
+          </p>
 
-        <p className="text-sm text-gray-500">
-          Activa los días y ajusta entrada/salida. La duración por día se calcula al instante.
-        </p>
-
-        <div className="space-y-2">
-          {DIAS_SEMANA.map((dia) => {
-            const diaData = horario[dia.key as keyof HorarioSemanal];
-            const minutosDia = minutosDelDia(diaData);
-            const duracionFmt = Number.isNaN(minutosDia) ? null : formatHorasMinutos(minutosDia);
-            const tieneError = !!erroresPorDia[dia.key];
-            return (
-              <Card key={dia.key} className={`border ${tieneError ? "border-red-200 bg-red-50/30" : ""}`}>
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 min-w-[100px]">
-                      <Switch
-                        checked={diaData.activo}
-                        onCheckedChange={(checked) =>
-                          handleHorarioChange(dia.key, 'activo', checked)
-                        }
-                        className="data-[state=checked]:bg-blue-600"
-                      />
-                      <span className={`text-sm font-medium ${diaData.activo ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {dia.label}
-                      </span>
-                    </div>
-
-                    {diaData.activo ? (
-                      <div className="flex items-center gap-2 flex-1 min-w-[260px] flex-wrap">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 text-gray-400" />
-                          <Input
-                            type="time"
-                            value={diaData.entrada}
-                            onChange={(e) =>
-                              handleHorarioChange(dia.key, 'entrada', e.target.value)
-                            }
-                            className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-400">—</span>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5 text-gray-400" />
-                          <Input
-                            type="time"
-                            value={diaData.salida}
-                            onChange={(e) =>
-                              handleHorarioChange(dia.key, 'salida', e.target.value)
-                            }
-                            className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
-                          />
-                        </div>
-                        <span className={`ml-1 text-xs font-medium px-2 py-0.5 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : "bg-slate-100 text-slate-700 border-slate-200"}`}>
-                          {tieneError ? "Inválido" : duracionFmt}
+          <div
+            className="space-y-4 overflow-y-auto pr-1"
+            style={{ maxHeight: "calc(55vh - 200px)" }}
+          >
+            {DIAS_SEMANA.map((dia) => {
+              const diaData = horario[dia.key as keyof HorarioSemanal];
+              const minutosDia = minutosDelDia(diaData);
+              const duracionFmt = Number.isNaN(minutosDia)
+                ? null
+                : formatHorasMinutos(minutosDia);
+              const tieneError = !!erroresPorDia[dia.key];
+              return (
+                <Card
+                  key={dia.key}
+                  className={`border ${tieneError ? "border-red-200 bg-red-50/30" : ""}`}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-[100px]">
+                        <Switch
+                          checked={diaData.activo}
+                          onCheckedChange={(checked) =>
+                            handleHorarioChange(dia.key, "activo", checked)
+                          }
+                          className="data-[state=checked]:bg-blue-600"
+                        />
+                        <span
+                          className={`text-sm font-medium ${diaData.activo ? "text-gray-900" : "text-gray-400"}`}
+                        >
+                          {dia.label}
                         </span>
                       </div>
-                    ) : (
-                      <span className="text-sm text-gray-400 italic">
-                        Descanso
-                      </span>
+
+                      {diaData.activo ? (
+                        <div className="flex items-center gap-2 flex-1 min-w-[260px] flex-wrap">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-gray-400" />
+                            <Input
+                              type="time"
+                              value={diaData.entrada}
+                              onChange={(e) =>
+                                handleHorarioChange(
+                                  dia.key,
+                                  "entrada",
+                                  e.target.value,
+                                )
+                              }
+                              className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-400">—</span>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 text-gray-400" />
+                            <Input
+                              type="time"
+                              value={diaData.salida}
+                              onChange={(e) =>
+                                handleHorarioChange(
+                                  dia.key,
+                                  "salida",
+                                  e.target.value,
+                                )
+                              }
+                              className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                            />
+                          </div>
+                          <span
+                            className={`ml-1 text-xs font-medium px-2 py-0.5 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : "bg-slate-100 text-slate-700 border-slate-200"}`}
+                          >
+                            {tieneError ? "Inválido" : duracionFmt}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400 italic">
+                          Descanso
+                        </span>
+                      )}
+                    </div>
+                    {tieneError && (
+                      <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />{" "}
+                        {erroresPorDia[dia.key]}
+                      </p>
                     )}
-                  </div>
-                  {tieneError && (
-                    <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" /> {erroresPorDia[dia.key]}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -881,10 +1248,16 @@ export function PracticanteCreateDialog({
 
   // ====== RENDER STEP 3: CONFIRMACIÓN ======
   const renderStep3 = () => {
-    const sedeNombre = sedes.find(a => a.idSede === formData.idSede)?.nombre || '—';
-    const cargoNombre = cargos.find(c => c.idCargo === formData.idCargo)?.nombre || '—';
-    const puestoNombre = puestos.find(p => p.idPuesto === formData.idPuesto)?.nombrePuesto || '—';
-    const tipoInstitutoNombre = tiposInstituto.find(t => t.idTipoInstituto === formData.idTipoInstituto)?.nombre || '—';
+    const sedeNombre =
+      sedes.find((a) => a.idSede === formData.idSede)?.nombre || "—";
+    const cargoNombre =
+      cargos.find((c) => c.idCargo === formData.idCargo)?.nombre || "—";
+    const puestoNombre =
+      puestos.find((p) => p.idPuesto === formData.idPuesto)?.nombrePuesto ||
+      "—";
+    const tipoInstitutoNombre =
+      tiposInstituto.find((t) => t.idTipoInstituto === formData.idTipoInstituto)
+        ?.nombre || "—";
 
     return (
       <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
@@ -895,7 +1268,6 @@ export function PracticanteCreateDialog({
           </p>
         </div>
 
-        {/* DATOS PERSONALES */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
             <User className="h-4 w-4" />
@@ -903,13 +1275,14 @@ export function PracticanteCreateDialog({
           </h4>
           <div className="grid grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3">
             <span className="text-gray-500">Nombre completo:</span>
-            <span className="font-medium">{formData.nombre} {formData.apellido}</span>
+            <span className="font-medium">
+              {formData.nombre} {formData.apellido}
+            </span>
             <span className="text-gray-500">Documento:</span>
             <span className="font-medium">{formData.documento}</span>
           </div>
         </div>
 
-        {/* INFORMACIÓN LABORAL */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
             <BriefcaseBusiness className="h-4 w-4" />
@@ -922,20 +1295,21 @@ export function PracticanteCreateDialog({
             <span className="font-medium">{puestoNombre}</span>
             <span className="text-gray-500">Cargo:</span>
             <span className="font-medium">{cargoNombre}</span>
-            <span className="text-gray-500">Tipo instituto:</span>
+            <span className="text-gray-500">Centro de Estudios:</span>
             <span className="font-medium">{tipoInstitutoNombre}</span>
             <span className="text-gray-500">Inicio:</span>
             <span className="font-medium">{formData.fechaInicioPracticas}</span>
             {formData.fechaFinPracticas && (
               <>
                 <span className="text-gray-500">Fin:</span>
-                <span className="font-medium">{formData.fechaFinPracticas}</span>
+                <span className="font-medium">
+                  {formData.fechaFinPracticas}
+                </span>
               </>
             )}
           </div>
         </div>
 
-        {/* HORARIO */}
         <div>
           <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
             <Clock className="h-4 w-4" />
@@ -945,10 +1319,19 @@ export function PracticanteCreateDialog({
             {DIAS_SEMANA.map((dia) => {
               const diaData = horario[dia.key as keyof HorarioSemanal];
               return (
-                <div key={dia.key} className="flex justify-between py-0.5 border-b border-gray-100 last:border-0">
+                <div
+                  key={dia.key}
+                  className="flex justify-between py-0.5 border-b border-gray-100 last:border-0"
+                >
                   <span className="text-gray-600">{dia.label}</span>
-                  <span className={diaData.activo ? 'font-medium' : 'text-gray-400 italic'}>
-                    {diaData.activo ? `${diaData.entrada} - ${diaData.salida}` : 'Descanso'}
+                  <span
+                    className={
+                      diaData.activo ? "font-medium" : "text-gray-400 italic"
+                    }
+                  >
+                    {diaData.activo
+                      ? `${diaData.entrada} - ${diaData.salida}`
+                      : "Descanso"}
                   </span>
                 </div>
               );
@@ -983,7 +1366,7 @@ export function PracticanteCreateDialog({
             <Button
               type="button"
               onClick={goToNextStep}
-              className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 ${!isStep1Valid || !isStep2Valid ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 ${!isStep1Valid || !isStep2Valid ? "opacity-50 cursor-not-allowed" : ""}`}
               disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
             >
               Continuar
@@ -1027,15 +1410,18 @@ export function PracticanteCreateDialog({
             <DialogTitle className="text-xl">Agregar practicante</DialogTitle>
           </div>
           <DialogDescription>
-            Completa los datos del nuevo practicante en {currentStep === 1 ? '3 pasos' : currentStep === 2 ? 'paso 2 de 3' : 'paso 3 de 3'}.
+            Completa los datos del nuevo practicante en{" "}
+            {currentStep === 1
+              ? "3 pasos"
+              : currentStep === 2
+                ? "paso 2 de 3"
+                : "paso 3 de 3"}
+            .
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 p-5 overflow-hidden px-6">
-          {/* Step Indicator - Centrado y sin cortes */}
           {renderStepIndicator()}
-
-          {/* Step Content */}
           <div className="mt-4">
             {currentStep === 1 && renderStep1()}
             {currentStep === 2 && renderStep2()}
@@ -1043,10 +1429,7 @@ export function PracticanteCreateDialog({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 pt-2 flex-shrink-0">
-          {renderFooter()}
-        </div>
+        <div className="p-6 pt-2 flex-shrink-0">{renderFooter()}</div>
       </DialogContent>
     </Dialog>
   );

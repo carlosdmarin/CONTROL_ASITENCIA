@@ -154,7 +154,7 @@ export default function PracticantesPage() {
       await practicantesApi.eliminar(id);
       await cargarPracticantes();
       setDialogEliminarAbierto(false);
-      toast.success("✅ Practicante eliminado correctamente");
+      toast.success(" Practicante eliminado correctamente");
     } catch (error: unknown) {
       const msg =
         error instanceof Error

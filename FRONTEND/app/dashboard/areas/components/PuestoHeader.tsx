@@ -19,9 +19,9 @@ export default function PuestoHeader({ total, totalActivos, onOpenCreate, loadin
           <Briefcase className="h-8 w-8 text-blue-600" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Puesto</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Areas</h1>
           <p className="text-sm text-gray-500">
-            Gestiona los puestos de tu empresa
+            Gestiona las areas de tu empresa
           </p>
         </div>
       </div>
@@ -32,7 +32,7 @@ export default function PuestoHeader({ total, totalActivos, onOpenCreate, loadin
         onClick={onOpenCreate}
       >
         <UserPlus className="h-5 w-5" />
-        Agregar puesto
+        Agregar area
       </Button>
     </div>
   );

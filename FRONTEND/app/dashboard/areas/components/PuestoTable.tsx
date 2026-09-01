@@ -39,11 +39,21 @@ const TableSkeleton = () => (
   <>
     {Array.from({ length: 5 }).map((_, index) => (
       <TableRow key={index}>
-        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-        <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-40" /></TableCell>
-        <TableCell className="text-center"><Skeleton className="h-6 w-20 mx-auto rounded-full" /></TableCell>
-        <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+        <TableCell>
+          <Skeleton className="h-4 w-32" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-4 w-20" />
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+          <Skeleton className="h-4 w-40" />
+        </TableCell>
+        <TableCell className="text-center">
+          <Skeleton className="h-6 w-20 mx-auto rounded-full" />
+        </TableCell>
+        <TableCell className="text-right">
+          <Skeleton className="h-8 w-20 ml-auto" />
+        </TableCell>
       </TableRow>
     ))}
   </>
@@ -63,14 +73,14 @@ export default function PuestoTable({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <BriefcaseBusiness className="h-4 w-4" />
-            Lista de Puestos
+            Lista de Areas
           </CardTitle>
           {loading ? (
             <Skeleton className="h-6 w-24" />
           ) : (
             <Badge variant="outline" className="gap-1">
               <Building2 className="h-3 w-3" />
-              {puestos.length} puestos
+              {puestos.length} areas
             </Badge>
           )}
         </div>
@@ -80,11 +90,22 @@ export default function PuestoTable({
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-100 hover:bg-gray-50/80">
-                <TableHead className="font-semibold">Nombre del Puesto</TableHead>
+                <TableHead className="font-semibold text-center" >
+                  #
+                </TableHead>
+                <TableHead className="font-semibold">
+                  Nombre del Area
+                </TableHead>
                 <TableHead className="font-semibold">Área</TableHead>
-                <TableHead className="font-semibold hidden md:table-cell">Descripción</TableHead>
-                <TableHead className="font-semibold text-center">Estado</TableHead>
-                <TableHead className="font-semibold text-right">Acciones</TableHead>
+                <TableHead className="font-semibold hidden md:table-cell">
+                  Descripción
+                </TableHead>
+                <TableHead className="font-semibold text-center">
+                  Estado
+                </TableHead>
+                <TableHead className="font-semibold text-right">
+                  Acciones
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -92,7 +113,7 @@ export default function PuestoTable({
                 <TableSkeleton />
               ) : puestos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-48 text-center">
+                  <TableCell colSpan={6} className="h-48 text-center">
                     <div className="flex flex-col items-center justify-center">
                       {busqueda ? (
                         <>
@@ -119,8 +140,16 @@ export default function PuestoTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                puestos.map((puesto) => (
-                  <TableRow key={puesto.idPuesto} className="hover:bg-slate-50 h-12">
+                puestos.map((puesto, index) => {
+                  const globalIndex = index+1;
+                  return(
+                  <TableRow
+                    key={puesto.idPuesto}
+                    className="hover:bg-slate-50 h-12"
+                  >
+                    <TableCell className="text-center text-sm text-gray-500">
+                      {globalIndex}
+                    </TableCell>
                     <TableCell className="font-medium">
                       {puesto.nombrePuesto}
                     </TableCell>
@@ -164,13 +193,16 @@ export default function PuestoTable({
 
                         <DropdownMenu>
                           <DropdownMenuTrigger>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4 text-gray-600" />
-                            </Button>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer text-gray-600">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Más acciones</span>
+                            </div>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuGroup>
-                              <DropdownMenuLabel>Más acciones</DropdownMenuLabel>
+                              <DropdownMenuLabel>
+                                Más acciones
+                              </DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem>Ver detalles</DropdownMenuItem>
                               <DropdownMenuItem>Historial</DropdownMenuItem>
@@ -181,7 +213,8 @@ export default function PuestoTable({
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>

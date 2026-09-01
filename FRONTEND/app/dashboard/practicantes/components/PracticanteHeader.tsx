@@ -25,7 +25,7 @@ export default function PracticanteHeader({ onOpenCreate }: PracticanteHeaderPro
 
       {/* ====== DERECHA: Botón Agregar ====== */}
       <Button
-        className="gap-2 p-4 hover:shadow-md transition-all duration-300 hover:bg-blue-950"
+        className="gap-2 p-4 hover:shadow-md transition-all bg-blue-700 duration-300 hover:bg-blue-800"
         onClick={onOpenCreate}
       >
         <UserPlus className="h-5 w-5" />

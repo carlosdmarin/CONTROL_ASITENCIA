@@ -72,7 +72,8 @@ export default function AsistenciaTable({ asistencias, loading = false }: Asiste
           <Table>
           <TableHeader>
             <TableRow className="bg-gray-100 hover:bg-gray-50/80">
-              <TableHead className="font-semibold">Practicante</TableHead>
+              <TableHead className="font-semibold">#</TableHead>
+              <TableHead className="font-semibold ">Practicante</TableHead>
               <TableHead className="font-semibold text-center">Entrada</TableHead>
               <TableHead className="font-semibold text-center">Salida</TableHead>
               <TableHead className="font-semibold text-center">Horas</TableHead>
@@ -83,10 +84,14 @@ export default function AsistenciaTable({ asistencias, loading = false }: Asiste
             {loading ? (
               <TableSkeleton />
             ) : (
-              asistencias.map((asistencia) => {
+              asistencias.map((asistencia, index) => {
                 const estado = getEstadoBadge(asistencia.estado);
+                const globalIndex = index + 1;
                 return (
                   <TableRow key={asistencia.id} className="hover:bg-slate-50 h-12">
+                    <TableCell className="font-medium">
+                      {globalIndex}
+                    </TableCell>
                     <TableCell className="font-medium">
                       {asistencia.practicante}
                     </TableCell>

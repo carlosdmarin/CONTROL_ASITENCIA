@@ -14,7 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, MoreHorizontal as Ellipsis } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal as Ellipsis,
+} from "lucide-react";
 import {
   Pencil,
   Trash2,
@@ -106,19 +110,33 @@ const TableSkeleton = () => (
   <>
     {Array.from({ length: 5 }).map((_, index) => (
       <TableRow key={index}>
-        <TableCell className="text-center"><Skeleton className="h-4 w-6 mx-auto" /></TableCell>
+        <TableCell className="text-center">
+          <Skeleton className="h-4 w-6 mx-auto" />
+        </TableCell>
         <TableCell>
           <div className="flex items-center gap-3">
             <Skeleton className="h-8 w-8 rounded-full" />
             <Skeleton className="h-4 w-32" />
           </div>
         </TableCell>
-        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-        <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-        <TableCell className="text-center"><Skeleton className="h-6 w-16 mx-auto rounded-full" /></TableCell>
-        <TableCell className="text-right"><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+        <TableCell>
+          <Skeleton className="h-4 w-20" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </TableCell>
+        <TableCell className="text-center">
+          <Skeleton className="h-4 w-12 mx-auto" />
+        </TableCell>
+        <TableCell className="text-center">
+          <Skeleton className="h-6 w-16 mx-auto rounded-full" />
+        </TableCell>
+        <TableCell className="text-right">
+          <Skeleton className="h-8 w-20 ml-auto" />
+        </TableCell>
       </TableRow>
     ))}
   </>
@@ -188,7 +206,9 @@ export function PracticanteTable({
                 onClick={() => goToPage(page)}
                 aria-current={currentPage === page ? "page" : undefined}
                 className={`h-8 w-8 p-0 text-sm ${
-                  currentPage === page ? "bg-blue-600 hover:bg-blue-700 text-white" : ""
+                  currentPage === page
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : ""
                 }`}
               >
                 {page}
@@ -234,14 +254,22 @@ export function PracticanteTable({
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-100 hover:bg-gray-50/80">
-                <TableHead className="font-semibold w-12 text-center">#</TableHead>
+                <TableHead className="font-semibold w-12 text-center">
+                  #
+                </TableHead>
                 <TableHead className="font-semibold">Nombre completo</TableHead>
                 <TableHead className="font-semibold">Documento</TableHead>
                 <TableHead className="font-semibold">Sede</TableHead>
                 <TableHead className="font-semibold">Cargo</TableHead>
-                <TableHead className="font-semibold text-center">Horas</TableHead>
-                <TableHead className="font-semibold text-center">Estado</TableHead>
-                <TableHead className="font-semibold text-right">Acciones</TableHead>
+                <TableHead className="font-semibold text-center">
+                  Horas
+                </TableHead>
+                <TableHead className="font-semibold text-center">
+                  Estado
+                </TableHead>
+                <TableHead className="font-semibold text-right">
+                  Acciones
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -279,7 +307,10 @@ export function PracticanteTable({
                 currentItems.map((practicante, index) => {
                   const globalIndex = startIndex + index + 1;
                   return (
-                    <TableRow key={practicante.idPracticante} className="hover:bg-slate-50 h-12">
+                    <TableRow
+                      key={practicante.idPracticante}
+                      className="hover:bg-slate-50 h-12"
+                    >
                       <TableCell className="text-center text-sm text-gray-500">
                         {globalIndex}
                       </TableCell>
@@ -291,11 +322,15 @@ export function PracticanteTable({
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="text-sm font-medium">{practicante.nombreCompleto}</p>
+                            <p className="text-sm font-medium">
+                              {practicante.nombreCompleto}
+                            </p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">{practicante.documento}</TableCell>
+                      <TableCell className="text-sm">
+                        {practicante.documento}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
@@ -316,7 +351,9 @@ export function PracticanteTable({
                         {practicante.horasSemanalesRequeridas}h
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge className={getStatusColor(practicante.situacion)}>
+                        <Badge
+                          className={getStatusColor(practicante.situacion)}
+                        >
                           {practicante.situacion}
                         </Badge>
                       </TableCell>
@@ -356,21 +393,21 @@ export function PracticanteTable({
 
                           <DropdownMenu>
                             <DropdownMenuTrigger>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4 text-gray-600" />
-                              </Button>
+                              <div className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer text-gray-600">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Más acciones</span>
+                              </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuGroup>
-                                <DropdownMenuLabel>Más acciones</DropdownMenuLabel>
+                                <DropdownMenuLabel>
+                                  Más acciones
+                                </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {onShowQR && (
-                                  <DropdownMenuItem onClick={() => onShowQR(practicante)}>
-                                    <QrCode className="h-4 w-4 mr-2" /> Ver QR
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem onClick={() => onShowDetail?.(practicante)}>
-                                  <User className="h-4 w-4 mr-2" /> Ver detalles
+                                <DropdownMenuItem
+                                  onClick={() => onShowDetail?.(practicante)}
+                                >
+                                <User className="h-4 w-4 mr-2" /> Ver detalles
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>Historial</DropdownMenuItem>
                                 <DropdownMenuItem>Reportes</DropdownMenuItem>
