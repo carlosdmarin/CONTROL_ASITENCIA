@@ -33,22 +33,22 @@ public class AsistenciaController {
             MarcacionResponse response = asistenciaService.registrarMarcacion(request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            // Capturar errores de negocio y devolver mensaje claro
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", e.getMessage());
             errorResponse.put("error", true);
-
-            // Determinar tipo de error para el frontend
             String mensaje = e.getMessage().toLowerCase();
             if (mensaje.contains("descanso") || mensaje.contains("día de descanso")) {
                 errorResponse.put("tipo", "DESCANSO");
-            } else if (mensaje.contains("ya registraste") || mensaje.contains("ya has registrado")) {
+            } else if (mensaje.contains("jornada de ingreso ya terminó") || mensaje.contains("jornada ya terminó")) {
+                errorResponse.put("tipo", "JORNADA_FINALIZADA");
+            } else if (mensaje.contains("ya registraste") || mensaje.contains("ya has registrado") || mensaje.contains("jornada de hoy ya está registrada")) {
                 errorResponse.put("tipo", "YA_REGISTRADO");
             } else if (mensaje.contains("no encontrado")) {
                 errorResponse.put("tipo", "NOT_FOUND");
+            } else {
+                errorResponse.put("tipo", "ERROR");
             }
-
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
@@ -56,7 +56,6 @@ public class AsistenciaController {
             errorResponse.put("message", "Error interno del servidor: " + e.getMessage());
             errorResponse.put("error", true);
             errorResponse.put("tipo", "ERROR");
-
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -97,6 +96,12 @@ public class AsistenciaController {
             @PathVariable String fecha) {
         LocalDate fechaLocal = LocalDate.parse(fecha);
         List<MarcacionResponse> responses = asistenciaService.obtenerMarcacionesPorPracticanteYFecha(idPracticante, fechaLocal);
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/marcaciones/recientes")
+    public ResponseEntity<List<MarcacionResponse>> obtenerMarcacionesRecientes(@RequestParam(defaultValue = "20") int limite) {
+        List<MarcacionResponse> responses = asistenciaService.obtenerMarcacionesRecientes(limite);
         return ResponseEntity.ok(responses);
     }
 
@@ -202,5 +207,68 @@ public class AsistenciaController {
         LocalDate fecha = LocalDate.parse(fechaInicio);
         asistenciaService.generarJornadaSemanal(idPracticante, fecha);
         return ResponseEntity.ok().build();
+    }
+
+    // ========== JUSTIFICAR / PERMISO / CORRECCIÓN MANUAL ==========
+
+    @PostMapping("/justificar/{idAsistencia}")
+    public ResponseEntity<?> justificarAsistencia(
+            @PathVariable Long idAsistencia,
+            @RequestBody Map<String, String> body) {
+        try {
+            String motivo = body.get("motivo");
+            String observacion = body.get("observacion");
+            String tipo = body.getOrDefault("tipo", "OTRO");
+            if (motivo == null || motivo.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "El motivo es obligatorio"));
+            }
+            AsistenciaDiariaResponse resp = asistenciaService.justificarAsistencia(idAsistencia, motivo, observacion, tipo);
+            return ResponseEntity.ok(resp);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/permiso")
+    public ResponseEntity<?> registrarPermiso(@RequestBody Map<String, String> body) {
+        try {
+            Long idPracticante = Long.valueOf(body.get("idPracticante"));
+            LocalDate fecha = LocalDate.parse(body.get("fecha"));
+            String motivo = body.get("motivo");
+            String observacion = body.get("observacion");
+            String tipo = body.getOrDefault("tipo", "PERSONAL");
+            if (motivo == null || motivo.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "El motivo es obligatorio"));
+            }
+            var j = asistenciaService.registrarPermiso(idPracticante, fecha, motivo, observacion, tipo);
+            return new ResponseEntity<>(j, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/corregir/{idPracticante}")
+    public ResponseEntity<?> corregirAsistenciaManual(
+            @PathVariable Long idPracticante,
+            @RequestBody Map<String, String> body) {
+        try {
+            String fechaStr = body.get("fecha");
+            if (fechaStr == null) return ResponseEntity.badRequest().body(Map.of("message", "Fecha requerida"));
+            LocalDate fecha = LocalDate.parse(fechaStr);
+            String horaEntrada = body.get("horaEntrada");
+            String horaSalida = body.get("horaSalida");
+            String observaciones = body.get("observaciones");
+            AsistenciaDiariaResponse resp = asistenciaService.corregirAsistenciaManual(idPracticante, fecha, horaEntrada, horaSalida, observaciones);
+            return ResponseEntity.ok(resp);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/cerrar-jornada")
+    public ResponseEntity<?> cerrarJornada(@RequestParam String fecha) {
+        LocalDate f = LocalDate.parse(fecha);
+        int c = asistenciaService.cerrarJornadaDelDia(f);
+        return ResponseEntity.ok(Map.of("fecha", fecha, "actualizados", c, "message", "Jornada cerrada: " + c + " ausencias registradas"));
     }
 }

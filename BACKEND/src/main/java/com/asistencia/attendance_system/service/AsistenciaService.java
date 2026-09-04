@@ -73,4 +73,20 @@ public interface AsistenciaService {
     void procesarAsistenciasPendientes(LocalDate fecha);
 
     void generarJornadaSemanal(Long idPracticante, LocalDate fechaInicio);
+
+    // ========== NUEVO: REGLAS RH ==========
+    // Justificar tardanza/ausencia (no altera hora real)
+    com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse justificarAsistencia(Long idAsistencia, String motivo, String observacion, String tipo);
+
+    // Permiso previo (fecha futura)
+    com.asistencia.attendance_system.model.entity.Justificacion registrarPermiso(Long idPracticante, LocalDate fecha, String motivo, String observacion, String tipoJustificacion);
+
+    // Corrección manual de entrada/salida por RH (recalcula estado)
+    com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse corregirAsistenciaManual(Long idPracticante, LocalDate fecha, String horaEntrada, String horaSalida, String observaciones);
+
+    // Historial reciente de marcaciones
+    List<com.asistencia.attendance_system.model.dto.MarcacionResponse> obtenerMarcacionesRecientes(int limite);
+
+    // Cierre diario: convierte SIN_MARCAR -> AUSENTE al finalizar jornada (excluye descansos y justificados)
+    int cerrarJornadaDelDia(LocalDate fecha);
 }

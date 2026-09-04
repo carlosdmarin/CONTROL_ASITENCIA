@@ -96,7 +96,6 @@ export default function PuestoTable({
                 <TableHead className="font-semibold">
                   Nombre del Area
                 </TableHead>
-                <TableHead className="font-semibold">Área</TableHead>
                 <TableHead className="font-semibold hidden md:table-cell">
                   Descripción
                 </TableHead>
@@ -152,14 +151,6 @@ export default function PuestoTable({
                     </TableCell>
                     <TableCell className="font-medium">
                       {puesto.nombrePuesto}
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      <Badge
-                        variant="outline"
-                        className="bg-blue-50 text-blue-700 border-blue-200"
-                      >
-                        {puesto.area}
-                      </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-gray-600">
                       {puesto.descripcion || "Sin descripción"}

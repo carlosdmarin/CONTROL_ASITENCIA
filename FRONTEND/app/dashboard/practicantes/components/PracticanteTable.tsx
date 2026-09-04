@@ -305,10 +305,10 @@ export function PracticanteTable({
                 </TableRow>
               ) : (
                 currentItems.map((practicante, index) => {
-                  const globalIndex = startIndex + index + 1;
+                  const globalIndex =  index + 1;
                   return (
                     <TableRow
-                      key={practicante.idPracticante}
+                    key={index}
                       className="hover:bg-slate-50 h-12"
                     >
                       <TableCell className="text-center text-sm text-gray-500">

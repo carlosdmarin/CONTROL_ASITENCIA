@@ -632,12 +632,12 @@ export function PracticanteCreateDialog({
             <div className="h-5 flex items-center gap-1 mt-0.5">
               {dniError ? (
                 <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                   <span className="text-xs text-red-600">{dniError}</span>
                 </>
               ) : formData.documento.length === 8 ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
                   <span className="text-xs text-green-600">DNI válido</span>
                 </>
               ) : (
@@ -672,14 +672,14 @@ export function PracticanteCreateDialog({
             <div className="h-5 flex items-center gap-1">
               {formData.nombre.length > 0 && formData.nombre.length < 2 ? (
                 <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                   <span className="text-xs text-red-600">
                     Mínimo 2 caracteres
                   </span>
                 </>
               ) : formData.nombre.length >= 2 ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 hrink-0" />
                   <span className="text-xs text-green-600">Nombre válido</span>
                 </>
               ) : (
@@ -714,14 +714,14 @@ export function PracticanteCreateDialog({
             <div className="h-5 flex items-center gap-1">
               {formData.apellido.length > 0 && formData.apellido.length < 2 ? (
                 <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                   <span className="text-xs text-red-600">
                     Mínimo 2 caracteres
                   </span>
                 </>
               ) : formData.apellido.length >= 2 ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
                   <span className="text-xs text-green-600">
                     Apellido válido
                   </span>
@@ -882,12 +882,12 @@ export function PracticanteCreateDialog({
             <div className="h-5 flex items-center gap-1">
               {emailError ? (
                 <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                   <span className="text-xs text-red-600">{emailError}</span>
                 </>
               ) : formData.correoElectronico.length > 0 && !emailError ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
                   <span className="text-xs text-green-600">Email válido</span>
                 </>
               ) : (
@@ -923,12 +923,12 @@ export function PracticanteCreateDialog({
             <div className="h-5 flex items-center gap-1">
               {telefonoError ? (
                 <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                   <span className="text-xs text-red-600">{telefonoError}</span>
                 </>
               ) : formData.telefono.length >= 9 ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
                   <span className="text-xs text-green-600">
                     Teléfono válido
                   </span>
@@ -1170,7 +1170,7 @@ export function PracticanteCreateDialog({
                 >
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2 min-w-[100px]">
+                      <div className="flex items-center gap-2 min-w-25">
                         <Switch
                           checked={diaData.activo}
                           onCheckedChange={(checked) =>
@@ -1186,7 +1186,7 @@ export function PracticanteCreateDialog({
                       </div>
 
                       {diaData.activo ? (
-                        <div className="flex items-center gap-2 flex-1 min-w-[260px] flex-wrap">
+                        <div className="flex items-center gap-2 flex-1 min-w-65 flex-wrap">
                           <div className="flex items-center gap-1.5">
                             <Clock className="h-3.5 w-3.5 text-gray-400" />
                             <Input
@@ -1248,16 +1248,35 @@ export function PracticanteCreateDialog({
 
   // ====== RENDER STEP 3: CONFIRMACIÓN ======
   const renderStep3 = () => {
-    const sedeNombre =
-      sedes.find((a) => a.idSede === formData.idSede)?.nombre || "—";
-    const cargoNombre =
-      cargos.find((c) => c.idCargo === formData.idCargo)?.nombre || "—";
-    const puestoNombre =
-      puestos.find((p) => p.idPuesto === formData.idPuesto)?.nombrePuesto ||
-      "—";
-    const tipoInstitutoNombre =
-      tiposInstituto.find((t) => t.idTipoInstituto === formData.idTipoInstituto)
-        ?.nombre || "—";
+    // Buscar los nombres de forma segura - SOLO CON formData
+    const sedeItem = sedes.find((a) => a.idSede === Number(formData.idSede));
+    const cargoItem = cargos.find(
+      (c) => c.idCargo === Number(formData.idCargo),
+    );
+    const puestoItem = puestos.find(
+      (p) => p.idPuesto === Number(formData.idPuesto),
+    );
+    const tipoItem = tiposInstituto.find(
+      (t) => t.idTipoInstituto === Number(formData.idTipoInstituto),
+    );
+
+    // Obtener nombres directamente de los items encontrados
+    const sedeFinal = sedeItem?.nombre || "—";
+    const cargoFinal = cargoItem?.nombre || "—";
+    const puestoFinal = puestoItem?.nombrePuesto || "—";
+    const tipoFinal = tipoItem?.nombre || "—";
+
+    // Debug para ver qué se está mostrando
+    console.log("📋 Step 3 - Mostrando:", {
+      sede: sedeFinal,
+      cargo: cargoFinal,
+      puesto: puestoFinal,
+      tipo: tipoFinal,
+      idSede: formData.idSede,
+      idCargo: formData.idCargo,
+      idPuesto: formData.idPuesto,
+      idTipo: formData.idTipoInstituto,
+    });
 
     return (
       <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
@@ -1290,13 +1309,13 @@ export function PracticanteCreateDialog({
           </h4>
           <div className="grid grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3">
             <span className="text-gray-500">Sede:</span>
-            <span className="font-medium">{sedeNombre}</span>
+            <span className="font-medium">{sedeFinal}</span>
             <span className="text-gray-500">Área:</span>
-            <span className="font-medium">{puestoNombre}</span>
+            <span className="font-medium">{puestoFinal}</span>
             <span className="text-gray-500">Cargo:</span>
-            <span className="font-medium">{cargoNombre}</span>
+            <span className="font-medium">{cargoFinal}</span>
             <span className="text-gray-500">Centro de Estudios:</span>
-            <span className="font-medium">{tipoInstitutoNombre}</span>
+            <span className="font-medium">{tipoFinal}</span>
             <span className="text-gray-500">Inicio:</span>
             <span className="font-medium">{formData.fechaInicioPracticas}</span>
             {formData.fechaFinPracticas && (
@@ -1348,8 +1367,18 @@ export function PracticanteCreateDialog({
     const isStep2Valid = validateStep2();
 
     return (
-      <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
-        <div className="flex gap-2 w-full">
+      <DialogFooter className="flex flex-col  sm:flex-row gap-160 pt-4 border-t">
+        {currentStep === 1 && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="flex-1 sm:flex-none text-gray-500"
+          >
+            Cancelar
+          </Button>
+        )}
+        <div className="flex flex-col sm:flex-row gap-141">
           {currentStep > 1 && (
             <Button
               type="button"
@@ -1359,18 +1388,6 @@ export function PracticanteCreateDialog({
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Atrás
-            </Button>
-          )}
-
-          {currentStep < 3 && (
-            <Button
-              type="button"
-              onClick={goToNextStep}
-              className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 ${!isStep1Valid || !isStep2Valid ? "opacity-50 cursor-not-allowed" : ""}`}
-              disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
-            >
-              Continuar
-              <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           )}
 
@@ -1385,15 +1402,15 @@ export function PracticanteCreateDialog({
             </Button>
           )}
         </div>
-
-        {currentStep === 1 && (
+        {currentStep < 3 && (
           <Button
             type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="flex-1 sm:flex-none text-gray-500"
+            onClick={goToNextStep}
+            className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 ${(currentStep === 1 ? !isStep1Valid : !isStep2Valid) ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
           >
-            Cancelar
+            Continuar
+            <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         )}
       </DialogFooter>
@@ -1403,8 +1420,8 @@ export function PracticanteCreateDialog({
   // ====== MAIN RENDER ======
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-4xl !w-full max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 flex-shrink-0">
+      <DialogContent className="max-w-4xl! w-full! max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2 shrink-0">
           <div className="flex items-center gap-2">
             <UserPlus className="h-6 w-6 text-blue-700" />
             <DialogTitle className="text-xl">Agregar practicante</DialogTitle>
@@ -1429,7 +1446,7 @@ export function PracticanteCreateDialog({
           </div>
         </div>
 
-        <div className="p-6 pt-2 flex-shrink-0">{renderFooter()}</div>
+        <div className="p-6 pt-2 shrink-0">{renderFooter()}</div>
       </DialogContent>
     </Dialog>
   );

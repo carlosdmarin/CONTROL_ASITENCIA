@@ -25,7 +25,7 @@ interface QRScannerResultProps {
   marcacionStatus?: {
     success: boolean;
     message: string;
-    tipo?: 'ENTRADA' | 'SALIDA' | 'DESCANSO' | 'YA_REGISTRADO' | 'ERROR';
+    tipo?: 'ENTRADA' | 'SALIDA' | 'DESCANSO' | 'YA_REGISTRADO' | 'JORNADA_FINALIZADA' | 'ERROR';
   } | null;
 }
 
@@ -53,7 +53,8 @@ export default function QRScannerResult({
 
   const isDescanso = marcacionStatus?.tipo === 'DESCANSO';
   const isYaRegistrado = marcacionStatus?.tipo === 'YA_REGISTRADO';
-  const isError = marcacionStatus?.tipo === 'ERROR' || (!marcacionStatus?.success && marcacionStatus !== null);
+  const isJornadaFinalizada = marcacionStatus?.tipo === 'JORNADA_FINALIZADA';
+  const isError = marcacionStatus?.tipo === 'ERROR' || (!marcacionStatus?.success && marcacionStatus !== null && !isDescanso && !isYaRegistrado && !isJornadaFinalizada);
   const isSuccess = marcacionStatus?.success === true;
   const isEntrada = isSuccess && marcacionStatus?.tipo === 'ENTRADA';
   const isSalida = isSuccess && marcacionStatus?.tipo === 'SALIDA';
@@ -227,6 +228,31 @@ export default function QRScannerResult({
     );
   }
 
+  // ===== CARD: JORNADA FINALIZADA =====
+  if (isJornadaFinalizada) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+        <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl overflow-hidden">
+          <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600">
+            <AlertTriangle className="h-5 w-5 text-white" />
+            <span className="text-white font-semibold text-sm"> Jornada finalizada</span>
+            <AlertTriangle className="h-5 w-5 text-white" />
+          </div>
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
+              <Clock className="h-8 w-8 text-red-600" />
+            </div>
+            <CardTitle className="text-lg text-red-700">No se puede registrar entrada</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center pb-6 space-y-3">
+            <p className="text-sm text-slate-600">{marcacionStatus?.message || "La jornada de ingreso ya terminó. No es posible registrar una entrada para esta jornada."}</p>
+            <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>Entendido</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // ===== CARD: YA REGISTRÓ ENTRADA Y SALIDA =====
   if (isYaRegistrado) {
     return (
@@ -371,7 +397,7 @@ export default function QRScannerResult({
         <div className={`px-6 py-3 flex items-center justify-center gap-2 ${isInactive ? 'bg-amber-500' : 'bg-gradient-to-r from-green-500 to-green-600'}`}>
           <Sparkles className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">
-            {isInactive ? "Practicante inactivo" : isEntrada ? " Entrada registrada" : isSalida ? "✅ Salida registrada" : "¡Marcación exitosa!"}
+            {isInactive ? "Practicante inactivo" : isEntrada ? "Entrada registrada" : isSalida ? "✅ Salida registrada" : "¡Marcación exitosa!"}
           </span>
           <Sparkles className="h-5 w-5 text-white" />
         </div>
@@ -438,7 +464,7 @@ export default function QRScannerResult({
             <Button variant="outline" className="flex-1" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>
               Cerrar
             </Button>
-            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>
+            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => { setVisible(false); setTimeout(onClose, 600); }}>
               Escanear otro
             </Button>
           </div>

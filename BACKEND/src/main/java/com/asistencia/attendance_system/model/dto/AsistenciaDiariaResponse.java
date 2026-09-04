@@ -16,7 +16,7 @@ public class AsistenciaDiariaResponse {
     private Long idPracticante;
     private String nombreCompleto;
     private LocalDate fecha;
-    private String estadoDia; // PRESENTE, TARDE, FALTA, CLASES, DESCANSO, JUSTIFICADO, MIXTO
+    private String estadoDia; // SIN_MARCAR, PRESENTE, TARDANZA, AUSENTE, DESCANSO, JUSTIFICADO (canónicos)
     private BigDecimal horasTrabajadas;
     private Integer minutosTardanza;
     private LocalTime entradaEsperada;
@@ -24,4 +24,11 @@ public class AsistenciaDiariaResponse {
     private LocalTime entradaReal;
     private LocalTime salidaReal;
     private String observaciones;
+    // Justificación separada del estado
+    private Boolean justificado;
+    private String justificacionMotivo;
+    private String justificacionObservacion;
+    private String justificacionTipo;
+    private String justificacionFecha;
+    private String estadoVisual; // PRESENTE, TARDANZA, TARDANZA_JUSTIFICADA, AUSENTE, INASISTENCIA_JUSTIFICADA, SIN_MARCAR, DESCANSO
 }

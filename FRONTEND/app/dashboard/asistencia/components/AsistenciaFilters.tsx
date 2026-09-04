@@ -56,10 +56,9 @@ export default function AsistenciaFilters({
               <SelectItem value="presente">✅ Presente</SelectItem>
               <SelectItem value="tardanza">⏰ Tardanza</SelectItem>
               <SelectItem value="ausente">❌ Ausente</SelectItem>
-              <SelectItem value="clases">📚 Clases</SelectItem>
+              <SelectItem value="sin_marcar">🕐 Sin marcar</SelectItem>
               <SelectItem value="descanso">🛌 Descanso</SelectItem>
               <SelectItem value="justificado">📝 Justificado</SelectItem>
-              <SelectItem value="mixto">🔀 Mixto</SelectItem>
             </SelectContent>
           </Select>
         )}

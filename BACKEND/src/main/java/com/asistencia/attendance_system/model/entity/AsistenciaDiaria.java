@@ -30,7 +30,7 @@ public class AsistenciaDiaria {
     private LocalDate fecha;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_dia", nullable = false)
+    @Column(name = "estado_dia", nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
     private EstadoDia estadoDia;
 
     @Column(name = "horas_trabajadas", columnDefinition = "DECIMAL(5,2)")
@@ -53,6 +53,22 @@ public class AsistenciaDiaria {
 
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
+
+    // ========== JUSTIFICACIÓN (separada del estado) ==========
+    @Column(name = "justificado")
+    private Boolean justificado = false;
+
+    @Column(name = "justificacion_motivo", columnDefinition = "TEXT")
+    private String justificacionMotivo;
+
+    @Column(name = "justificacion_observacion", columnDefinition = "TEXT")
+    private String justificacionObservacion;
+
+    @Column(name = "justificacion_fecha")
+    private LocalDateTime justificacionFecha;
+
+    @Column(name = "justificacion_tipo", length = 30)
+    private String justificacionTipo; // TARDANZA | INASISTENCIA | PERMISO
 
     @Column(name = "fecha_calculo", nullable = false, updatable = false)
     private LocalDateTime fechaCalculo;

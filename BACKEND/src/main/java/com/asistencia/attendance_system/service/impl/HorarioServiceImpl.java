@@ -114,8 +114,16 @@ public class HorarioServiceImpl implements HorarioService {
         if (dia == null) return false;
         List<BloqueHorario> bloques = bloqueHorarioRepository
                 .findByPracticanteIdPracticanteAndDiaSemanaAndActivoTrue(idPracticante, dia);
-        // Si no hay bloque TRABAJO activo ese día, es descanso
-        return bloques.stream().anyMatch(b -> b.getTipoBloque() == TipoBloque.TRABAJO);
+        return bloques.stream().anyMatch(b -> b.getTipoBloque() != null && b.getTipoBloque().esLaborable());
+    }
+
+    @Override
+    public java.util.Optional<com.asistencia.attendance_system.model.entity.BloqueHorario> obtenerBloqueDelDia(Long idPracticante, LocalDate fecha) {
+        DiaSemana dia = mapToDiaSemana(fecha);
+        if (dia == null) return java.util.Optional.empty();
+        List<BloqueHorario> bloques = bloqueHorarioRepository
+                .findByPracticanteIdPracticanteAndDiaSemanaAndActivoTrue(idPracticante, dia);
+        return bloques.stream().filter(b -> b.getTipoBloque() != null && b.getTipoBloque().esLaborable()).findFirst();
     }
 
     @Override
@@ -127,7 +135,7 @@ public class HorarioServiceImpl implements HorarioService {
             List<BloqueHorario> bloques = bloqueHorarioRepository
                     .findByPracticanteIdPracticanteAndDiaSemanaAndActivoTrue(idPracticante, dia);
             return bloques.stream()
-                    .filter(b -> b.getTipoBloque() == TipoBloque.TRABAJO)
+                    .filter(b -> b.getTipoBloque() != null && b.getTipoBloque().esLaborable())
                     .anyMatch(b -> !horaActual.isBefore(b.getHoraInicio()) && !horaActual.isAfter(b.getHoraFin()));
         } catch (Exception e) {
             log.warn("Error al validar horario para practicante {}: {}", idPracticante, e.getMessage());

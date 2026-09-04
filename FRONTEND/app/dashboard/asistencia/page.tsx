@@ -7,10 +7,20 @@ import AsistenciaStats from "./components/AsistenciaStats";
 import AsistenciaFilters from "./components/AsistenciaFilters";
 import AsistenciaTable from "./components/AsistenciaTable";
 import { asistenciasApi } from "@/lib/api/asistencias";
-import { AsistenciaDiaria, AsistenciaDiariaResponse } from "@/types/asistencia";
+import { practicantesApi } from "@/lib/api/practicantes";
+import { AsistenciaDiaria, AsistenciaDiariaResponse, normalizeEstadoDia, isTardanza, isAusente } from "@/types/asistencia";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function formatFechaISO(date: Date): string {
-  return date.toISOString().split("T")[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function formatHoras(horas: number | null | undefined): string | null {
@@ -20,22 +30,17 @@ function formatHoras(horas: number | null | undefined): string | null {
   return `${h}h ${m}m`;
 }
 
-// ====== MAPEO DE ESTADOS - cubre los 7 valores documentados en AsistenciaDiariaResponse.java ======
-// Propuesta si CLASES/MIXTO no tienen semántica distinta confirmada:
-// - CLASES: día con clases académicas programadas (similar a DESCANSO pero con connotación formativa) → badge azul claro
-// - MIXTO: día con bloques TRABAJO + CLASES → badge violeta
-// Si en tu negocio CLASES debe contar como PRESENTE o MIXTO como EN_JORNADA, ajusta aquí.
 function mapEstado(estadoDia: AsistenciaDiariaResponse["estadoDia"]): AsistenciaDiaria["estado"] {
   switch (estadoDia) {
+    case "SIN_MARCAR": return "SIN_MARCAR";
     case "PRESENTE": return "PRESENTE";
-    case "TARDE": return "TARDANZA";
-    case "FALTA": return "AUSENTE";
-    case "CLASES": return "CLASES";
+    case "TARDE":
+    case "TARDANZA": return "TARDANZA";
+    case "FALTA":
+    case "AUSENTE": return "AUSENTE";
     case "DESCANSO": return "DESCANSO";
     case "JUSTIFICADO": return "JUSTIFICADO";
-    case "MIXTO": return "MIXTO";
     default: {
-      // Exhaustiveness check: si añades un nuevo estado en Java y no lo mapeas, TypeScript avisará aquí
       const _exhaustiveCheck: never = estadoDia;
       void _exhaustiveCheck;
       return "AUSENTE";
@@ -56,6 +61,13 @@ export default function AsistenciaPage() {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [permisoOpen, setPermisoOpen] = useState(false);
+  const [permisoFecha, setPermisoFecha] = useState(formatFechaISO(new Date()));
+  const [permisoMotivo, setPermisoMotivo] = useState("");
+  const [permisoObs, setPermisoObs] = useState("");
+  const [permisoTipo, setPermisoTipo] = useState("PERSONAL");
+  const [permisoPracticante, setPermisoPracticante] = useState("");
+  const [practicantes, setPracticantes] = useState<any[]>([]);
 
   const fechaISO = formatFechaISO(fecha);
 
@@ -63,22 +75,15 @@ export default function AsistenciaPage() {
     try {
       setLoading(true);
       const data = await asistenciasApi.getAsistenciasDelDia(fechaISO).catch(() => [] as AsistenciaDiariaResponse[]);
-      
       const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data) ? data : [];
       setAsistencias(dataArray);
-      
-      // TODO: Si se quiere evitar el cálculo manual en el cliente, crear endpoint backend
-      // GET /asistencias/resumen/dia-agregado?fecha=YYYY-MM-DD que devuelva
-      // {total, presentes, tardanzas, ausentes, descansos} ya agregado.
-      // Por ahora se calcula en cliente porque ResumenAsistenciaDTO.java es semanal por practicante, no agregado diario.
       const total = dataArray.length;
-      const presentes = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "PRESENTE").length;
-      const tardanzas = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "TARDE").length;
-      const descansos = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "DESCANSO").length;
-      const ausentes = dataArray.filter((a: AsistenciaDiariaResponse) => a.estadoDia === "FALTA").length;
-      
+      const presentes = dataArray.filter((a) => a.estadoDia === "PRESENTE" || isTardanza(a.estadoDia)).length;
+      const tardanzas = dataArray.filter((a) => isTardanza(a.estadoDia)).length;
+      const descansos = dataArray.filter((a) => a.estadoDia === "DESCANSO").length;
+      const ausentes = dataArray.filter((a) => isAusente(a.estadoDia)).length;
+      // también contar SIN_MARCAR separado pero para resumen lo agrupamos
       setResumen({ total, presentes, tardanzas, ausentes, descansos });
-      
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Error al cargar asistencias";
       toast.error(msg);
@@ -93,28 +98,61 @@ export default function AsistenciaPage() {
 
   const handlePrev = () => setFecha((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; });
   const handleNext = () => setFecha((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; });
-  const handleFechaChange = (iso: string) => setFecha(new Date(iso + "T12:00:00"));
+  const handleFechaChange = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    setFecha(new Date(y, m - 1, d));
+  };
 
-  // Mapear backend -> UI para tabla (sin area/sede, AsistenciaDiariaResponse no lo trae)
+  // Mapear backend -> UI para tabla
   const asistenciasUI = useMemo(() => {
     return asistencias.map((a) => ({
       id: a.idAsistencia || a.idPracticante,
       practicante: a.nombreCompleto,
-      entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : (a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : null),
-      salida: a.salidaReal ? a.salidaReal.substring(0, 5) : (a.salidaEsperada ? a.salidaEsperada.substring(0, 5) : null),
+      entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : null,
+      salida: a.salidaReal ? a.salidaReal.substring(0, 5) : null,
       horas: formatHoras(a.horasTrabajadas),
       estado: mapEstado(a.estadoDia),
     }));
   }, [asistencias]);
 
   // Filtros en memoria (sin filtro por área)
-  const filtradas = useMemo(() => {
-    return asistenciasUI.filter((a) => {
+  const filtradasIndices = useMemo(() => {
+    return asistenciasUI.map((a, idx) => ({...a, _idx: idx})).filter((a) => {
       const matchBusqueda = !busqueda || a.practicante.toLowerCase().includes(busqueda.toLowerCase());
-      const matchEstado = filtroEstado === "todos" || a.estado.toLowerCase() === filtroEstado;
+      const matchEstado = filtroEstado === "todos" || a.estado.toLowerCase() === filtroEstado.toLowerCase();
       return matchBusqueda && matchEstado;
     });
   }, [asistenciasUI, busqueda, filtroEstado]);
+
+  const filtradas = filtradasIndices;
+  const filtradasRaw = filtradasIndices.map(f => asistencias[f._idx]);
+
+  const handleCerrarJornada = async () => {
+    try {
+      const res = await asistenciasApi.cerrarJornada(fechaISO);
+      toast.success(res.message || "Jornada cerrada");
+      cargarDatos();
+    } catch(e:any){ toast.error(e.message); }
+  };
+
+  const openPermiso = async () => {
+    setPermisoOpen(true);
+    try {
+      const list = await practicantesApi.getActivos();
+      setPracticantes(list);
+    } catch {}
+  };
+  const handlePermiso = async () => {
+    if (!permisoPracticante) { toast.error("Seleccione practicante"); return; }
+    if (!permisoMotivo.trim()) { toast.error("Motivo obligatorio"); return; }
+    try {
+      await asistenciasApi.registrarPermiso(Number(permisoPracticante), permisoFecha, permisoMotivo, permisoObs, permisoTipo);
+      toast.success("Permiso registrado. No se generará AUSENTE ese día.");
+      setPermisoOpen(false);
+      setPermisoMotivo(""); setPermisoObs("");
+      cargarDatos();
+    } catch(e:any){ toast.error(e.message); }
+  };
 
   return (
     <div className="space-y-6">
@@ -127,6 +165,10 @@ export default function AsistenciaPage() {
       />
 
       <AsistenciaStats resumen={resumen} loading={loading} />
+      <div className="flex justify-end gap-2">
+        <button onClick={openPermiso} className="text-xs border rounded px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700">Registrar permiso previo</button>
+
+      </div>
 
       <AsistenciaFilters
         busqueda={busqueda}
@@ -136,7 +178,55 @@ export default function AsistenciaPage() {
         loading={loading}
       />
 
-      <AsistenciaTable asistencias={filtradas} loading={loading} />
+      <AsistenciaTable asistencias={filtradas.map(({_idx, ...rest})=>rest)} rawData={filtradasRaw} loading={loading} onRefresh={cargarDatos} />
+
+      <Dialog open={permisoOpen} onOpenChange={setPermisoOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar permiso previo</DialogTitle>
+            <DialogDescription>Autoriza inasistencia antes de la fecha. Ese día no se generará AUSENTE.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Practicante</Label>
+              <Select value={permisoPracticante} onValueChange={(v:any)=>setPermisoPracticante(v)}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                <SelectContent>
+                  {practicantes.map((p:any)=> <SelectItem key={p.idPracticante} value={String(p.idPracticante)}>{p.nombreCompleto || p.nombre+" "+p.apellido} - {p.documento}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Fecha</Label>
+              <Input type="date" value={permisoFecha} onChange={e=>setPermisoFecha(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Tipo</Label>
+              <Select value={permisoTipo} onValueChange={(v:any)=>setPermisoTipo(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PERSONAL">Personal</SelectItem>
+                  <SelectItem value="MEDICO">Médico</SelectItem>
+                  <SelectItem value="ACADEMICO">Académico</SelectItem>
+                  <SelectItem value="OTRO">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Motivo *</Label>
+              <Input value={permisoMotivo} onChange={e=>setPermisoMotivo(e.target.value)} placeholder="Ej: Permiso personal" />
+            </div>
+            <div className="space-y-1">
+              <Label>Observación</Label>
+              <Textarea value={permisoObs} onChange={e=>setPermisoObs(e.target.value)} rows={2} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={()=>setPermisoOpen(false)}>Cancelar</Button>
+              <Button onClick={handlePermiso}>Guardar permiso</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

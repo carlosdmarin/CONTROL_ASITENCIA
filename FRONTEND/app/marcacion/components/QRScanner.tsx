@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Camera } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 
 interface QRScannerProps {
@@ -10,11 +11,11 @@ interface QRScannerProps {
   isResultVisible?: boolean;
 }
 
-export default function QRScanner({ 
-  onScan, 
-  onError, 
+export default function QRScanner({
+  onScan,
+  onError,
   isActive,
-  isResultVisible = false
+  isResultVisible = false,
 }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -71,12 +72,21 @@ export default function QRScanner({
             // Si es JSON {"documento":"70000001"} o {"dni":"..."} intentar parsear
             try {
               const obj = JSON.parse(decodedText);
-              documento = obj.documento || obj.dni || obj.codigo || obj.documentoPracticante || decodedText;
+              documento =
+                obj.documento ||
+                obj.dni ||
+                obj.codigo ||
+                obj.documentoPracticante ||
+                decodedText;
             } catch {
               // Si es URL con ?doc= o ?codigo=, extraer param
               try {
                 const url = new URL(decodedText);
-                documento = url.searchParams.get("documento") || url.searchParams.get("dni") || url.searchParams.get("codigo") || decodedText;
+                documento =
+                  url.searchParams.get("documento") ||
+                  url.searchParams.get("dni") ||
+                  url.searchParams.get("codigo") ||
+                  decodedText;
               } catch {
                 // texto plano, usar tal cual
               }
@@ -89,16 +99,15 @@ export default function QRScanner({
           },
           () => {
             // error de frame, ignorar (no hay QR en este frame)
-          }
+          },
         );
 
         if (mounted) setIsCameraReady(true);
       } catch (error: any) {
         console.error("❌ ERROR COMPLETO AL INICIAR CÁMARA:", error);
 
-         const msg = error?.message || String(error);
-         onError(`Error de cámara: ${msg}`);
-       
+        const msg = error?.message || String(error);
+        onError(`Error de cámara: ${msg}`);
       }
     };
 
@@ -132,7 +141,10 @@ export default function QRScanner({
         </div>
         <div className="absolute bottom-6 left-0 right-0 text-center">
           <span className="inline-block bg-black/60 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-lg">
-            {isCameraReady ? "📷 Coloca el QR dentro del recuadro" : "⏳ Iniciando cámara..."}
+            <div className="flex items-center gap-2">
+              <Camera className="h-4 w-4 text-blue-500"></Camera>
+              <span>Coloca el QR dentro del recuadro</span>
+            </div>
           </span>
         </div>
         {isCameraReady && !isResultVisible && (
@@ -144,7 +156,8 @@ export default function QRScanner({
       {!isCameraReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4">
           <p className="text-white text-xs text-center">
-            Si la cámara no inicia, asegúrate de usar <b>https://</b> o <b>localhost</b> y dar permiso de cámara.
+            Si la cámara no inicia, asegúrate de usar <b>https://</b> o{" "}
+            <b>localhost</b> y dar permiso de cámara.
           </p>
         </div>
       )}

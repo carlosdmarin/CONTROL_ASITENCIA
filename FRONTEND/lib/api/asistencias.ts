@@ -76,4 +76,49 @@ export const asistenciasApi = {
       throw new Error(handleApiError(error));
     }
   },
+
+  getMarcacionesRecientes: async (limite = 20): Promise<any[]> => {
+    try {
+      const response = await api.get(`/asistencias/marcaciones/recientes?limite=${limite}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  justificar: async (idAsistencia: number, motivo: string, observacion: string, tipo: string): Promise<AsistenciaDiariaResponse> => {
+    try {
+      const response = await api.post(`/asistencias/justificar/${idAsistencia}`, { motivo, observacion, tipo });
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  registrarPermiso: async (idPracticante: number, fecha: string, motivo: string, observacion: string, tipo: string): Promise<any> => {
+    try {
+      const response = await api.post(`/asistencias/permiso`, { idPracticante: idPracticante.toString(), fecha, motivo, observacion, tipo });
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  corregirManual: async (idPracticante: number, fecha: string, horaEntrada: string | null, horaSalida: string | null, observaciones?: string): Promise<AsistenciaDiariaResponse> => {
+    try {
+      const response = await api.put(`/asistencias/corregir/${idPracticante}`, { fecha, horaEntrada, horaSalida, observaciones });
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  cerrarJornada: async (fecha: string): Promise<any> => {
+    try {
+      const response = await api.post(`/asistencias/cerrar-jornada?fecha=${fecha}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
 };

@@ -37,4 +37,17 @@ public interface HorarioService {
      * Verifica si el practicante debe estar en empresa a esa hora
      */
     boolean debeEstarEnEmpresa(Long idPracticante, LocalDate fecha, String hora);
+
+    /**
+     * Obtiene el bloque TRABAJO del día (entrada/salida esperada). Vacío si es descanso.
+     */
+    java.util.Optional<com.asistencia.attendance_system.model.entity.BloqueHorario> obtenerBloqueDelDia(Long idPracticante, LocalDate fecha);
+
+    /**
+     * Obtiene horario esperado (entrada, salida) para fecha dada.
+     */
+    default java.util.Optional<java.time.LocalTime[]> obtenerHorarioDelDia(Long idPracticante, LocalDate fecha) {
+        return obtenerBloqueDelDia(idPracticante, fecha)
+                .map(b -> new java.time.LocalTime[]{b.getHoraInicio(), b.getHoraFin()});
+    }
 }
