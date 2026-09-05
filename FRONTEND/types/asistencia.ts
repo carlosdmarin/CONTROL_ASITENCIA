@@ -5,6 +5,7 @@ export type AsistenciaDiaria = {
   salida: string | null;
   horas: string | null;
   estado: 'SIN_MARCAR' | 'PRESENTE' | 'TARDE' | 'TARDANZA' | 'FALTA' | 'AUSENTE' | 'DESCANSO' | 'JUSTIFICADO';
+  situacion?: string | null;
 };
 
 // DTO real del backend - espejo de AsistenciaDiariaResponse.java
@@ -26,7 +27,11 @@ export type AsistenciaDiariaResponse = {
   justificacionObservacion?: string | null;
   justificacionTipo?: string | null;
   justificacionFecha?: string | null;
-  estadoVisual?: string | null; // PRESENTE, TARDANZA, TARDANZA_JUSTIFICADA, AUSENTE, INASISTENCIA_JUSTIFICADA, SIN_MARCAR, DESCANSO, JUSTIFICADO
+  estadoVisual?: string | null; // DEPRECADO: usar situacion
+  situacion?: string | null; // NINGUNA, TARDANZA_JUSTIFICADA, SALIDA_ANTICIPADA_JUSTIFICADA, INASISTENCIA_JUSTIFICADA
+  situaciones?: string[] | null; // Múltiples situaciones
+  situacionesDetalle?: any[] | null;
+  horaSalidaAnticipadaAutorizada?: string | null;
 };
 
 // Espejo de ResumenAsistenciaDTO.java (semanal por practicante, usado por getResumenDiario actualmente descartado)
@@ -62,6 +67,7 @@ export type ResumenAsistencia = {
 export function normalizeEstadoDia(estado: string): string {
   if (estado === "TARDE") return "TARDANZA";
   if (estado === "FALTA") return "AUSENTE";
+  if (estado === "JUSTIFICADO") return "AUSENTE"; // legacy JUSTIFICADO → AUSENTE para columna Estado
   return estado;
 }
 export function isTardanza(estado: string): boolean {
@@ -69,4 +75,11 @@ export function isTardanza(estado: string): boolean {
 }
 export function isAusente(estado: string): boolean {
   return normalizeEstadoDia(estado) === "AUSENTE";
+}
+export function getSituacionLabel(situacion?: string | null): string {
+  if (!situacion || situacion === "NINGUNA") return "Ninguna";
+  if (situacion === "TARDANZA_JUSTIFICADA") return "Tardanza justificada";
+  if (situacion === "SALIDA_ANTICIPADA_JUSTIFICADA") return "Salida anticipada justificada";
+  if (situacion === "INASISTENCIA_JUSTIFICADA") return "Inasistencia justificada";
+  return situacion;
 }

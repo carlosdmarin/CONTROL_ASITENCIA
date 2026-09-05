@@ -116,9 +116,9 @@ export function PracticanteQRDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md justify-center">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 ">
             <QrCode className="h-5 w-5" />
             Carnet de {practicante.nombreCompleto}
           </DialogTitle>
@@ -131,11 +131,11 @@ export function PracticanteQRDialog({
           style={{ borderRadius: "16px" }}
         >
           {/* ENCABEZADO */}
-          <div className="relative flex items-center bg-[#0A2F6B] px-6 py-5">
+          <div className="relative flex items-center bg-[#0A2F6B] px-2 py-3">
             <img
-              src="/images/LOGO_OLAMSA.png"
+              src="/images/LOGO-C2.png"
               alt="OLAMSA"
-              className="h-18 w-auto"
+              className="h-25 w-auto"
               onError={(e) => {
                 e.currentTarget.src =
                   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='40'%3E%3Ctext x='0' y='30' font-family='Arial' font-size='24' fill='white' font-weight='bold'%3EOLAMSA%3C/text%3E%3C/svg%3E";
@@ -143,7 +143,7 @@ export function PracticanteQRDialog({
             />
 
             <div className="mt-1 ml-2">
-              <p className="text-sm font-medium tracking-widest text-orange-400">
+              <p className="text-sm font-medium tracking-widest text-orange-600">
                 SISTEMA DE ASISTENCIA
               </p>
               <h2 className="mt-1 text-2xl font-bold text-white">
@@ -255,7 +255,7 @@ export function PracticanteQRDialog({
           {/* PIE */}
           <div className="bg-[#0A2F6B] px-6 py-4 text-center">
             <p className="text-xs font-medium text-white">Somos una gran familia sostenible</p>
-            <p className="text-xs font-medium text-orange-400">
+            <p className="text-xs font-medium text-orange-600">
               de palmicultores de Ucayali
             </p>
           </div>

@@ -219,12 +219,21 @@ public class AsistenciaController {
             String motivo = body.get("motivo");
             String observacion = body.get("observacion");
             String tipo = body.getOrDefault("tipo", "OTRO");
+            String horaSalidaAnticipada = body.get("horaSalidaAnticipada");
+            if (horaSalidaAnticipada == null) horaSalidaAnticipada = body.get("horaSalida");
             if (motivo == null || motivo.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("message", "El motivo es obligatorio"));
             }
-            AsistenciaDiariaResponse resp = asistenciaService.justificarAsistencia(idAsistencia, motivo, observacion, tipo);
+            AsistenciaDiariaResponse resp = asistenciaService.justificarAsistencia(idAsistencia, motivo, observacion, tipo, horaSalidaAnticipada);
             return ResponseEntity.ok(resp);
         } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            if (msg.contains("no encontrada") || msg.contains("no encontrado")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+            }
+            if (msg.contains("ya tiene una justificación")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }
@@ -261,6 +270,13 @@ public class AsistenciaController {
             AsistenciaDiariaResponse resp = asistenciaService.corregirAsistenciaManual(idPracticante, fecha, horaEntrada, horaSalida, observaciones);
             return ResponseEntity.ok(resp);
         } catch (RuntimeException e) {
+            String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            if (msg.contains("no encontrada") || msg.contains("no encontrado") || msg.contains("practicante no encontrado")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+            }
+            if (msg.contains("ya tiene una justificación") || msg.contains("no se puede editar una asistencia justificada")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }
     }

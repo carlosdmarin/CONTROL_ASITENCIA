@@ -1,14 +1,19 @@
 package com.asistencia.attendance_system.model.entity;
 
 import com.asistencia.attendance_system.model.enums.EstadoDia;
+import com.asistencia.attendance_system.model.enums.SituacionAsistencia;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "Asistencia_Diaria")
@@ -68,7 +73,17 @@ public class AsistenciaDiaria {
     private LocalDateTime justificacionFecha;
 
     @Column(name = "justificacion_tipo", length = 30)
-    private String justificacionTipo; // TARDANZA | INASISTENCIA | PERMISO
+    private String justificacionTipo; // TARDANZA | INASISTENCIA | PERMISO | SALIDA_ANTICIPADA
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "situacion", length = 35)
+    private SituacionAsistencia situacion = SituacionAsistencia.NINGUNA;
+
+    // Múltiples situaciones justificadas por asistencia (nuevo)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "asistencia", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<AsistenciaSituacion> situacionesDetalle = new HashSet<>();
 
     @Column(name = "fecha_calculo", nullable = false, updatable = false)
     private LocalDateTime fechaCalculo;

@@ -30,5 +30,9 @@ public class AsistenciaDiariaResponse {
     private String justificacionObservacion;
     private String justificacionTipo;
     private String justificacionFecha;
-    private String estadoVisual; // PRESENTE, TARDANZA, TARDANZA_JUSTIFICADA, AUSENTE, INASISTENCIA_JUSTIFICADA, SIN_MARCAR, DESCANSO
+    private String estadoVisual; // DEPRECADO: usar situacion. Se mantiene para compatibilidad
+    private String situacion; // NINGUNA, TARDANZA_JUSTIFICADA, SALIDA_ANTICIPADA_JUSTIFICADA, INASISTENCIA_JUSTIFICADA (compat, primer valor)
+    private java.util.Set<String> situaciones; // Múltiples situaciones
+    private java.time.LocalTime horaSalidaAnticipadaAutorizada;
+    private java.util.List<SituacionDetalleDTO> situacionesDetalle;
 }

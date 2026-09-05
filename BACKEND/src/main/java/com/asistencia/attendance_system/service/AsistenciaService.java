@@ -76,7 +76,10 @@ public interface AsistenciaService {
 
     // ========== NUEVO: REGLAS RH ==========
     // Justificar tardanza/ausencia (no altera hora real)
-    com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse justificarAsistencia(Long idAsistencia, String motivo, String observacion, String tipo);
+    default com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse justificarAsistencia(Long idAsistencia, String motivo, String observacion, String tipo) {
+        return justificarAsistencia(idAsistencia, motivo, observacion, tipo, null);
+    }
+    com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse justificarAsistencia(Long idAsistencia, String motivo, String observacion, String tipo, String horaSalidaAnticipada);
 
     // Permiso previo (fecha futura)
     com.asistencia.attendance_system.model.entity.Justificacion registrarPermiso(Long idPracticante, LocalDate fecha, String motivo, String observacion, String tipoJustificacion);

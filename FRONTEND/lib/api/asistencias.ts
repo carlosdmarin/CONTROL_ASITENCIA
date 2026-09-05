@@ -86,9 +86,11 @@ export const asistenciasApi = {
     }
   },
 
-  justificar: async (idAsistencia: number, motivo: string, observacion: string, tipo: string): Promise<AsistenciaDiariaResponse> => {
+  justificar: async (idAsistencia: number, motivo: string, observacion: string, tipo: string, horaSalidaAnticipada?: string | null): Promise<AsistenciaDiariaResponse> => {
     try {
-      const response = await api.post(`/asistencias/justificar/${idAsistencia}`, { motivo, observacion, tipo });
+      const body: any = { motivo, observacion, tipo };
+      if (horaSalidaAnticipada) body.horaSalidaAnticipada = horaSalidaAnticipada;
+      const response = await api.post(`/asistencias/justificar/${idAsistencia}`, body);
       return response.data;
     } catch (error) {
       throw new Error(handleApiError(error));

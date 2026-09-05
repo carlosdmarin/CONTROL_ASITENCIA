@@ -5,6 +5,7 @@ import com.asistencia.attendance_system.model.dto.MarcacionRequest;
 import com.asistencia.attendance_system.model.dto.MarcacionResponse;
 import com.asistencia.attendance_system.model.dto.ResumenAsistenciaDTO;
 import com.asistencia.attendance_system.model.entity.AsistenciaDiaria;
+import com.asistencia.attendance_system.model.entity.AsistenciaSituacion;
 import com.asistencia.attendance_system.model.entity.BloqueHorario;
 import com.asistencia.attendance_system.model.entity.Justificacion;
 import com.asistencia.attendance_system.model.entity.Marcacion;
@@ -13,10 +14,12 @@ import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.enums.Agencia;
 import com.asistencia.attendance_system.model.enums.EstadoDia;
 import com.asistencia.attendance_system.model.enums.EstadoJustificacion;
+import com.asistencia.attendance_system.model.enums.SituacionAsistencia;
 import com.asistencia.attendance_system.model.enums.MetodoRegistro;
 import com.asistencia.attendance_system.model.enums.TipoJustificacion;
 import com.asistencia.attendance_system.model.enums.TipoMarcacion;
 import com.asistencia.attendance_system.repository.AsistenciaDiariaRepository;
+import com.asistencia.attendance_system.repository.AsistenciaSituacionRepository;
 import com.asistencia.attendance_system.repository.JustificacionRepository;
 import com.asistencia.attendance_system.repository.MarcacionRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
@@ -56,6 +59,7 @@ public class AsistenciaServiceImpl implements AsistenciaService {
     private final HorarioService horarioService;
     private final JustificacionRepository justificacionRepository;
     private final CalculadoraEstadoAsistencia calculadoraEstado;
+    private final AsistenciaSituacionRepository asistenciaSituacionRepository;
 
     // ========== Helpers zona horaria ==========
     private LocalDate hoyLima() {
@@ -75,11 +79,30 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         boolean just = Boolean.TRUE.equals(ad.getJustificado());
         if (just) {
             if (e == EstadoDia.TARDANZA) return "TARDANZA_JUSTIFICADA";
-            if (e == EstadoDia.AUSENTE || e == EstadoDia.JUSTIFICADO) return "INASISTENCIA_JUSTIFICADA";
+            if (e == EstadoDia.AUSENTE || e == EstadoDia.JUSTIFICADO || e == EstadoDia.SIN_MARCAR) return "INASISTENCIA_JUSTIFICADA";
+            if (e == EstadoDia.PRESENTE && ad.getSituacion() == SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA) return "SALIDA_ANTICIPADA_JUSTIFICADA";
+            if (e == EstadoDia.PRESENTE) return "PRESENTE";
             if (e == EstadoDia.JUSTIFICADO) return "INASISTENCIA_JUSTIFICADA";
             return e.name() + "_JUSTIFICADA";
         }
         return e.name();
+    }
+
+    private String calcularSituacion(AsistenciaDiaria ad) {
+        if (ad.getSituacion() != null && ad.getSituacion() != SituacionAsistencia.NINGUNA) {
+            return ad.getSituacion().name();
+        }
+        boolean just = Boolean.TRUE.equals(ad.getJustificado());
+        if (!just) return SituacionAsistencia.NINGUNA.name();
+        EstadoDia e = ad.getEstadoDia() != null ? ad.getEstadoDia().normalizado() : EstadoDia.SIN_MARCAR;
+        if (e == EstadoDia.TARDANZA) return SituacionAsistencia.TARDANZA_JUSTIFICADA.name();
+        if (e == EstadoDia.AUSENTE || e == EstadoDia.JUSTIFICADO || e == EstadoDia.SIN_MARCAR) return SituacionAsistencia.INASISTENCIA_JUSTIFICADA.name();
+        if (e == EstadoDia.PRESENTE) {
+            String tipo = ad.getJustificacionTipo();
+            if ("SALIDA_ANTICIPADA_JUSTIFICADA".equals(tipo) || "SALIDA_ANTICIPADA".equals(tipo)) return SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA.name();
+            return SituacionAsistencia.NINGUNA.name();
+        }
+        return SituacionAsistencia.NINGUNA.name();
     }
 
     // ========== MARCACION QR ==========
@@ -459,6 +482,24 @@ public class AsistenciaServiceImpl implements AsistenciaService {
                 }
                 return convertAsistenciaToResponse(virtual);
             }
+            // Si es día de descanso, siempre mostrar DESCANSO aunque exista registro inconsistente previo
+            boolean esLaborable = horarioService.esDiaLaborable(p.getIdPracticante(), fecha);
+            if (!esLaborable) {
+                AsistenciaDiaria copiaDescanso = new AsistenciaDiaria();
+                copiaDescanso.setIdAsistencia(ad.getIdAsistencia());
+                copiaDescanso.setPracticante(ad.getPracticante());
+                copiaDescanso.setFecha(ad.getFecha());
+                copiaDescanso.setEstadoDia(EstadoDia.DESCANSO);
+                copiaDescanso.setHorasTrabajadas(BigDecimal.ZERO);
+                copiaDescanso.setMinutosTardanza(0);
+                copiaDescanso.setEntradaEsperada(ad.getEntradaEsperada());
+                copiaDescanso.setSalidaEsperada(ad.getSalidaEsperada());
+                copiaDescanso.setEntradaReal(ad.getEntradaReal());
+                copiaDescanso.setSalidaReal(ad.getSalidaReal());
+                copiaDescanso.setObservaciones(ad.getObservaciones());
+                copiaDescanso.setJustificado(false);
+                return convertAsistenciaToResponse(copiaDescanso);
+            }
             // Solo cálculo visual, sin persistir: si es SIN_MARCAR y ya venció la jornada, mostrar como AUSENTE sin save()
             EstadoDia estadoActual = ad.getEstadoDia() != null ? ad.getEstadoDia().normalizado() : EstadoDia.SIN_MARCAR;
             boolean hasJust = tieneJustificacionAprobada(p.getIdPracticante(), fecha);
@@ -555,8 +596,86 @@ public class AsistenciaServiceImpl implements AsistenciaService {
     // ========== JUSTIFICAR / PERMISO / CORRECCION ==========
     @Override
     public AsistenciaDiariaResponse justificarAsistencia(Long idAsistencia, String motivo, String observacion, String tipo) {
+        return justificarAsistencia(idAsistencia, motivo, observacion, tipo, null);
+    }
+
+    @Override
+    public AsistenciaDiariaResponse justificarAsistencia(Long idAsistencia, String motivo, String observacion, String tipo, String horaSalidaAnticipada) {
         AsistenciaDiaria ad = asistenciaDiariaRepository.findById(idAsistencia)
                 .orElseThrow(() -> new RuntimeException("Asistencia no encontrada"));
+        String tipoNorm = tipo != null ? tipo.toUpperCase() : "OTRO";
+        // Normalizar tipo a situacion canonica
+        SituacionAsistencia situacionSolicitada;
+        if ("TARDANZA_JUSTIFICADA".equals(tipoNorm) || "TARDANZA".equals(tipoNorm)) situacionSolicitada = SituacionAsistencia.TARDANZA_JUSTIFICADA;
+        else if ("INASISTENCIA_JUSTIFICADA".equals(tipoNorm) || "INASISTENCIA".equals(tipoNorm) || "AUSENTE".equals(tipoNorm)) situacionSolicitada = SituacionAsistencia.INASISTENCIA_JUSTIFICADA;
+        else if ("SALIDA_ANTICIPADA_JUSTIFICADA".equals(tipoNorm) || "SALIDA_ANTICIPADA".equals(tipoNorm) || "SALIDA".equals(tipoNorm)) situacionSolicitada = SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA;
+        else situacionSolicitada = SituacionAsistencia.INASISTENCIA_JUSTIFICADA;
+
+        // Validación duplicada: no repetir misma situacion
+        if (ad.getSituacionesDetalle() != null && ad.getSituacionesDetalle().stream().anyMatch(s -> s.getTipo() == situacionSolicitada)) {
+            throw new RuntimeException("La asistencia ya tiene una justificación de tipo " + situacionSolicitada.name());
+        }
+        if (ad.getSituacion() != null && ad.getSituacion() == situacionSolicitada) {
+            throw new RuntimeException("La asistencia ya tiene una justificación de tipo " + situacionSolicitada.name());
+        }
+        // Compat: si ya tiene cualquier justificacion y se intenta otra incompatible, verificar duplicado generico
+        // Validación DESCANSO: no justificar día no laborable (TRABAJO/CLASES laborables)
+        Long idPracticante = ad.getPracticante().getIdPracticante();
+        LocalDate fecha = ad.getFecha();
+        if (!horarioService.esDiaLaborable(idPracticante, fecha)) {
+            throw new RuntimeException("No se puede justificar una asistencia en día de descanso");
+        }
+        Optional<BloqueHorario> bloqueOpt = horarioService.obtenerBloqueDelDia(idPracticante, fecha);
+        if (bloqueOpt.isEmpty() || bloqueOpt.get().getTipoBloque() == null || !bloqueOpt.get().getTipoBloque().esLaborable()) {
+            throw new RuntimeException("No se puede justificar una asistencia en día de descanso");
+        }
+        if (ad.getEstadoDia() != null && ad.getEstadoDia().normalizado() == EstadoDia.DESCANSO) {
+            throw new RuntimeException("No se puede justificar una asistencia en día de descanso");
+        }
+        EstadoDia estadoActual = ad.getEstadoDia() != null ? ad.getEstadoDia().normalizado() : EstadoDia.SIN_MARCAR;
+        // Validar reglas por estado
+        if (estadoActual == EstadoDia.SIN_MARCAR && situacionSolicitada != SituacionAsistencia.INASISTENCIA_JUSTIFICADA) {
+            throw new RuntimeException("SIN_MARCAR solo admite INASISTENCIA_JUSTIFICADA");
+        }
+        if (estadoActual == EstadoDia.PRESENTE && situacionSolicitada != SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA) {
+            throw new RuntimeException("PRESENTE solo admite SALIDA_ANTICIPADA_JUSTIFICADA");
+        }
+        if (estadoActual == EstadoDia.TARDANZA && !(situacionSolicitada == SituacionAsistencia.TARDANZA_JUSTIFICADA || situacionSolicitada == SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA)) {
+            throw new RuntimeException("TARDANZA solo admite TARDANZA_JUSTIFICADA o SALIDA_ANTICIPADA_JUSTIFICADA");
+        }
+        if (estadoActual == EstadoDia.AUSENTE && situacionSolicitada != SituacionAsistencia.INASISTENCIA_JUSTIFICADA) {
+            throw new RuntimeException("AUSENTE solo admite INASISTENCIA_JUSTIFICADA");
+        }
+        if (estadoActual == EstadoDia.DESCANSO) {
+            throw new RuntimeException("No se puede justificar una asistencia en día de descanso");
+        }
+        // Para SALIDA_ANTICIPADA_JUSTIFICADA requiere entradaReal
+        if (situacionSolicitada == SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA) {
+            if (ad.getEntradaReal() == null) {
+                throw new RuntimeException("No se puede registrar salida anticipada sin entrada registrada");
+            }
+            if (horaSalidaAnticipada == null || horaSalidaAnticipada.isBlank()) {
+                throw new RuntimeException("Hora de salida anticipada autorizada es obligatoria");
+            }
+            try { LocalTime.parse(horaSalidaAnticipada); } catch (Exception e) { throw new RuntimeException("Formato horaSalidaAnticipada inválido, use HH:mm"); }
+        }
+        // Asignar Estado canónico (SIN_MARCAR -> AUSENTE) y Situación múltiple
+        EstadoDia estadoActual2 = ad.getEstadoDia() != null ? ad.getEstadoDia().normalizado() : EstadoDia.SIN_MARCAR;
+        if (estadoActual2 == EstadoDia.SIN_MARCAR) {
+            ad.setEstadoDia(EstadoDia.AUSENTE);
+        }
+        // Crear detalle de situación
+        AsistenciaSituacion detalle = new AsistenciaSituacion();
+        detalle.setAsistencia(ad);
+        detalle.setTipo(situacionSolicitada);
+        detalle.setMotivo(motivo);
+        detalle.setObservacion(observacion);
+        detalle.setHoraEntradaRegistrada(ad.getEntradaReal());
+        if (situacionSolicitada == SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA) {
+            detalle.setHoraSalidaAnticipada(LocalTime.parse(horaSalidaAnticipada));
+        }
+        ad.getSituacionesDetalle().add(detalle);
+        ad.setSituacion(situacionSolicitada);
         ad.setJustificado(true);
         ad.setJustificacionMotivo(motivo);
         ad.setJustificacionObservacion(observacion);
@@ -606,15 +725,21 @@ public class AsistenciaServiceImpl implements AsistenciaService {
             j.setTipoJustificacion(TipoJustificacion.OTRO);
         }
         Justificacion saved = justificacionRepository.save(j);
-        // Si ya existe asistencia ese día sin marcar, actualizar a JUSTIFICADO
+        // Si ya existe asistencia ese día sin marcar, actualizar a AUSENTE + INASISTENCIA_JUSTIFICADA
         asistenciaDiariaRepository.findByPracticante_IdPracticanteAndFecha(idPracticante, fecha).ifPresent(ad -> {
             ad.setJustificado(true);
             ad.setJustificacionMotivo(motivo);
             ad.setJustificacionObservacion(observacion);
             ad.setJustificacionTipo(tipoJustificacion);
             ad.setJustificacionFecha(LocalDateTime.now(ZONA_LIMA));
-            if (ad.getEstadoDia() != null && (ad.getEstadoDia().normalizado() == EstadoDia.AUSENTE || ad.getEstadoDia().normalizado() == EstadoDia.SIN_MARCAR)) {
-                ad.setEstadoDia(EstadoDia.JUSTIFICADO);
+            if (ad.getEstadoDia() != null && (ad.getEstadoDia().normalizado() == EstadoDia.AUSENTE || ad.getEstadoDia().normalizado() == EstadoDia.SIN_MARCAR || ad.getEstadoDia().normalizado() == EstadoDia.JUSTIFICADO)) {
+                ad.setEstadoDia(EstadoDia.AUSENTE);
+                ad.setSituacion(SituacionAsistencia.INASISTENCIA_JUSTIFICADA);
+            } else if (ad.getEstadoDia() != null && ad.getEstadoDia().normalizado() == EstadoDia.TARDANZA) {
+                ad.setSituacion(SituacionAsistencia.TARDANZA_JUSTIFICADA);
+            }
+            if (ad.getSituacion() == null || ad.getSituacion() == SituacionAsistencia.NINGUNA) {
+                ad.setSituacion(SituacionAsistencia.INASISTENCIA_JUSTIFICADA);
             }
             asistenciaDiariaRepository.save(ad);
         });
@@ -627,6 +752,21 @@ public class AsistenciaServiceImpl implements AsistenciaService {
                 .orElseThrow(() -> new RuntimeException("Practicante no encontrado"));
         AsistenciaDiaria ad = asistenciaDiariaRepository.findByPracticante_IdPracticanteAndFecha(idPracticante, fecha)
                 .orElse(new AsistenciaDiaria());
+        // Validación: no editar justificada
+        if (ad.getIdAsistencia() != null && (ad.getSituacion() != null && ad.getSituacion() != SituacionAsistencia.NINGUNA)) {
+            throw new RuntimeException("No se puede editar una asistencia justificada.");
+        }
+        if (ad.getIdAsistencia() != null && Boolean.TRUE.equals(ad.getJustificado())) {
+            throw new RuntimeException("No se puede editar una asistencia justificada.");
+        }
+        // Validación DESCANSO: no se puede corregir en día no laborable
+        if (!horarioService.esDiaLaborable(idPracticante, fecha)) {
+            throw new RuntimeException("No se puede corregir asistencia en día de descanso");
+        }
+        Optional<BloqueHorario> bloquePrevio = horarioService.obtenerBloqueDelDia(idPracticante, fecha);
+        if (bloquePrevio.isEmpty() || bloquePrevio.get().getTipoBloque() == null || !bloquePrevio.get().getTipoBloque().esLaborable()) {
+            throw new RuntimeException("No se puede corregir asistencia en día de descanso");
+        }
         ad.setPracticante(practicante);
         ad.setFecha(fecha);
 
@@ -770,7 +910,9 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         response.setIdPracticante(asistencia.getPracticante().getIdPracticante());
         response.setNombreCompleto(asistencia.getPracticante().getNombre() + " " + asistencia.getPracticante().getApellido());
         response.setFecha(asistencia.getFecha());
-        response.setEstadoDia(asistencia.getEstadoDia() != null ? asistencia.getEstadoDia().normalizado().name() : EstadoDia.SIN_MARCAR.name());
+        EstadoDia estadoNorm = asistencia.getEstadoDia() != null ? asistencia.getEstadoDia().normalizado() : EstadoDia.SIN_MARCAR;
+        String estadoParaMostrar = estadoNorm == EstadoDia.JUSTIFICADO ? EstadoDia.AUSENTE.name() : estadoNorm.name();
+        response.setEstadoDia(estadoParaMostrar);
         response.setHorasTrabajadas(asistencia.getHorasTrabajadas());
         response.setMinutosTardanza(asistencia.getMinutosTardanza());
         response.setEntradaEsperada(asistencia.getEntradaEsperada());
@@ -784,6 +926,43 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         response.setJustificacionTipo(asistencia.getJustificacionTipo());
         if (asistencia.getJustificacionFecha() != null) response.setJustificacionFecha(asistencia.getJustificacionFecha().toString());
         response.setEstadoVisual(calcularEstadoVisual(asistencia));
+        // Situación múltiple: priorizar colección, fallback a campo single y justificado
+        java.util.Set<String> sits = new java.util.HashSet<>();
+        if (asistencia.getSituacionesDetalle() != null && !asistencia.getSituacionesDetalle().isEmpty()) {
+            for (AsistenciaSituacion s : asistencia.getSituacionesDetalle()) sits.add(s.getTipo().name());
+        } else if (asistencia.getSituacion() != null && asistencia.getSituacion() != SituacionAsistencia.NINGUNA) {
+            sits.add(asistencia.getSituacion().name());
+        } else {
+            String calc = calcularSituacion(asistencia);
+            if (!"NINGUNA".equals(calc)) sits.add(calc);
+        }
+        if (sits.isEmpty()) sits.add(SituacionAsistencia.NINGUNA.name());
+        response.setSituacion(sits.contains(SituacionAsistencia.INASISTENCIA_JUSTIFICADA.name()) ? SituacionAsistencia.INASISTENCIA_JUSTIFICADA.name() : sits.iterator().next());
+        response.setSituaciones(sits);
+        // Hora salida anticipada: buscar en detalles
+        if (asistencia.getSituacionesDetalle() != null) {
+            for (AsistenciaSituacion s : asistencia.getSituacionesDetalle()) {
+                if (s.getTipo() == SituacionAsistencia.SALIDA_ANTICIPADA_JUSTIFICADA && s.getHoraSalidaAnticipada() != null) {
+                    response.setHoraSalidaAnticipadaAutorizada(s.getHoraSalidaAnticipada());
+                    break;
+                }
+            }
+        }
+        // Detalles lista
+        if (asistencia.getSituacionesDetalle() != null && !asistencia.getSituacionesDetalle().isEmpty()) {
+            java.util.List<com.asistencia.attendance_system.model.dto.SituacionDetalleDTO> detList = new java.util.ArrayList<>();
+            for (AsistenciaSituacion s : asistencia.getSituacionesDetalle()) {
+                com.asistencia.attendance_system.model.dto.SituacionDetalleDTO dto = new com.asistencia.attendance_system.model.dto.SituacionDetalleDTO();
+                dto.setTipo(s.getTipo().name());
+                dto.setMotivo(s.getMotivo());
+                dto.setObservacion(s.getObservacion());
+                dto.setHoraEntradaRegistrada(s.getHoraEntradaRegistrada());
+                dto.setHoraSalidaAnticipadaAutorizada(s.getHoraSalidaAnticipada());
+                dto.setFechaRegistro(s.getFechaRegistro());
+                detList.add(dto);
+            }
+            response.setSituacionesDetalle(detList);
+        }
         return response;
     }
 }

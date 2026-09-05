@@ -16,10 +16,62 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Calendar, Users, Pencil, FileCheck, Eye, Save, X, FileText, Info, Clock, User, CalendarDays, BadgeCheck, AlertCircle, Edit, EyeOff } from "lucide-react";
-import { AsistenciaDiaria, AsistenciaDiariaResponse, normalizeEstadoDia, isTardanza, isAusente } from "@/types/asistencia";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Calendar,
+  Users,
+  Pencil,
+  FileCheck,
+  Eye,
+  Save,
+  FileSearchCorner,
+  X,
+  SquareArrowRightEnter,
+  AlertTriangle,
+  CheckCircle,
+  FileText,
+  Info,
+  Clock,
+  User,
+  CalendarDays,
+  BadgeCheck,
+  AlertCircle,
+  Edit,
+  ArrowLeftFromLine,
+  EyeOff,
+  CheckCircle2, // Presente
+  ClockAlert, // Tardanza
+  XCircle, // Ausente
+  MinusCircle, // Sin marcar
+  Coffee, // Descanso
+  FileCheck2, // Justificado
+  ShieldCheck, // Tardanza justificada
+  ShieldX,
+  Icon,
+  Shield,
+} from "lucide-react";
+import {
+  AsistenciaDiaria,
+  AsistenciaDiariaResponse,
+  normalizeEstadoDia,
+  isTardanza,
+  isAusente,
+  getSituacionLabel,
+} from "@/types/asistencia";
 import { asistenciasApi } from "@/lib/api/asistencias";
 import { toast } from "sonner";
 
@@ -30,90 +82,260 @@ interface AsistenciaTableProps {
   onRefresh?: () => void;
 }
 
-export default function AsistenciaTable({ asistencias, rawData = [], loading = false, onRefresh }: AsistenciaTableProps) {
+export default function AsistenciaTable({
+  asistencias,
+  rawData = [],
+  loading = false,
+  onRefresh,
+}: AsistenciaTableProps) {
   const [justificarOpen, setJustificarOpen] = useState(false);
   const [editarOpen, setEditarOpen] = useState(false);
   const [verOpen, setVerOpen] = useState(false);
-  const [selected, setSelected] = useState<AsistenciaDiariaResponse | null>(null);
+  const [selected, setSelected] = useState<AsistenciaDiariaResponse | null>(
+    null,
+  );
   const [verData, setVerData] = useState<AsistenciaDiariaResponse | null>(null);
   const [motivo, setMotivo] = useState("");
   const [observacion, setObservacion] = useState("");
-  const [tipoJust, setTipoJust] = useState("TARDANZA");
+  const [tipoJust, setTipoJust] = useState("TARDANZA_JUSTIFICADA");
   const [horaEntrada, setHoraEntrada] = useState("");
   const [horaSalida, setHoraSalida] = useState("");
+  const [horaSalidaAnticipada, setHoraSalidaAnticipada] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const getEstadoBadge = (estado: string, visual?: string | null, justificado?: boolean | null) => {
+  const getEstadoBadge = (
+    estado: string,
+  ): { label: string; className: string; icon: React.ElementType } => {
     const n = normalizeEstadoDia(estado);
-    if (visual === "TARDANZA_JUSTIFICADA") return { label: 'Tardanza justificada', className: 'bg-blue-50 text-blue-700 border-blue-200' };
-    if (visual === "INASISTENCIA_JUSTIFICADA") return { label: 'Inasistencia justificada', className: 'bg-blue-50 text-blue-700 border-blue-200' };
-    if (justificado && n === "TARDANZA") return { label: 'Tardanza justificada', className: 'bg-blue-50 text-blue-700 border-blue-200' };
-    if (justificado && n === "AUSENTE") return { label: 'Inasistencia justificada', className: 'bg-blue-50 text-blue-700 border-blue-200' };
-    const config: Record<string, { label: string; className: string }> = {
-      'SIN_MARCAR': { label: 'Sin marcar', className: 'bg-slate-100 text-slate-600 border-slate-200' },
-      'PRESENTE': { label: 'Presente', className: 'bg-green-50 text-green-700 border-green-200' },
-      'TARDANZA': { label: 'Tardanza', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-      'AUSENTE': { label: 'Ausente', className: 'bg-red-50 text-red-700 border-red-200' },
-      'DESCANSO': { label: 'Descanso', className: 'bg-slate-100 text-slate-600 border-slate-200' },
-      'JUSTIFICADO': { label: 'Justificado', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+    // Estado solo 5 valores canónicos; JUSTIFICADO legacy se normaliza a AUSENTE para columna Estado
+    const s = n === "JUSTIFICADO" ? "AUSENTE" : n;
+    const config: Record<
+      string,
+      { label: string; className: string; icon: React.ElementType }
+    > = {
+      SIN_MARCAR: {
+        label: "Sin marcar",
+        className: "bg-slate-100 text-slate-600 border-slate-200",
+        icon: MinusCircle,
+      },
+      PRESENTE: {
+        label: "Presente",
+        className: "bg-green-50 text-green-700 border-green-200",
+        icon: CheckCircle2,
+      },
+      TARDANZA: {
+        label: "Tardanza",
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+        icon: ClockAlert,
+      },
+      AUSENTE: {
+        label: "Ausente",
+        className: "bg-red-50 text-red-700 border-red-200",
+        icon: XCircle,
+      },
+      DESCANSO: {
+        label: "Descanso",
+        className: "bg-slate-100 text-slate-600 border-slate-200",
+        icon: Coffee,
+      },
     };
-    return config[n] || config[estado] || { label: estado, className: 'bg-gray-100 text-gray-700 border-gray-200' };
+    return (
+      config[s] ||
+      config[estado] || {
+        label: s,
+        className: "bg-gray-100 text-gray-700 border-gray-200",
+        icon: MinusCircle,
+      }
+    );
+  };
+
+  const getSituacionBadge = (situacion?: string | null) => {
+    const s = situacion || "NINGUNA";
+    if (s === "NINGUNA")
+      return {
+        label: "Ninguna",
+        className: "bg-slate-50 text-slate-500 border-slate-200",
+        icon: MinusCircle,
+      };
+    if (s === "TARDANZA_JUSTIFICADA")
+      return {
+        label: "Tardanza justificada",
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+        icon: ShieldCheck,
+      };
+    if (s === "SALIDA_ANTICIPADA_JUSTIFICADA")
+      return {
+        label: "Salida anticipada justificada",
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+        icon: Clock,
+      };
+    if (s === "INASISTENCIA_JUSTIFICADA")
+      return {
+        label: "Inasistencia justificada",
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+        icon: ShieldX,
+      };
+    return {
+      label: getSituacionLabel(s),
+      className: "bg-slate-50 text-slate-600 border-slate-200",
+      icon: FileCheck,
+    };
   };
 
   const TableSkeleton = () => (
     <>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index}>
-          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-          <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-          <TableCell className="text-center"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-          <TableCell className="text-center"><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
-          <TableCell className="text-center"><Skeleton className="h-6 w-20 mx-auto rounded-full" /></TableCell>
-          <TableCell className="text-center"><Skeleton className="h-6 w-20 mx-auto" /></TableCell>
+          <TableCell>
+            <Skeleton className="h-4 w-32" />
+          </TableCell>
+          <TableCell className="text-center">
+            <Skeleton className="h-4 w-12 mx-auto" />
+          </TableCell>
+          <TableCell className="text-center">
+            <Skeleton className="h-4 w-12 mx-auto" />
+          </TableCell>
+          <TableCell className="text-center">
+            <Skeleton className="h-4 w-16 mx-auto" />
+          </TableCell>
+          <TableCell className="text-center">
+            <Skeleton className="h-6 w-20 mx-auto rounded-full" />
+          </TableCell>
+          <TableCell className="text-center">
+            <Skeleton className="h-6 w-24 mx-auto rounded-full" />
+          </TableCell>
+          <TableCell className="text-center">
+            <Skeleton className="h-6 w-20 mx-auto" />
+          </TableCell>
         </TableRow>
       ))}
     </>
   );
 
+  // Helper: situaciones existentes como Set (soporta situaciones[] y situacion legacy)
+  const getSituacionesExistentes = (
+    r: AsistenciaDiariaResponse | undefined | null,
+  ): Set<string> => {
+    if (!r) return new Set();
+    const arr = ((r as any).situaciones as string[] | undefined) || [];
+    const fromArray = arr.filter(Boolean);
+    const single = (r as any).situacion as string | undefined;
+    const combined = fromArray.length > 0 ? fromArray : single ? [single] : [];
+    return new Set(combined.filter((s) => s && s !== "NINGUNA"));
+  };
+
+  // Helper central: calcula opciones disponibles según Estado y situaciones ya registradas
+  const getOpcionesParaRegistro = (
+    r: AsistenciaDiariaResponse | undefined | null,
+  ): { value: string; label: string }[] => {
+    if (!r) return [];
+    const n = normalizeEstadoDia(r.estadoDia);
+    if (n === "DESCANSO") return [];
+    const existentes = getSituacionesExistentes(r);
+    if (n === "SIN_MARCAR" || n === "AUSENTE") {
+      if (existentes.has("INASISTENCIA_JUSTIFICADA")) return [];
+      return [
+        {
+          value: "INASISTENCIA_JUSTIFICADA",
+          label: "Inasistencia justificada",
+        },
+      ];
+    }
+    if (n === "PRESENTE") {
+      if (existentes.has("SALIDA_ANTICIPADA_JUSTIFICADA")) return [];
+      return [
+        {
+          value: "SALIDA_ANTICIPADA_JUSTIFICADA",
+          label: "Salida anticipada justificada",
+        },
+      ];
+    }
+    if (n === "TARDANZA") {
+      const opts: { value: string; label: string }[] = [];
+      if (!existentes.has("TARDANZA_JUSTIFICADA"))
+        opts.push({
+          value: "TARDANZA_JUSTIFICADA",
+          label: "Tardanza justificada",
+        });
+      if (!existentes.has("SALIDA_ANTICIPADA_JUSTIFICADA") && r.entradaReal)
+        opts.push({
+          value: "SALIDA_ANTICIPADA_JUSTIFICADA",
+          label: "Salida anticipada justificada",
+        });
+      return opts;
+    }
+    return [];
+  };
+
+  const getOpcionesJustificacion = () => {
+    return getOpcionesParaRegistro(selected);
+  };
+
   const openJustificar = (idx: number) => {
     const r = rawData[idx];
     if (!r || !r.idAsistencia) {
-      toast.error("No se puede justificar: aún no existe registro (SIN_MARCAR). Registre primero o use permiso previo.");
+      toast.error(
+        "No se puede justificar: aún no existe registro (SIN_MARCAR). Registre primero o use permiso previo.",
+      );
       return;
     }
-    if (isJustificado(r)) {
-      toast.info("Esta asistencia ya está justificada");
+    if (isDescanso(r)) {
+      toast.info("No se puede justificar en día de descanso");
+      return;
+    }
+    const opcionesDisponibles = getOpcionesParaRegistro(r);
+    if (opcionesDisponibles.length === 0) {
+      toast.info(
+        "No quedan situaciones pendientes por justificar para este estado",
+      );
       return;
     }
     setSelected(r);
-    setMotivo(r.justificacionMotivo || "");
-    setObservacion(r.justificacionObservacion || "");
-    const n = normalizeEstadoDia(r.estadoDia);
-    if (n === "TARDANZA") setTipoJust("TARDANZA");
-    else if (n === "AUSENTE") setTipoJust("INASISTENCIA");
-    else setTipoJust("OTRO");
+    setMotivo("");
+    setObservacion("");
+    setHoraSalidaAnticipada("");
+    // Seleccionar por defecto la primera opción disponible (preserva orden: TARDANZA_JUSTIFICADA luego SALIDA)
+    setTipoJust(opcionesDisponibles[0].value);
     setJustificarOpen(true);
   };
 
   const isJustificado = (r: AsistenciaDiariaResponse | undefined) => {
     if (!r) return false;
-    return Boolean(r.justificado) || normalizeEstadoDia(r.estadoDia) === "JUSTIFICADO" || r.estadoVisual === "TARDANZA_JUSTIFICADA" || r.estadoVisual === "INASISTENCIA_JUSTIFICADA";
+    return (
+      Boolean(r.justificado) ||
+      normalizeEstadoDia(r.estadoDia) === "JUSTIFICADO" ||
+      r.estadoVisual === "TARDANZA_JUSTIFICADA" ||
+      r.estadoVisual === "INASISTENCIA_JUSTIFICADA"
+    );
   };
   const hasJustificacion = (r: AsistenciaDiariaResponse | undefined) => {
     if (!r) return false;
-    return Boolean(r.justificado) && Boolean(r.justificacionMotivo || r.justificacionTipo || r.justificacionFecha);
+    return (
+      Boolean(r.justificado) &&
+      Boolean(
+        r.justificacionMotivo || r.justificacionTipo || r.justificacionFecha,
+      )
+    );
+  };
+  const isDescanso = (r: AsistenciaDiariaResponse | undefined) => {
+    if (!r) return false;
+    return normalizeEstadoDia(r.estadoDia) === "DESCANSO";
   };
 
   const openEditar = (idx: number) => {
     const r = rawData[idx];
     if (!r) return;
+    if (isDescanso(r)) {
+      toast.info("No se puede editar en día de descanso");
+      return;
+    }
     if (isJustificado(r)) {
       toast.info("No se puede editar una asistencia justificada");
       return;
     }
     setSelected(r);
-    setHoraEntrada(r.entradaReal ? r.entradaReal.substring(0,5) : "");
-    setHoraSalida(r.salidaReal ? r.salidaReal.substring(0,5) : "");
+    setHoraEntrada(r.entradaReal ? r.entradaReal.substring(0, 5) : "");
+    setHoraSalida(r.salidaReal ? r.salidaReal.substring(0, 5) : "");
     setEditarOpen(true);
   };
 
@@ -126,15 +348,42 @@ export default function AsistenciaTable({ asistencias, rawData = [], loading = f
 
   const handleJustificar = async () => {
     if (!selected?.idAsistencia) return;
-    if (!motivo.trim()) { toast.error("El motivo es obligatorio"); return; }
+    if (!motivo.trim()) {
+      toast.error("El motivo es obligatorio");
+      return;
+    }
+    if (tipoJust === "SALIDA_ANTICIPADA_JUSTIFICADA") {
+      if (!selected.entradaReal) {
+        toast.error(
+          "No se puede registrar salida anticipada sin entrada registrada",
+        );
+        return;
+      }
+      if (!horaSalidaAnticipada) {
+        toast.error("Hora de salida anticipada es obligatoria");
+        return;
+      }
+    }
     setSaving(true);
     try {
-      await asistenciasApi.justificar(selected.idAsistencia!, motivo, observacion, tipoJust);
+      await asistenciasApi.justificar(
+        selected.idAsistencia!,
+        motivo,
+        observacion,
+        tipoJust,
+        tipoJust === "SALIDA_ANTICIPADA_JUSTIFICADA"
+          ? horaSalidaAnticipada
+          : null,
+      );
       toast.success("Justificación guardada");
       setJustificarOpen(false);
+      setHoraSalidaAnticipada("");
       onRefresh?.();
-    } catch (e:any) { toast.error(e.message); }
-    finally { setSaving(false); }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleEditar = async () => {
@@ -142,477 +391,1094 @@ export default function AsistenciaTable({ asistencias, rawData = [], loading = f
     setSaving(true);
     try {
       const fecha = selected.fecha;
-      await asistenciasApi.corregirManual(selected.idPracticante, fecha, horaEntrada || null, horaSalida || null);
+      await asistenciasApi.corregirManual(
+        selected.idPracticante,
+        fecha,
+        horaEntrada || null,
+        horaSalida || null,
+      );
       toast.success("Corrección guardada, estado recalculado");
       setEditarOpen(false);
       onRefresh?.();
-    } catch (e:any) { toast.error(e.message); }
-    finally { setSaving(false); }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <>
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Registro de Asistencia
-          </CardTitle>
-          {loading ? (
-            <Skeleton className="h-6 w-24" />
-          ) : (
-            <Badge variant="outline" className="gap-1">
-              <Users className="h-3 w-3" />
-              {asistencias.length} practicantes
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-0 md:p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-100 hover:bg-gray-50/80">
-              <TableHead className="font-semibold">#</TableHead>
-              <TableHead className="font-semibold ">Practicante</TableHead>
-              <TableHead className="font-semibold text-center">Entrada</TableHead>
-              <TableHead className="font-semibold text-center">Salida</TableHead>
-              <TableHead className="font-semibold text-center">Horas</TableHead>
-              <TableHead className="font-semibold text-center">Estado</TableHead>
-              <TableHead className="font-semibold text-center">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Registro de Asistencia
+            </CardTitle>
             {loading ? (
-              <TableSkeleton />
+              <Skeleton className="h-6 w-24" />
             ) : (
-              asistencias.map((asistencia, index) => {
-                const raw = rawData[index];
-                const estado = getEstadoBadge(asistencia.estado, (raw as any)?.estadoVisual, (raw as any)?.justificado);
-                const justificado = isJustificado(raw);
-                const puedeJustificar = raw && !justificado && !!raw.idAsistencia;
-                const puedeVer = hasJustificacion(raw);
-                return (
-                  <TableRow key={index} className="hover:bg-slate-50 h-12">
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-medium">{asistencia.practicante}</TableCell>
-                    <TableCell className="text-center font-mono text-sm">{asistencia.entrada || "—"}</TableCell>
-                    <TableCell className="text-center font-mono text-sm">{asistencia.salida || "—"}</TableCell>
-                    <TableCell className="text-center font-mono text-sm">{asistencia.horas || "—"}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge className={estado.className}>{estado.label}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex gap-1 justify-center">
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={justificado} title={justificado ? "No editable: justificado" : "Editar horas"} onClick={() => openEditar(index)}><Pencil className="h-3 w-3" />Editar</Button>
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1 bg-amber-50 hover:bg-amber-100 disabled:opacity-50" disabled={!puedeJustificar} title={!puedeJustificar ? (justificado ? "Ya justificado" : "Sin registro para justificar") : "Justificar"} onClick={() => openJustificar(index)}><FileCheck className="h-3 w-3" />Justificar</Button>
-                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={!puedeVer} title={!puedeVer ? "Sin justificación" : "Ver justificación"} onClick={() => openVer(index)}><Eye className="h-3 w-3" />Ver</Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+              <Badge variant="outline" className="gap-1">
+                <Users className="h-3 w-3" />
+                {asistencias.length} practicantes
+              </Badge>
             )}
-          </TableBody>
-        </Table>
-        </div>
-      </CardContent>
-    </Card>
-
-    {/* ============================================================ */}
-    {/* DIALOG 1: JUSTIFICAR ASISTENCIA */}
-    {/* ============================================================ */}
-    <Dialog open={justificarOpen} onOpenChange={setJustificarOpen}>
-      <DialogContent className="max-w-lg sm:max-w-md">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600 mt-0.5">
-              <FileText className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold">Justificar asistencia</DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground mt-0.5">
-                Registrar una justificación para la asistencia seleccionada.
-              </DialogDescription>
-            </div>
           </div>
-        </DialogHeader>
-
-        {selected && (
-          <div className="space-y-5 pt-1">
-            {/* Tarjeta de información del practicante */}
-            <div className="bg-slate-50/80 border border-slate-100 rounded-lg p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                    <User className="h-3 w-3" />
-                    Practicante
-                  </div>
-                  <span className="text-sm font-medium text-slate-800">{selected.nombreCompleto}</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                    <CalendarDays className="h-3 w-3" />
-                    Fecha
-                  </div>
-                  <span className="text-sm font-medium text-slate-800">{selected.fecha}</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                    <BadgeCheck className="h-3 w-3" />
-                    Estado actual
-                  </div>
-                  <Badge className={getEstadoBadge(selected.estadoDia, selected.estadoVisual, selected.justificado).className}>
-                    {getEstadoBadge(selected.estadoDia, selected.estadoVisual, selected.justificado).label}
-                  </Badge>
-                </div>
-                {selected.entradaReal && (
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                      <Clock className="h-3 w-3" />
-                      Entrada real
-                    </div>
-                    <span className="text-sm font-mono font-medium text-slate-800">{selected.entradaReal.substring(0,5)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Formulario */}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="tipo-justificacion" className="text-sm font-medium text-slate-700">Tipo de justificación</Label>
-                <Select value={tipoJust} onValueChange={(v:any)=> setTipoJust(v)}>
-                  <SelectTrigger id="tipo-justificacion" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="TARDANZA">Tardanza</SelectItem>
-                    <SelectItem value="INASISTENCIA">Inasistencia</SelectItem>
-                    <SelectItem value="PERMISO">Permiso</SelectItem>
-                    <SelectItem value="OTRO">Otro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="motivo-justificacion" className="text-sm font-medium text-slate-700">
-                  Motivo <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="motivo-justificacion"
-                  value={motivo}
-                  onChange={e=>setMotivo(e.target.value)}
-                  placeholder="Ej: Permiso médico, tráfico, emergencia familiar..."
-                  className="w-full"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="observacion-justificacion" className="text-sm font-medium text-slate-700">Observación</Label>
-                <Textarea
-                  id="observacion-justificacion"
-                  value={observacion}
-                  onChange={e=>setObservacion(e.target.value)}
-                  placeholder="Detalles adicionales (opcional)"
-                  rows={3}
-                  className="w-full resize-y min-h-[80px]"
-                />
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
-              <Button
-                variant="outline"
-                onClick={()=>setJustificarOpen(false)}
-                className="gap-1.5"
-              >
-                <X className="h-4 w-4" />
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleJustificar}
-                disabled={saving || !motivo.trim()}
-                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {saving ? (
-                  <>
-                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    Guardando...
-                  </>
+        </CardHeader>
+        <CardContent className="p-0 md:p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-100 hover:bg-gray-50/80">
+                  <TableHead className="font-semibold">#</TableHead>
+                  <TableHead className="font-semibold ">Practicante</TableHead>
+                  <TableHead className="font-semibold text-center">
+                    Entrada
+                  </TableHead>
+                  <TableHead className="font-semibold text-center">
+                    Salida
+                  </TableHead>
+                  <TableHead className="font-semibold text-center">
+                    Horas
+                  </TableHead>
+                  <TableHead className="font-semibold text-center">
+                    Estado
+                  </TableHead>
+                  <TableHead className="font-semibold text-center">
+                    Situación
+                  </TableHead>
+                  <TableHead className="font-semibold text-center">
+                    Acciones
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableSkeleton />
                 ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    Guardar
-                  </>
+                  asistencias.map((asistencia, index) => {
+                    const raw = rawData[index];
+                    const estado = getEstadoBadge(asistencia.estado);
+                    const justificado = isJustificado(raw);
+                    const descanso = isDescanso(raw);
+                    const opcionesDisponiblesRow = getOpcionesParaRegistro(raw);
+                    const puedeJustificar =
+                      !!raw &&
+                      !descanso &&
+                      !!raw.idAsistencia &&
+                      opcionesDisponiblesRow.length > 0;
+                    const puedeVer = hasJustificacion(raw) && !descanso;
+                    const editarDisabled = justificado || descanso;
+                    return (
+                      <TableRow key={index} className="hover:bg-slate-50 h-12">
+                        <TableCell className="font-medium">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {asistencia.practicante}
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">
+                          {asistencia.entrada || "—"}
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">
+                          {asistencia.salida || "—"}
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">
+                          {asistencia.horas || "—"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            className={`${estado.className} inline-flex items-center gap-1`}
+                          >
+                            <estado.icon className="h-3 w-3" />
+                            {estado.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex flex-col gap-1 items-center">
+                            {(() => {
+                              const rawSit = (raw as any)?.situaciones as
+                                | string[]
+                                | undefined;
+                              const rawSingle = (raw as any)?.situacion as
+                                | string
+                                | undefined;
+                              const list =
+                                rawSit && rawSit.length > 0
+                                  ? rawSit
+                                  : [rawSingle || "NINGUNA"];
+                              const filtered = list.filter(
+                                (s) => s !== "NINGUNA",
+                              );
+                              const displayList =
+                                filtered.length > 0
+                                  ? filtered
+                                  : (["NINGUNA"] as string[]);
+                              return displayList.map((s, i) => {
+                                const sit = getSituacionBadge(s);
+                                return (
+                                  <Badge
+                                    key={i}
+                                    className={`${sit.className} inline-flex items-center gap-1`}
+                                  >
+                                    <sit.icon className="h-3 w-3" />
+                                    {sit.label}
+                                  </Badge>
+                                );
+                              });
+                            })()}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex gap-1 justify-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1 bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 disabled:opacity-50"
+                              disabled={editarDisabled}
+                              title={
+                                descanso
+                                  ? "No editable: descanso"
+                                  : justificado
+                                    ? "No editable: justificado"
+                                    : "Editar horas"
+                              }
+                              onClick={() => openEditar(index)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                              Editar
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 disabled:opacity-50"
+                              disabled={!puedeJustificar}
+                              title={
+                                !puedeJustificar
+                                  ? descanso
+                                    ? "No justificable: descanso"
+                                    : !raw?.idAsistencia
+                                      ? "Sin registro para justificar"
+                                      : opcionesDisponiblesRow.length === 0
+                                        ? "No quedan situaciones pendientes por justificar"
+                                        : "No justificable"
+                                  : "Justificar"
+                              }
+                              onClick={() => openJustificar(index)}
+                            >
+                              <FileCheck className="h-3 w-3" />
+                              Justificar
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1 bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 disabled:opacity-50"
+                              disabled={!puedeVer}
+                              title={
+                                !puedeVer
+                                  ? "Sin justificación"
+                                  : "Ver justificación"
+                              }
+                              onClick={() => openVer(index)}
+                            >
+                              <Eye className="h-3 w-3" />
+                              Ver
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
-              </Button>
-            </div>
+              </TableBody>
+            </Table>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
-
-    {/* ============================================================ */}
-    {/* DIALOG 2: CORREGIR MARCACIÓN MANUAL (RH) */}
-    {/* ============================================================ */}
-    <Dialog open={editarOpen} onOpenChange={setEditarOpen}>
-      <DialogContent className="max-w-lg sm:max-w-md">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-amber-50 text-amber-600 mt-0.5">
-              <Edit className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-xl font-semibold">Corregir marcación manual</DialogTitle>
-                <Badge variant="outline" className="text-[10px] font-mono uppercase bg-slate-100 border-slate-200 text-slate-600 px-1.5 py-0">
-                  RH
-                </Badge>
+        </CardContent>
+      </Card>
+      {/* ============================================================ */}
+      {/* DIALOG 1: JUSTIFICAR ASISTENCIA (REDISEÑO PROFESIONAL)      */}
+      {/* ============================================================ */}
+      <Dialog open={justificarOpen} onOpenChange={setJustificarOpen}>
+        <DialogContent className="max-w-4xl sm:max-w-4xl p-0 overflow-hidden">
+          {/* HEADER: más elegante, con etiqueta de módulo */}
+          <DialogHeader className="border-b border-blue-5 bg-gradient-to-r from-blue-50/50 to-white px-8 pt-6 pb-4">
+            <div className="flex items-start gap-4">
+              <div className="p-2.5 rounded-xl w-20 h-20 bg-blue-900 text-white shadow-sm flex items-center justify-center">
+                <FileText className="h-15 w-15" />
               </div>
-              <DialogDescription className="text-sm text-muted-foreground mt-0.5">
-                Modificar entrada/salida. El estado se recalculará automáticamente.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        {selected && (
-          <div className="space-y-5 pt-1">
-            {/* Tarjeta de información */}
-            <div className="bg-slate-50/80 border border-slate-100 rounded-lg p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                    <User className="h-3 w-3" />
-                    Practicante
-                  </div>
-                  <span className="text-sm font-medium text-slate-800">{selected.nombreCompleto}</span>
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-blue-900 uppercase tracking-wider">
+                    Gestión de asistencia
+                  </span>
                 </div>
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                    <CalendarDays className="h-3 w-3" />
-                    Fecha
-                  </div>
-                  <span className="text-sm font-medium text-slate-800">{selected.fecha}</span>
-                </div>
-                <div className="col-span-2">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                    <Clock className="h-3 w-3" />
-                    Horario esperado
-                  </div>
-                  <div className="flex items-center gap-2 text-sm font-mono font-medium text-slate-800">
-                    <span className="bg-white px-2 py-0.5 rounded border border-slate-200">
-                      {selected.entradaEsperada?.substring(0,5) || "—"}
-                    </span>
-                    <span className="text-slate-400 text-xs">→</span>
-                    <span className="bg-white px-2 py-0.5 rounded border border-slate-200">
-                      {selected.salidaEsperada?.substring(0,5) || "—"}
-                    </span>
-                  </div>
-                </div>
+                <DialogTitle className="text-2xl font-bold tracking-tight text-slate-800 mt-0.5">
+                  Justificar asistencia
+                </DialogTitle>
+                <DialogDescription className="text-sm text-slate-500 mt-0.5">
+                  Registre una justificación para la asistencia seleccionada.
+                </DialogDescription>
               </div>
             </div>
+          </DialogHeader>
 
-            {/* Campos de hora */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium text-slate-700">Registro de marcación</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="hora-entrada" className="text-xs text-slate-500">Hora entrada</Label>
-                  <Input
-                    id="hora-entrada"
-                    type="time"
-                    value={horaEntrada}
-                    onChange={e=>setHoraEntrada(e.target.value)}
-                    className="w-full font-mono"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="hora-salida" className="text-xs text-slate-500">Hora salida</Label>
-                  <Input
-                    id="hora-salida"
-                    type="time"
-                    value={horaSalida}
-                    onChange={e=>setHoraSalida(e.target.value)}
-                    className="w-full font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Nota informativa */}
-            <div className="flex items-start gap-2.5 bg-blue-50/70 border border-blue-100 rounded-lg p-3">
-              <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Dejar vacío para no registrar. El sistema validará que entrada &lt; salida y recalculará <span className="font-medium text-slate-700">PRESENTE</span> / <span className="font-medium text-amber-600">TARDANZA</span>.
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
-              <Button
-                variant="outline"
-                onClick={()=>setEditarOpen(false)}
-                className="gap-1.5"
-              >
-                <X className="h-4 w-4" />
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleEditar}
-                disabled={saving}
-                className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {saving ? (
-                  <>
-                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    Guardar
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-
-    {/* ============================================================ */}
-    {/* DIALOG 3: VER JUSTIFICACIÓN */}
-    {/* ============================================================ */}
-    <Dialog open={verOpen} onOpenChange={setVerOpen}>
-      <DialogContent className="max-w-lg sm:max-w-md">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600 mt-0.5">
-              <Eye className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl font-semibold">Detalle de justificación</DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground mt-0.5">
-                Información de la justificación registrada.
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        {verData ? (
-          hasJustificacion(verData) ? (
-            <div className="space-y-5 pt-1">
-              {/* Identificación del practicante */}
-              <div className="bg-slate-50/80 border border-slate-100 rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                      <User className="h-3 w-3" />
-                      Practicante
-                    </div>
-                    <span className="text-sm font-medium text-slate-800">{verData.nombreCompleto}</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                      <CalendarDays className="h-3 w-3" />
-                      Fecha
-                    </div>
-                    <span className="text-sm font-medium text-slate-800">{verData.fecha}</span>
-                  </div>
-                  <div className="col-span-2">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">
-                      <BadgeCheck className="h-3 w-3" />
-                      Estado
-                    </div>
-                    <Badge className={getEstadoBadge(verData.estadoDia, verData.estadoVisual, verData.justificado).className}>
-                      {getEstadoBadge(verData.estadoDia, verData.estadoVisual, verData.justificado).label}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Información de la justificación */}
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-slate-50/50 border border-slate-100 rounded-lg p-3">
-                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Tipo</div>
-                    <span className="text-sm font-medium text-slate-800">{verData.justificacionTipo || "—"}</span>
-                  </div>
-                  <div className="bg-slate-50/50 border border-slate-100 rounded-lg p-3">
-                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Fecha de justificación</div>
-                    <span className="text-sm font-medium text-slate-800">
-                      {verData.justificacionFecha ? new Date(verData.justificacionFecha).toLocaleString("es-PE") : "—"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50/50 border border-slate-100 rounded-lg p-3">
-                  <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Motivo</div>
-                  <span className="text-sm font-medium text-slate-800">{verData.justificacionMotivo || "—"}</span>
-                </div>
-
-                {verData.justificacionObservacion && (
-                  <div className="bg-slate-50/50 border border-slate-100 rounded-lg p-3">
-                    <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-0.5">Observaciones</div>
-                    <span className="text-sm text-slate-700">{verData.justificacionObservacion}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Registro de marcación */}
-              {(verData.entradaReal || verData.salidaReal) && (
-                <div className="bg-slate-50/50 border border-slate-100 rounded-lg p-3">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">
-                    <Clock className="h-3 w-3" />
-                    Registro de marcación
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div>
-                      <span className="text-slate-500 text-xs">Entrada real</span>
-                      <span className="font-mono font-medium text-slate-800 block">{verData.entradaReal?.substring(0,5) || "—"}</span>
+          {selected && (
+            <div className="px-8 py-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              {/* ============================================================
+            SECCIÓN: IDENTIFICACIÓN DEL PRACTICANTE (estilo imagen)
+            ============================================================ */}
+              <div className="bg-white border border-slate-200 h-30 rounded-xl shadow-sm p-5">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  {/* Lado izquierdo: avatar + nombre + subtítulo */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-20 h-20 rounded-full bg-blue-100 text-blue-900 flex items-center justify-center">
+                      <User className="h-12 w-12" />
                     </div>
                     <div>
-                      <span className="text-slate-500 text-xs">Salida real</span>
-                      <span className="font-mono font-medium text-slate-800 block">{verData.salidaReal?.substring(0,5) || "—"}</span>
+                      <span className="text-xl font-bold text-slate-800">
+                        {selected.nombreCompleto}
+                      </span>
+                      <div className="text-sm text-slate-500">
+                        Practicante · Información del registro
+                      </div>
+                    </div>
+                  </div>
+                  <Separator orientation="vertical" />
+                  {/* Lado derecho: datos en grid de 3 columnas */}
+                  <div className="grid grid-cols-3 gap-6 flex-1">
+                    <div className="gap-10">
+                      <div className="flex items-center gap-1.5 text-xs mb-3 font-semibold text-slate-500 uppercase">
+                        <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
+                        Fecha
+                      </div>
+                      <span className="text-base font-medium text-slate-800">
+                        {selected.fecha}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 text-xs  mb-3 font-semibold text-slate-500 uppercase r">
+                        <BadgeCheck className="h-3.5 w-3.5 text-blue-600" />
+                        Estado actual
+                      </div>
+                      <Badge
+                        className={getEstadoBadge(selected.estadoDia).className}
+                      >
+                        {getEstadoBadge(selected.estadoDia).label}
+                      </Badge>
+                    </div>
+                    {selected.entradaReal && (
+                      <div>
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase ">
+                          <Clock className="h-3.5 w-3.5 text-blue-600" />
+                          Entrada real
+                        </div>
+                        <span className="text-base font-mono font-medium text-slate-800">
+                          {selected.entradaReal.substring(0, 5)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ============================================================
+            SECCIÓN: FORMULARIO CON JERARQUÍA Y LÍNEA VERTICAL
+            ============================================================ */}
+              <div className="space-y-6">
+                {/* Título de sección */}
+                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                  Información de la justificación
+                </h3>
+
+                {/* Contenedor de pasos con línea vertical */}
+                <div className="relative">
+                  {/* PASO 1: Tipo de justificación */}
+                  <div className="flex gap-4">
+                    {/* Columna izquierda: número + línea vertical */}
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold z-10">
+                        1
+                      </div>
+                      {/* Línea vertical que conecta con el siguiente paso */}
+                      <div className="w-0.5 flex-1 bg-blue-200/70 min-h-[40px]" />
+                    </div>
+
+                    {/* Columna derecha: contenido del paso */}
+                    <div className="flex-1 pb-6">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="tipo-justificacion"
+                          className="text-sm font-semibold text-slate-700"
+                        >
+                          Tipo de justificación
+                        </Label>
+                        <Select
+                          value={tipoJust}
+                          onValueChange={(v: any) => setTipoJust(v)}
+                        >
+                          <SelectTrigger
+                            id="tipo-justificacion"
+                            className="w-full h-11"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getOpcionesJustificacion().map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {tipoJust && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Seleccione el tipo de justificación que corresponde.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PASO 2: Motivo */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold z-10">
+                        2
+                      </div>
+                      {/* Línea vertical (solo si hay más pasos después) */}
+                      {tipoJust !== "SALIDA_ANTICIPADA_JUSTIFICADA" && (
+                        <div className="w-0.5 flex-1 bg-blue-200/70 min-h-[40px]" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 pb-6">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="motivo-justificacion"
+                          className="text-sm font-semibold text-slate-700"
+                        >
+                          Motivo de la justificación{" "}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="motivo-justificacion"
+                          value={motivo}
+                          onChange={(e) => setMotivo(e.target.value)}
+                          placeholder="Ej: Se malogró su motocicleta, trámite personal, problema de salud..."
+                          className="w-full h-11"
+                        />
+                        {motivo && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Explique brevemente el motivo de la justificación.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PASO 3 (condicional): Salida anticipada */}
+                  {tipoJust === "SALIDA_ANTICIPADA_JUSTIFICADA" && (
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold z-10">
+                          3
+                        </div>
+                        <div className="w-0.5 flex-1 bg-blue-200/70 min-h-[40px]" />
+                      </div>
+
+                      <div className="flex-1 pb-6">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-semibold text-slate-700">
+                            Hora de salida anticipada autorizada
+                          </Label>
+                          <div className="bg-gradient-to-br from-blue-50/80 to-white border border-blue-200/70 rounded-xl p-4 shadow-sm space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                <div className="text-xs text-slate-500">
+                                  Entrada registrada
+                                </div>
+                                <span className="text-base font-mono font-medium text-slate-800">
+                                  {selected.entradaReal?.substring(0, 5) || "—"}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="text-xs text-slate-500">
+                                  Estado actual
+                                </div>
+                                <span className="text-sm font-medium text-slate-800">
+                                  {selected.estadoDia}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="text-xs text-slate-500">
+                                  Hora autorizada
+                                </div>
+                                <Input
+                                  id="hora-salida-anticipada"
+                                  type="time"
+                                  value={horaSalidaAnticipada}
+                                  onChange={(e) =>
+                                    setHoraSalidaAnticipada(e.target.value)
+                                  }
+                                  className="w-full h-11 font-mono border-blue-300 focus:border-blue-500 focus:ring-blue-200"
+                                  required
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PASO 3 o 4: Observación */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold z-10">
+                        {tipoJust === "SALIDA_ANTICIPADA_JUSTIFICADA" ? 4 : 3}
+                      </div>
+                      {/* No hay línea después del último paso */}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="observacion-justificacion"
+                          className="text-sm font-semibold text-slate-700"
+                        >
+                          Observación adicional (opcional)
+                        </Label>
+                        <Textarea
+                          id="observacion-justificacion"
+                          value={observacion}
+                          onChange={(e) => setObservacion(e.target.value)}
+                          placeholder="Detalles adicionales (opcional)"
+                          rows={2}
+                          className="w-full resize-y min-h-11"
+                        />
+                        {observacion && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Información adicional que considere relevante.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-end pt-2 border-t border-slate-100">
+              {/* ============================================================
+            FOOTER: con botón principal renombrado
+            ============================================================ */}
+              <div className="flex items-center justify-end gap-4 pt-4 border-t border-slate-200">
                 <Button
                   variant="outline"
-                  onClick={()=>setVerOpen(false)}
-                  className="gap-1.5"
+                  onClick={() => setJustificarOpen(false)}
+                  className="gap-2 h-11 px-6"
+                >
+                  <X className="h-4 w-4" />
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleJustificar}
+                  disabled={saving || !motivo.trim()}
+                  className="gap-2 h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                >
+                  {saving ? (
+                    <>
+                      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Registrar justificación
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* ============================================================ */}
+      {/* DIALOG 2: CORREGIR MARCACIÓN MANUAL (RH) - REDISEÑO         */}
+      {/* ============================================================ */}
+      <Dialog open={editarOpen} onOpenChange={setEditarOpen}>
+        <DialogContent className="max-w-4xl sm:max-w-4xl p-0 overflow-hidden">
+          {/* HEADER: con badge RH y fondo ámbar sutil */}
+          <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-amber-50/50 to-white px-8 pt-6 pb-4">
+            <div className="flex items-start gap-4">
+              <div className="p-2.5 rounded-xl w-20 h-20 bg-orange-400 text-white shadow-sm flex items-center justify-center">
+                <Edit className="h-13 w-13" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
+                    Gestión de asistencia
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] font-mono uppercase px-2 py-0"
+                  >
+                    RH
+                  </Badge>
+                </div>
+                <DialogTitle className="text-2xl font-bold tracking-tight text-slate-800 mt-0.5">
+                  Corregir marcación manual
+                </DialogTitle>
+                <DialogDescription className="text-sm text-slate-500 mt-0.5">
+                  Ajuste manual de la marcación de asistencia del practicante.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {selected && (
+            <div className="px-8 py-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              {/* ============================================================
+            SECCIÓN: IDENTIFICACIÓN DEL PRACTICANTE (estilo imagen)
+            ============================================================ */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  {/* Lado izquierdo: avatar + nombre + subtítulo */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-20 h-20 rounded-full bg-blue-100 text-blue-900 flex items-center justify-center">
+                      <User className="h-12 w-12" />
+                    </div>
+                    <div>
+                      <span className="text-xl font-bold text-slate-800">
+                        {selected.nombreCompleto}
+                      </span>
+                      <div className="text-sm text-slate-500">
+                        Practicante · Información del registro
+                      </div>
+                    </div>
+                  </div>
+                  <Separator orientation="vertical" />
+                  {/* Lado derecho: datos en grid de 4 columnas */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-2 text-[10px] font-semibold text-slate-500 uppercase ">
+                        <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
+                        Fecha
+                      </div>
+                      <span className="text-base text-[12px] font-medium text-slate-800">
+                        {selected.fecha}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex items-center mb-2 gap-1.5 text-[10px] font-semibold text-slate-500 uppercase ">
+                        <BadgeCheck className="h-3.5 w-3.5 text-[10px] text-indigo-600" />
+                        Estado
+                      </div>
+                      <Badge
+                        className={getEstadoBadge(selected.estadoDia).className}
+                      >
+                        {getEstadoBadge(selected.estadoDia).label}
+                      </Badge>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 text-[10px] mb-2 font-semibold text-slate-500 uppercase ">
+                        <Clock className="h-3.5 w-3.5 text-blue-600" />
+                        Entrada
+                      </div>
+                      <span className="text-[12px] font-mono font-medium bg-slate-50 px-2.5 py-0.5 rounded border border-slate-200 inline-block">
+                        {selected.entradaEsperada?.substring(0, 5) || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 text-[10px] mb-2 font-semibold text-slate-500 uppercase tracking-wider">
+                        <Clock className="h-3.5 w-3.5 text-red-600" />
+                        Salida
+                      </div>
+                      <span className="text-[12px] font-mono  font-medium bg-slate-50 px-2.5 py-0.5 rounded border border-slate-200 inline-block">
+                        {selected.salidaEsperada?.substring(0, 5) || "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ============================================================
+            SECCIÓN: REGISTRO DE MARCACIÓN (con valores actuales)
+            ============================================================ */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                  Registro de marcación
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Entrada */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center  mb-2">
+                      <SquareArrowRightEnter className="h-4 w-4 text-blue-500"></SquareArrowRightEnter>
+                      <Label
+                        htmlFor="hora-entrada"
+                        className="text-xs font-semibold pl-2 text-blue-500 uppercase tracking-wider"
+                      >
+                        Entrada
+                      </Label>
+                    </div>
+                    <Input
+                      id="hora-entrada"
+                      type="time"
+                      value={horaEntrada}
+                      onChange={(e) => setHoraEntrada(e.target.value)}
+                      className="w-full h-11 font-mono border-slate-300 focus:border-amber-500 focus:ring-amber-200"
+                      placeholder="--:--"
+                    />
+                  </div>
+
+                  {/* Salida */}
+                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center  mb-2">
+                      <ArrowLeftFromLine className="h-4 w-4 text-red-500"></ArrowLeftFromLine>
+                      <Label
+                        htmlFor="hora-salida"
+                        className="text-xs font-semibold pl-2 text-red-500 uppercase tracking-wider"
+                      >
+                        Salida
+                      </Label>
+                    </div>
+                    <Input
+                      id="hora-salida"
+                      type="time"
+                      value={horaSalida}
+                      onChange={(e) => setHoraSalida(e.target.value)}
+                      className="w-full h-11 font-mono border-slate-300 focus:border-amber-500 focus:ring-amber-200"
+                      placeholder="--:--"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* ============================================================
+            SECCIÓN: OBSERVACIONES (opcional)
+            ============================================================ */}
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="observacion-correccion"
+                  className="text-sm font-semibold text-slate-700"
+                >
+                  Observaciones{" "}
+                  <span className="text-slate-400">(opcional)</span>
+                </Label>
+                <Textarea
+                  id="observacion-correccion"
+                  value={observacion} // Asumo que existe un estado 'observacion' en tu lógica (si no, puedes usar el mismo que usas en justificación o crear uno específico)
+                  onChange={(e) => setObservacion(e.target.value)} // Asegúrate de tener este setter
+                  placeholder="Explique el motivo de la corrección realizada."
+                  rows={2}
+                  className="w-full resize-y min-h-11 border-slate-300 focus:border-amber-500 focus:ring-amber-200"
+                />
+                {observacion && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Información adicional que considere relevante.
+                  </p>
+                )}
+              </div>
+
+              {/* ============================================================
+            NOTA INFORMATIVA (estilo imagen)
+            ============================================================ */}
+              <div className="flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-4">
+                <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Esta acción será registrada en el historial del sistema con su
+                  usuario y fecha.
+                </p>
+              </div>
+
+              {/* ============================================================
+            FOOTER: con botón principal específico
+            ============================================================ */}
+              <div className="flex items-center justify-end gap-4 pt-4 border-t border-slate-200">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditarOpen(false)}
+                  className="gap-2 h-11 px-6"
+                >
+                  <X className="h-4 w-4" />
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleEditar}
+                  disabled={saving}
+                  className="gap-2 h-11 px-6 bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                >
+                  {saving ? (
+                    <>
+                      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Guardar corrección
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* ============================================================ */}
+      {/* ============================================================ */}
+      {/* DIALOG 3: VER JUSTIFICACIÓN - COPIA EXACTA DE LA IMAGEN     */}
+      {/* ============================================================ */}
+      <Dialog open={verOpen} onOpenChange={setVerOpen}>
+        <DialogContent className="max-w-4xl sm:max-w-6xl p-0 overflow-hidden">
+          {/* HEADER: con etiqueta de módulo y descripción */}
+          <DialogHeader className="border-b border-slate-200  bg-gradient-to-r from-blue-50/50 to-white px-8 pt-6 pb-4">
+            <div className="flex items-start  gap-4">
+              <div className="p-2.5 rounded-xl bg-blue-900 h-20 w-20  text-white shadow-sm">
+                <FileSearchCorner className="h-15 w-15" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-blue-900 uppercase tracking-wider">
+                    Gestión de asistencia
+                  </span>
+                </div>
+                <DialogTitle className="text-2xl font-bold tracking-tight text-slate-800 mt-0.5">
+                  Detalle de justificación
+                </DialogTitle>
+                <DialogDescription className="text-sm text-slate-500 mt-0.5">
+                  Detalle completo de las justificaciones y marcaciones del día.
+                </DialogDescription>
+              </div>
+            </div>
+            {/* Línea de acento azul sutil */}
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-400/20 to-blue-600/40" />
+          </DialogHeader>
+
+          {verData ? (
+            hasJustificacion(verData) ? (
+              <div className="px-8 py-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                {/* ============================================================
+              SECCIÓN: IDENTIFICACIÓN DEL PRACTICANTE (con avatar)
+              ============================================================ */}
+                <div className="bg-white border w-90 border-slate-200 rounded-xl shadow-sm p-5">
+                  {/* Fila superior: avatar + nombre + subtítulo */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                      <User className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <span className="text-xl font-bold text-slate-800">
+                        {verData.nombreCompleto}
+                      </span>
+                      <div className="text-sm text-slate-500">
+                        Practicante · Información del registro
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fila inferior: fecha y estado en línea */}
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-slate-600">Fecha:</span>
+                      <span className="text-slate-800">{verData.fecha}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <BadgeCheck className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-slate-600">
+                        Estado del día:
+                      </span>
+                      <Badge
+                        className={getEstadoBadge(verData.estadoDia).className}
+                      >
+                        {getEstadoBadge(verData.estadoDia).label}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ============================================================
+              SECCIÓN: REGISTRO DE MARCACIÓN (bloque independiente)
+              ============================================================ */}
+                {(verData.entradaReal || verData.salidaReal) && (
+                  <div className="bg-slate-50/70 border w-90 border-slate-200 rounded-xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3">
+                      Registro de marcación
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 mb-5 gap-4">
+                      <div>
+                        <div className="text-xs flex gap-2 mb-1 text-slate-500">
+                          <Clock className="h-4 w-4 text-green-600" />
+                          Entrada real
+                        </div>
+                        <div className="text-base font-mono font-medium text-slate-800">
+                          {verData.entradaReal?.substring(0, 5) || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs flex gap-2 text-slate-500">
+                          <Clock className="h-4 w-4 text-red-600" />
+                          Salida real
+                        </div>
+                        <div className="text-base font-mono font-medium text-slate-800">
+                          {verData.salidaReal?.substring(0, 5) || "—"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-start h-12  gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-2">
+                      <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-slate-600 leading-relaxed">
+                        El horario mostrado corresponde a la marcacion del 
+                        lector QR
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ============================================================
+              SECCIÓN: JUSTIFICACIONES REGISTRADAS
+              ============================================================ */}
+                <div>
+                  {(() => {
+                    const detalles = (verData as any).situacionesDetalle as
+                      | any[]
+                      | undefined;
+                    const list =
+                      detalles && detalles.length > 0
+                        ? detalles
+                        : [
+                            {
+                              tipo:
+                                verData.justificacionTipo ||
+                                verData.situacion ||
+                                "OTRO",
+                              motivo: verData.justificacionMotivo,
+                              observacion: verData.justificacionObservacion,
+                              horaEntradaRegistrada: verData.entradaReal,
+                              horaSalidaAnticipada: (verData as any)
+                                .horaSalidaAnticipadaAutorizada,
+                              fechaRegistro: verData.justificacionFecha,
+                            },
+                          ];
+
+                    // Mapa de colores y etiquetas para badges
+                    const tipoColorMap: Record<
+                      string,
+                      {
+                        bg: string;
+                        text: string;
+                        border: string;
+                        icon: React.ReactNode;
+                      }
+                    > = {
+                      SALIDA_ANTICIPADA_JUSTIFICADA: {
+                        bg: "bg-purple-100",
+                        text: "text-purple-700",
+                        border: "border-purple-200",
+                        icon: <Clock className="h-4 w-4" />,
+                      },
+                      JUSTIFICACION_FALTA: {
+                        bg: "bg-red-100",
+                        text: "text-red-700",
+                        border: "border-red-200",
+                        icon: <XCircle className="h-4 w-4" />,
+                      },
+                      JUSTIFICACION_TARDANZA: {
+                        bg: "bg-amber-100",
+                        text: "text-amber-700",
+                        border: "border-amber-200",
+                        icon: <AlertTriangle className="h-4 w-4" />,
+                      },
+                      JUSTIFICACION_ASISTENCIA: {
+                        bg: "bg-green-100",
+                        text: "text-green-700",
+                        border: "border-green-200",
+                        icon: <CheckCircle className="h-4 w-4" />,
+                      },
+                      OTRO: {
+                        bg: "bg-slate-100",
+                        text: "text-slate-700",
+                        border: "border-slate-200",
+                        icon: <FileText className="h-4 w-4" />,
+                      },
+                    };
+
+                    // Etiquetas legibles
+                    const getTipoLabel = (tipo: string) => {
+                      if (tipo === "JUSTIFICACION_TARDANZA")
+                        return "Tardanza justificada";
+                      if (tipo === "SALIDA_ANTICIPADA_JUSTIFICADA")
+                        return "Salida anticipada justificada";
+                      if (tipo === "JUSTIFICACION_FALTA")
+                        return "Falta justificada";
+                      if (tipo === "JUSTIFICACION_ASISTENCIA")
+                        return "Asistencia justificada";
+                      return tipo || "Otro";
+                    };
+
+                    return (
+                      <>
+                        <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3">
+                          Justificaciones registradas ({list.length})
+                        </h4>
+                        {list.map((d: any, idx: number) => {
+                          const tipoKey = d.tipo?.toUpperCase() || "OTRO";
+                          const colors =
+                            tipoColorMap[tipoKey] || tipoColorMap["OTRO"];
+                          const tipoLabel = getTipoLabel(d.tipo);
+
+                          return (
+                            <div
+                              key={idx}
+                              className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 mb-4 last:mb-0"
+                            >
+                              {/* Encabezado: badge + fecha */}
+                              <div className="flex items-center justify-between mb-3">
+                                <Badge
+                                  variant="outline"
+                                  className={`${colors.bg} ${colors.text} ${colors.border} text-xs font-semibold px-3 py-1 uppercase tracking-wide flex items-center gap-1.5`}
+                                >
+                                  {colors.icon}
+                                  {tipoLabel}
+                                </Badge>
+                                <span className="text-xs text-slate-400">
+                                  {d.fechaRegistro
+                                    ? new Date(d.fechaRegistro).toLocaleString(
+                                        "es-PE",
+                                      )
+                                    : verData.justificacionFecha
+                                      ? new Date(
+                                          verData.justificacionFecha,
+                                        ).toLocaleString("es-PE")
+                                      : "—"}
+                                </span>
+                              </div>
+
+                              {/* Cuerpo: motivo y horas */}
+                              <div className="space-y-3">
+                                {d.motivo && (
+                                  <div>
+                                    <div className="text-xs text-slate-500">
+                                      Motivo
+                                    </div>
+                                    <p className="text-sm font-medium text-slate-800">
+                                      {d.motivo}
+                                    </p>
+                                  </div>
+                                )}
+                                {(d.horaEntradaRegistrada ||
+                                  d.horaSalidaAnticipada) && (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {d.horaEntradaRegistrada && (
+                                      <div>
+                                        <div className="text-xs text-slate-500">
+                                          Entrada registrada
+                                        </div>
+                                        <span className="text-sm font-mono font-medium text-slate-800">
+                                          {String(
+                                            d.horaEntradaRegistrada,
+                                          ).substring(0, 5)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {d.horaSalidaAnticipada && (
+                                      <div>
+                                        <div className="text-xs text-slate-500">
+                                          Salida autorizada
+                                        </div>
+                                        <span className="text-sm font-mono font-medium text-blue-700">
+                                          {String(
+                                            d.horaSalidaAnticipada,
+                                          ).substring(0, 5)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {d.observacion && (
+                                  <div>
+                                    <div className="text-xs text-slate-500">
+                                      Observaciones
+                                    </div>
+                                    <p className="text-sm text-slate-700">
+                                      {d.observacion}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Pie de tarjeta: "Sin documento" o similar (NO se agrega porque no hay lógica) */}
+                              {/* En la imagen aparece "Sin documento" o el nombre del archivo, pero no lo tenemos */}
+                            </div>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {/* Footer con botón cerrar */}
+                <div className="flex justify-end pt-2 border-t border-slate-200">
+                  <Button
+                    variant="outline"
+                    onClick={() => setVerOpen(false)}
+                    className="gap-2 h-10 px-6"
+                  >
+                    <X className="h-4 w-4" />
+                    Cerrar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // Sin justificación
+              <div className="px-8 py-12 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
+                  <EyeOff className="h-8 w-8" />
+                </div>
+                <p className="text-base font-medium text-slate-700">
+                  No existe justificación para esta asistencia.
+                </p>
+                <p className="text-sm text-slate-500 mt-1">
+                  El registro de asistencia no cuenta con una justificación
+                  asociada.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setVerOpen(false)}
+                  className="mt-6 gap-2 h-10 px-6"
                 >
                   <X className="h-4 w-4" />
                   Cerrar
                 </Button>
               </div>
-            </div>
+            )
           ) : (
-            <div className="py-8 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-400 mb-3">
-                <EyeOff className="h-6 w-6" />
+            // Sin datos
+            <div className="px-8 py-12 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
+                <AlertCircle className="h-8 w-8" />
               </div>
-              <p className="text-sm text-slate-500">No existe justificación para esta asistencia.</p>
+              <p className="text-base font-medium text-slate-700">
+                Sin datos disponibles
+              </p>
+              <p className="text-sm text-slate-500 mt-1">
+                No se pudo cargar la información de la justificación.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setVerOpen(false)}
+                className="mt-6 gap-2 h-10 px-6"
+              >
+                <X className="h-4 w-4" />
+                Cerrar
+              </Button>
             </div>
-          )
-        ) : (
-          <div className="py-8 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-400 mb-3">
-              <AlertCircle className="h-6 w-6" />
-            </div>
-            <p className="text-sm text-slate-500">Sin datos disponibles.</p>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
