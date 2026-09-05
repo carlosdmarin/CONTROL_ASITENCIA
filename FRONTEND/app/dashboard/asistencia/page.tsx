@@ -165,11 +165,6 @@ export default function AsistenciaPage() {
       />
 
       <AsistenciaStats resumen={resumen} loading={loading} />
-      <div className="flex justify-end gap-2">
-        <button onClick={openPermiso} className="text-xs border rounded px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700">Registrar permiso previo</button>
-
-      </div>
-
       <AsistenciaFilters
         busqueda={busqueda}
         onBusquedaChange={setBusqueda}
@@ -179,54 +174,6 @@ export default function AsistenciaPage() {
       />
 
       <AsistenciaTable asistencias={filtradas.map(({_idx, ...rest})=>rest)} rawData={filtradasRaw} loading={loading} onRefresh={cargarDatos} />
-
-      <Dialog open={permisoOpen} onOpenChange={setPermisoOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Registrar permiso previo</DialogTitle>
-            <DialogDescription>Autoriza inasistencia antes de la fecha. Ese día no se generará AUSENTE.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label>Practicante</Label>
-              <Select value={permisoPracticante} onValueChange={(v:any)=>setPermisoPracticante(v)}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                <SelectContent>
-                  {practicantes.map((p:any)=> <SelectItem key={p.idPracticante} value={String(p.idPracticante)}>{p.nombreCompleto || p.nombre+" "+p.apellido} - {p.documento}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Fecha</Label>
-              <Input type="date" value={permisoFecha} onChange={e=>setPermisoFecha(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label>Tipo</Label>
-              <Select value={permisoTipo} onValueChange={(v:any)=>setPermisoTipo(v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PERSONAL">Personal</SelectItem>
-                  <SelectItem value="MEDICO">Médico</SelectItem>
-                  <SelectItem value="ACADEMICO">Académico</SelectItem>
-                  <SelectItem value="OTRO">Otro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Motivo *</Label>
-              <Input value={permisoMotivo} onChange={e=>setPermisoMotivo(e.target.value)} placeholder="Ej: Permiso personal" />
-            </div>
-            <div className="space-y-1">
-              <Label>Observación</Label>
-              <Textarea value={permisoObs} onChange={e=>setPermisoObs(e.target.value)} rows={2} />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={()=>setPermisoOpen(false)}>Cancelar</Button>
-              <Button onClick={handlePermiso}>Guardar permiso</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

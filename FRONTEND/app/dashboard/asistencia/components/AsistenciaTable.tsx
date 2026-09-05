@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -64,6 +64,10 @@ import {
   ShieldOff,
   Icon,
   Shield,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal as Ellipsis,
+  Search,
 } from "lucide-react";
 import {
   AsistenciaDiaria,
@@ -103,6 +107,90 @@ export default function AsistenciaTable({
   const [horaSalida, setHoraSalida] = useState("");
   const [horaSalidaAnticipada, setHoraSalidaAnticipada] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Paginación - mismo patrón que PracticanteTable (10 por página)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalItems = asistencias.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentAsistencias = asistencias.slice(startIndex, endIndex);
+  const currentRawData = rawData.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+  // Volver a página 1 cuando cambian filtros (asistencias filtradas)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [asistencias]);
+
+  // Ajustar si totalPages disminuye y currentPage queda fuera de rango
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    const pageRange = getPageRange(currentPage, totalPages);
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 border-t border-gray-100">
+        <p className="text-sm text-gray-500 order-2 sm:order-1">
+          {startIndex + 1}–{Math.min(endIndex, totalItems)} de {totalItems}
+        </p>
+        <div className="flex items-center gap-1 order-1 sm:order-2 self-end sm:self-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Anterior</span>
+          </Button>
+          {pageRange.map((page, i) =>
+            page === "..." ? (
+              <span
+                key={`ellipsis-${i}`}
+                className="flex h-8 w-8 items-center justify-center text-gray-300"
+              >
+                <Ellipsis className="h-4 w-4" />
+              </span>
+            ) : (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => goToPage(page)}
+                aria-current={currentPage === page ? "page" : undefined}
+                className={`h-8 w-8 p-0 text-sm ${
+                  currentPage === page
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : ""
+                }`}
+              >
+                {page}
+              </Button>
+            ),
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Siguiente</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   const getEstadoBadge = (
     estado: string,
@@ -182,6 +270,30 @@ export default function AsistenciaTable({
       icon: FileCheck,
     };
   };
+
+  // ---------------------------------------------------------------------------
+  // Paginación con truncado - mismo patrón que PracticanteTable
+  // ---------------------------------------------------------------------------
+  function getPageRange(current: number, total: number): (number | "...")[] {
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    const pages: (number | "...")[] = [];
+    pages.push(1);
+    if (current > 3) {
+      pages.push("...");
+    }
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) {
+      pages.push("...");
+    }
+    pages.push(total);
+    return pages;
+  }
 
   const TableSkeleton = () => (
     <>
@@ -422,12 +534,12 @@ export default function AsistenciaTable({
             ) : (
               <Badge variant="outline" className="gap-1">
                 <Users className="h-3 w-3" />
-                {asistencias.length} practicantes
+                {totalItems} practicantes
               </Badge>
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-0 md:p-0 overflow-hidden">
+        <CardContent className="p-0 overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -457,9 +569,23 @@ export default function AsistenciaTable({
               <TableBody>
                 {loading ? (
                   <TableSkeleton />
+                ) : currentAsistencias.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <Search className="h-10 w-10 text-gray-500 mb-3" />
+                        <p className="text-sm font-medium text-gray-400">
+                          No hay registros para mostrar
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Intenta ajustar los filtros de búsqueda
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  asistencias.map((asistencia, index) => {
-                    const raw = rawData[index];
+                  currentAsistencias.map((asistencia, index) => {
+                    const raw = currentRawData[index];
                     const estado = getEstadoBadge(asistencia.estado);
                     const justificado = isJustificado(raw);
                     const descanso = isDescanso(raw);
@@ -471,10 +597,14 @@ export default function AsistenciaTable({
                       opcionesDisponiblesRow.length > 0;
                     const puedeVer = hasJustificacion(raw) && !descanso;
                     const editarDisabled = justificado || descanso;
+                    const globalIndex = startIndex + index;
                     return (
-                      <TableRow key={index} className="hover:bg-slate-50 h-12">
+                      <TableRow
+                        key={globalIndex}
+                        className="hover:bg-slate-50 h-12"
+                      >
                         <TableCell className="font-medium">
-                          {index + 1}
+                          {globalIndex + 1}
                         </TableCell>
                         <TableCell className="font-medium">
                           {asistencia.practicante}
@@ -536,7 +666,7 @@ export default function AsistenciaTable({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-xs gap-1 bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 disabled:opacity-50"
+                              className="h-7 text-xs gap-1 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 disabled:opacity-50"
                               disabled={editarDisabled}
                               title={
                                 descanso
@@ -545,7 +675,7 @@ export default function AsistenciaTable({
                                     ? "No editable: justificado"
                                     : "Editar horas"
                               }
-                              onClick={() => openEditar(index)}
+                              onClick={() => openEditar(globalIndex)}
                             >
                               <Pencil className="h-3 w-3" />
                               Editar
@@ -554,7 +684,7 @@ export default function AsistenciaTable({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-xs gap-1 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 disabled:opacity-50"
+                              className="h-7 text-xs gap-1 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 disabled:opacity-50"
                               disabled={!puedeJustificar}
                               title={
                                 !puedeJustificar
@@ -567,7 +697,7 @@ export default function AsistenciaTable({
                                         : "No justificable"
                                   : "Justificar"
                               }
-                              onClick={() => openJustificar(index)}
+                              onClick={() => openJustificar(globalIndex)}
                             >
                               <FileCheck className="h-3 w-3" />
                               Justificar
@@ -576,14 +706,14 @@ export default function AsistenciaTable({
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-7 text-xs gap-1 bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 disabled:opacity-50"
+                              className="h-7 text-xs gap-1 bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 disabled:opacity-50"
                               disabled={!puedeVer}
                               title={
                                 !puedeVer
                                   ? "Sin justificación"
                                   : "Ver justificación"
                               }
-                              onClick={() => openVer(index)}
+                              onClick={() => openVer(globalIndex)}
                             >
                               <Eye className="h-3 w-3" />
                               Ver
@@ -597,6 +727,7 @@ export default function AsistenciaTable({
               </TableBody>
             </Table>
           </div>
+          {!loading && renderPagination()}
         </CardContent>
       </Card>
       {/* ============================================================ */}
@@ -906,7 +1037,7 @@ export default function AsistenciaTable({
         </DialogContent>
       </Dialog>
       {/* ============================================================ */}
-      {/* DIALOG 2: CORREGIR MARCACIÓN MANUAL (RH) - REDISEÑO         */}
+      {/* DIALOG 2: CORREGIR MARCACIÓN MANUAL   */}
       {/* ============================================================ */}
       <Dialog open={editarOpen} onOpenChange={setEditarOpen}>
         <DialogContent className="max-w-4xl sm:max-w-4xl p-0 overflow-hidden">
@@ -1060,28 +1191,6 @@ export default function AsistenciaTable({
               {/* ============================================================
             SECCIÓN: OBSERVACIONES (opcional)
             ============================================================ */}
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="observacion-correccion"
-                  className="text-sm font-semibold text-slate-700"
-                >
-                  Observaciones{" "}
-                  <span className="text-slate-400">(opcional)</span>
-                </Label>
-                <Textarea
-                  id="observacion-correccion"
-                  value={observacion} // Asumo que existe un estado 'observacion' en tu lógica (si no, puedes usar el mismo que usas en justificación o crear uno específico)
-                  onChange={(e) => setObservacion(e.target.value)} // Asegúrate de tener este setter
-                  placeholder="Explique el motivo de la corrección realizada."
-                  rows={2}
-                  className="w-full resize-y min-h-11 border-slate-300 focus:border-amber-500 focus:ring-amber-200"
-                />
-                {observacion && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Información adicional que considere relevante.
-                  </p>
-                )}
-              </div>
 
               {/* ============================================================
             NOTA INFORMATIVA (estilo imagen)
@@ -1089,8 +1198,7 @@ export default function AsistenciaTable({
               <div className="flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-4">
                 <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  Esta acción será registrada en el historial del sistema con su
-                  usuario y fecha.
+                  Esta acción será registrada en el historial del sistema.
                 </p>
               </div>
 
@@ -1129,7 +1237,7 @@ export default function AsistenciaTable({
         </DialogContent>
       </Dialog>
       {/* ============================================================ */}
-      {/* DIALOG 3: VER JUSTIFICACIÓN - COPIA EXACTA DE LA IMAGEN     */}
+      {/* DIALOG 3: VER JUSTIFICACIÓN     */}
       {/* ============================================================ */}
       <Dialog open={verOpen} onOpenChange={setVerOpen}>
         <DialogContent className="max-w-4xl sm:max-w-6xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
@@ -1137,7 +1245,7 @@ export default function AsistenciaTable({
           <DialogHeader className="relative border-b border-slate-200 px-6 sm:px-8 pt-6 pb-5 shrink-0">
             <div className="flex items-start gap-3.5">
               <div className="w-20 h-20 rounded-lg bg-blue-900 flex items-center justify-center text-white shrink-0">
-                <FileSearchCorner className="h-13 w-13" />
+                <FileSearchCorner className="h-15 w-15" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-medium text-blue-900">
@@ -1341,7 +1449,6 @@ export default function AsistenciaTable({
 
                         return (
                           <>
-
                             <div className="space-y-3 mt-0">
                               {list.map((d: any, idx: number) => {
                                 const tipoKey = d.tipo?.toUpperCase() || "OTRO";
@@ -1397,37 +1504,39 @@ export default function AsistenciaTable({
                                     {/* Horarios: compactos, en línea */}
                                     {(() => {
                                       const horaSalidaAutorizada =
-                                        (d as any).horaSalidaAnticipadaAutorizada ??
+                                        (d as any)
+                                          .horaSalidaAnticipadaAutorizada ??
                                         (d as any).horaSalidaAnticipada;
-                                      const hasHoraSalida = Boolean(horaSalidaAutorizada);
-                                      return (d.horaEntradaRegistrada ||
-                                        hasHoraSalida) ? (
-                                      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm mb-3">
-                                        {d.horaEntradaRegistrada && (
-                                          <div className="flex items-baseline gap-1.5">
-                                            <span className="text-xs text-slate-400">
-                                              Entrada registrada
-                                            </span>
-                                            <span className="font-mono font-medium text-slate-800">
-                                              {String(
-                                                d.horaEntradaRegistrada,
-                                              ).substring(0, 5)}
-                                            </span>
-                                          </div>
-                                        )}
-                                        {hasHoraSalida && (
-                                          <div className="flex items-baseline gap-1.5">
-                                            <span className="text-xs text-slate-400">
-                                              Salida autorizada
-                                            </span>
-                                            <span className="font-mono font-medium text-blue-700">
-                                              {String(
-                                                horaSalidaAutorizada,
-                                              ).substring(0, 5)}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
+                                      const hasHoraSalida =
+                                        Boolean(horaSalidaAutorizada);
+                                      return d.horaEntradaRegistrada ||
+                                        hasHoraSalida ? (
+                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm mb-3">
+                                          {d.horaEntradaRegistrada && (
+                                            <div className="flex items-baseline gap-1.5">
+                                              <span className="text-xs text-slate-400">
+                                                Entrada registrada
+                                              </span>
+                                              <span className="font-mono font-medium text-slate-800">
+                                                {String(
+                                                  d.horaEntradaRegistrada,
+                                                ).substring(0, 5)}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {hasHoraSalida && (
+                                            <div className="flex items-baseline gap-1.5">
+                                              <span className="text-xs text-slate-400">
+                                                Salida autorizada
+                                              </span>
+                                              <span className="font-mono font-medium text-blue-700">
+                                                {String(
+                                                  horaSalidaAutorizada,
+                                                ).substring(0, 5)}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
                                       ) : null;
                                     })()}
 

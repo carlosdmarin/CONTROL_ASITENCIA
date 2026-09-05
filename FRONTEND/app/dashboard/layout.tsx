@@ -25,8 +25,6 @@ const menuItems = [
   { title: "Areas", icon: BriefcaseBusiness, href: "/dashboard/areas" },
   { title: "Practicantes", icon: Users, href: "/dashboard/practicantes" },
   { title: "Asistencia", icon: Users, href: "/dashboard/asistencia" },
-  { title: "Historial", icon: Calendar, href: "/dashboard/historial" },
-  { title: "Graficos", icon: BarChart3, href: "/dashboard/graficos" },
   { title: "Reportes", icon: FileText, href: "/dashboard/reportes" },
   { title: "Configuracion", icon: Settings, href: "/dashboard/configuracion" },
   { title: "Ayuda", icon: HelpCircle, href: "/dashboard/ayuda" },
@@ -43,7 +41,7 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="flex h-[100dvh] overflow-hidden bg-slate-50/80 flex-col md:flex-row">
+      <div className="flex h-dvhh-dvh overflow-hidden bg-slate-50/80 flex-col md:flex-row">
         {/* Header móvil - fijo arriba solo en cel */}
         <header className="md:hidden shrink-0 sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
