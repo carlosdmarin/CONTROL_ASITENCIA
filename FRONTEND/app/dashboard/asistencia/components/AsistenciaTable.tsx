@@ -1,90 +1,143 @@
+// ===============================
+// Esto le dice a Next.js que este componente debe correr en el navegador (cliente)
+// ===============================
 "use client";
 
+// ============================================
+// REACT HOOKS
+// ============================================
 import { useState, useEffect } from "react";
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Calendar,
-  Users,
-  Pencil,
-  FileCheck,
-  Eye,
-  Save,
-  FileSearchCorner,
-  X,
-  SquareArrowRightEnter,
-  AlertTriangle,
-  CheckCircle,
-  FileText,
-  Info,
-  Clock,
-  User,
-  CalendarDays,
-  BadgeCheck,
-  AlertCircle,
-  Edit,
-  ArrowLeftFromLine,
-  EyeOff,
-  CheckCircle2, // Presente
-  ClockAlert, // Tardanza
-  XCircle, // Ausente
-  MinusCircle, // Sin marcar
-  Coffee, // Descanso
-  FileCheck2, // Justificado
-  ShieldCheck, // Tardanza justificada
-  ShieldOff,
-  Icon,
-  Shield,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal as Ellipsis,
-  Search,
-} from "lucide-react";
-import {
-  AsistenciaDiaria,
-  AsistenciaDiariaResponse,
-  normalizeEstadoDia,
-  isTardanza,
-  isAusente,
-  getSituacionLabel,
-} from "@/types/asistencia";
-import { asistenciasApi } from "@/lib/api/asistencias";
-import { toast } from "sonner";
+// → useState: Guarda datos que cambian (ej: lista de asistencias, carga)
+// → useEffect: Ejecuta código al cargar la página (ej: traer datos del backend)
 
+// → La librería principal de React (necesaria para JSX)
+import React from "react";
+
+// ============================================
+// COMPONENTES UI - SHADCN
+// ============================================
+
+// Cards
+import {
+  Card, // El contenedor principal
+  CardContent, // Parte superior con titulo
+  CardHeader, // Titulo del card
+  CardTitle, // Contenido interno del card
+} from "@/components/ui/card";
+
+// TABLAS - Para mostrar datos en filas y columnas
+import {
+  Table, // Contenedor de la tabla
+  TableBody, // Cuerpo de la tabla (datos)
+  TableCell, // Celda individual (fila)
+  TableHead, // Celda de encabezado (negrita)
+  TableHeader, // Fila de encabezados
+  TableRow, // Fila de la tabla
+} from "@/components/ui/table";
+
+// BADGE - Etiquetas pequeñas para estados (ENTRADA/SALIDA/PRESENTE/AUSENTE)
+import { Badge } from "@/components/ui/badge";
+// SKELETON - Esqueleto de carga (muestra líneas grises mientras carga)
+import { Skeleton } from "@/components/ui/skeleton";
+// BOTON - Para acciones del usuario (guardar, editar, cancelar)
+import { Button } from "@/components/ui/button";
+// INPUT - Campo de texto corto (nombre, DNI, etc.)
+import { Input } from "@/components/ui/input";
+// TEXTAREA - Campo de texto largo (observaciones, descripciones)
+import { Textarea } from "@/components/ui/textarea";
+// LABEL - Título/descripción arriba de los inputs
+import { Label } from "@/components/ui/label";
+// SEPARATOR - Línea divisoria horizontal
+import { Separator } from "@/components/ui/separator";
+// SELECT - Menú desplegable (ej: filtrar practicantes)
+import {
+  Select, // Contenedor del select
+  SelectContent, // Opciones desplegables
+  SelectItem, // Opción individual
+  SelectTrigger, // Botón que abre el select
+  SelectValue, // Valor seleccionado
+} from "@/components/ui/select";
+// DIALOG - Ventana modal (popup que aparece encima)
+import {
+  Dialog,              // Contenedor del modal
+  DialogContent,       // Contenido del modal
+  DialogHeader,        // Encabezado del modal
+  DialogTitle,         // Título del modal
+  DialogDescription,   // Descripción del modal
+} from "@/components/ui/dialog";
+// ============================================
+// 🎯 ICONOS - LUCIDE REACT
+// ============================================
+// → Cada ícono es un componente que puedes usar como <Calendar />
+import {
+  Calendar,              // 📅 Calendario/fecha
+  Users,                 // 👥 Usuarios/grupo
+  Pencil,                // ✏️ Editar
+  FileCheck,             // ✅ Documento verificado
+  Eye,                   // 👁️ Ver/visualizar
+  Save,                  // 💾 Guardar
+  FileSearchCorner,      // 🔍 Buscar en documento
+  X,                     // ❌ Cerrar/eliminar
+  SquareArrowRightEnter, // ➡️ Entrar/marcar entrada
+  AlertTriangle,         // ⚠️ Advertencia
+  CheckCircle,           // ✅ Éxito/confirmado
+  FileText,              // 📄 Documento/texto
+  Info,                  // ℹ️ Información
+  Clock,                 // 🕐 Reloj/hora
+  User,                  // 👤 Usuario individual
+  CalendarDays,          // 📆 Días del calendario
+  BadgeCheck,            // ✅ Verificado
+  AlertCircle,           // ⚠️ Alerta/círculo
+  Edit,                  // ✏️ Editar
+  ArrowLeftFromLine,     // ⬅️ Volver
+  EyeOff,                // 👁️‍🗨️ Ocultar
+  CheckCircle2,          // ✅ Presente
+  ClockAlert,            // ⏰ Tardanza
+  XCircle,               // ❌ Ausente
+  MinusCircle,           // ➖ Sin marcar
+  Coffee,                // ☕ Descanso
+  ShieldCheck,           // 🛡️ Tardanza justificada
+  ShieldOff,             // 🛡️ Sin protección
+  ChevronLeft,           // ◀️ Flecha izquierda
+  ChevronRight,          // ▶️ Flecha derecha
+  MoreHorizontal as Ellipsis, // … Más opciones
+  Search,                // 🔍 Buscar
+} from "lucide-react";
+
+// ============================================
+// 📊 TIPOS Y UTILIDADES - ASISTENCIA
+// ============================================
+import {
+  AsistenciaDiaria,           // Tipo: Datos de asistencia de un día
+  AsistenciaDiariaResponse,   // Tipo: Respuesta del backend
+  normalizeEstadoDia,         // Función: Normaliza el estado (PRESENTE/AUSENTE)
+  isTardanza,                 // Función: ¿Es tardanza?
+  isAusente,                  // Función: ¿Está ausente?
+  getSituacionLabel,          // Función: Traduce el estado a texto
+} from "@/types/asistencia";
+
+
+// ============================================
+// 📡 API - COMUNICACIÓN CON BACKEND
+// ============================================
+import { asistenciasApi } from "@/lib/api/asistencias";
+
+
+// ============================================
+// 🔔 NOTIFICACIONES - SONNER
+// ============================================
+import { toast } from "sonner";
+// → toast: Muestra notificaciones emergentes
+//   - toast.success("✅ Mensaje")
+//   - toast.error("❌ Error")
+//   - toast.warning("⚠️ Advertencia")
+
+// Props que recibe el componente de tabla de asistencia
 interface AsistenciaTableProps {
-  asistencias: AsistenciaDiaria[];
-  rawData?: AsistenciaDiariaResponse[];
-  loading?: boolean;
-  onRefresh?: () => void;
+  asistencias: AsistenciaDiaria[];       // Lista de asistencias
+  rawData?: AsistenciaDiariaResponse[];  // Datos crudos del backend (opcional)
+  loading?: boolean;                     // ¿Está cargando? (opcional)
+  onRefresh?: () => void;               // Función para actualizar (opcional)
 }
 
 export default function AsistenciaTable({

@@ -7,14 +7,32 @@ import AsistenciaStats from "./components/AsistenciaStats";
 import AsistenciaFilters from "./components/AsistenciaFilters";
 import AsistenciaTable from "./components/AsistenciaTable";
 import { asistenciasApi } from "@/lib/api/asistencias";
-import { practicantesApi } from "@/lib/api/practicantes";
-import { AsistenciaDiaria, AsistenciaDiariaResponse, normalizeEstadoDia, isTardanza, isAusente } from "@/types/asistencia";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { practicantesApi } from "@/lib/api/practicantes";4
+import {
+  AsistenciaDiaria,
+  AsistenciaDiariaResponse,
+  normalizeEstadoDia,
+  isTardanza,
+  isAusente,
+} from "@/types/asistencia";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function formatFechaISO(date: Date): string {
   const y = date.getFullYear();
@@ -30,16 +48,24 @@ function formatHoras(horas: number | null | undefined): string | null {
   return `${h}h ${m}m`;
 }
 
-function mapEstado(estadoDia: AsistenciaDiariaResponse["estadoDia"]): AsistenciaDiaria["estado"] {
+function mapEstado(
+  estadoDia: AsistenciaDiariaResponse["estadoDia"],
+): AsistenciaDiaria["estado"] {
   switch (estadoDia) {
-    case "SIN_MARCAR": return "SIN_MARCAR";
-    case "PRESENTE": return "PRESENTE";
+    case "SIN_MARCAR":
+      return "SIN_MARCAR";
+    case "PRESENTE":
+      return "PRESENTE";
     case "TARDE":
-    case "TARDANZA": return "TARDANZA";
+    case "TARDANZA":
+      return "TARDANZA";
     case "FALTA":
-    case "AUSENTE": return "AUSENTE";
-    case "DESCANSO": return "DESCANSO";
-    case "JUSTIFICADO": return "JUSTIFICADO";
+    case "AUSENTE":
+      return "AUSENTE";
+    case "DESCANSO":
+      return "DESCANSO";
+    case "JUSTIFICADO":
+      return "JUSTIFICADO";
     default: {
       const _exhaustiveCheck: never = estadoDia;
       void _exhaustiveCheck;
@@ -50,13 +76,15 @@ function mapEstado(estadoDia: AsistenciaDiariaResponse["estadoDia"]): Asistencia
 
 export default function AsistenciaPage() {
   const [fecha, setFecha] = useState<Date>(new Date());
-  const [asistencias, setAsistencias] = useState<AsistenciaDiariaResponse[]>([]);
-  const [resumen, setResumen] = useState({ 
-    total: 0, 
-    presentes: 0, 
-    tardanzas: 0, 
+  const [asistencias, setAsistencias] = useState<AsistenciaDiariaResponse[]>(
+    [],
+  );
+  const [resumen, setResumen] = useState({
+    total: 0,
+    presentes: 0,
+    tardanzas: 0,
     ausentes: 0,
-    descansos: 0 
+    descansos: 0,
   });
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
@@ -74,18 +102,27 @@ export default function AsistenciaPage() {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const data = await asistenciasApi.getAsistenciasDelDia(fechaISO).catch(() => [] as AsistenciaDiariaResponse[]);
-      const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data) ? data : [];
+      const data = await asistenciasApi
+        .getAsistenciasDelDia(fechaISO)
+        .catch(() => [] as AsistenciaDiariaResponse[]);
+      const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data)
+        ? data
+        : [];
       setAsistencias(dataArray);
       const total = dataArray.length;
-      const presentes = dataArray.filter((a) => a.estadoDia === "PRESENTE" || isTardanza(a.estadoDia)).length;
+      const presentes = dataArray.filter(
+        (a) => a.estadoDia === "PRESENTE" || isTardanza(a.estadoDia),
+      ).length;
       const tardanzas = dataArray.filter((a) => isTardanza(a.estadoDia)).length;
-      const descansos = dataArray.filter((a) => a.estadoDia === "DESCANSO").length;
+      const descansos = dataArray.filter(
+        (a) => a.estadoDia === "DESCANSO",
+      ).length;
       const ausentes = dataArray.filter((a) => isAusente(a.estadoDia)).length;
       // también contar SIN_MARCAR separado pero para resumen lo agrupamos
       setResumen({ total, presentes, tardanzas, ausentes, descansos });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Error al cargar asistencias";
+      const msg =
+        e instanceof Error ? e.message : "Error al cargar asistencias";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -96,8 +133,18 @@ export default function AsistenciaPage() {
     cargarDatos();
   }, [fechaISO]);
 
-  const handlePrev = () => setFecha((d) => { const n = new Date(d); n.setDate(n.getDate() - 1); return n; });
-  const handleNext = () => setFecha((d) => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; });
+  const handlePrev = () =>
+    setFecha((d) => {
+      const n = new Date(d);
+      n.setDate(n.getDate() - 1);
+      return n;
+    });
+  const handleNext = () =>
+    setFecha((d) => {
+      const n = new Date(d);
+      n.setDate(n.getDate() + 1);
+      return n;
+    });
   const handleFechaChange = (iso: string) => {
     const [y, m, d] = iso.split("-").map(Number);
     setFecha(new Date(y, m - 1, d));
@@ -117,22 +164,30 @@ export default function AsistenciaPage() {
 
   // Filtros en memoria (sin filtro por área)
   const filtradasIndices = useMemo(() => {
-    return asistenciasUI.map((a, idx) => ({...a, _idx: idx})).filter((a) => {
-      const matchBusqueda = !busqueda || a.practicante.toLowerCase().includes(busqueda.toLowerCase());
-      const matchEstado = filtroEstado === "todos" || a.estado.toLowerCase() === filtroEstado.toLowerCase();
-      return matchBusqueda && matchEstado;
-    });
+    return asistenciasUI
+      .map((a, idx) => ({ ...a, _idx: idx }))
+      .filter((a) => {
+        const matchBusqueda =
+          !busqueda ||
+          a.practicante.toLowerCase().includes(busqueda.toLowerCase());
+        const matchEstado =
+          filtroEstado === "todos" ||
+          a.estado.toLowerCase() === filtroEstado.toLowerCase();
+        return matchBusqueda && matchEstado;
+      });
   }, [asistenciasUI, busqueda, filtroEstado]);
 
   const filtradas = filtradasIndices;
-  const filtradasRaw = filtradasIndices.map(f => asistencias[f._idx]);
+  const filtradasRaw = filtradasIndices.map((f) => asistencias[f._idx]);
 
   const handleCerrarJornada = async () => {
     try {
       const res = await asistenciasApi.cerrarJornada(fechaISO);
       toast.success(res.message || "Jornada cerrada");
       cargarDatos();
-    } catch(e:any){ toast.error(e.message); }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const openPermiso = async () => {
@@ -143,15 +198,30 @@ export default function AsistenciaPage() {
     } catch {}
   };
   const handlePermiso = async () => {
-    if (!permisoPracticante) { toast.error("Seleccione practicante"); return; }
-    if (!permisoMotivo.trim()) { toast.error("Motivo obligatorio"); return; }
+    if (!permisoPracticante) {
+      toast.error("Seleccione practicante");
+      return;
+    }
+    if (!permisoMotivo.trim()) {
+      toast.error("Motivo obligatorio");
+      return;
+    }
     try {
-      await asistenciasApi.registrarPermiso(Number(permisoPracticante), permisoFecha, permisoMotivo, permisoObs, permisoTipo);
+      await asistenciasApi.registrarPermiso(
+        Number(permisoPracticante),
+        permisoFecha,
+        permisoMotivo,
+        permisoObs,
+        permisoTipo,
+      );
       toast.success("Permiso registrado. No se generará AUSENTE ese día.");
       setPermisoOpen(false);
-      setPermisoMotivo(""); setPermisoObs("");
+      setPermisoMotivo("");
+      setPermisoObs("");
       cargarDatos();
-    } catch(e:any){ toast.error(e.message); }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   return (
@@ -173,7 +243,12 @@ export default function AsistenciaPage() {
         loading={loading}
       />
 
-      <AsistenciaTable asistencias={filtradas.map(({_idx, ...rest})=>rest)} rawData={filtradasRaw} loading={loading} onRefresh={cargarDatos} />
+      <AsistenciaTable
+        asistencias={filtradas.map(({ _idx, ...rest }) => rest)}
+        rawData={filtradasRaw}
+        loading={loading}
+        onRefresh={cargarDatos}
+      />
     </div>
   );
 }
