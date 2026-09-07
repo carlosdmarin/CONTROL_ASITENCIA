@@ -18,6 +18,7 @@ export default function PracticantesPage() {
   const [practicantes, setPracticantes] = useState<Practicante[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [filtroSituacion, setFiltroSituacion] = useState("ACTIVO");
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [dialogEditarAbierto, setDialogEditarAbierto] = useState(false);
@@ -57,14 +58,17 @@ export default function PracticantesPage() {
   }, []);
 
   // ====== FILTRAR ======
-  const practicantesFiltrados = practicantes.filter(
-    (p) =>
+  const practicantesFiltrados = practicantes.filter((p) => {
+    const matchSituacion =
+      filtroSituacion === "TODOS" || p.situacion === filtroSituacion;
+    const matchBusqueda =
       p.nombreCompleto?.toLowerCase().includes(busqueda.toLowerCase()) ||
       p.documento?.includes(busqueda) ||
       (p.sede || (p as any).agencia || "")
         .toLowerCase()
-        .includes(busqueda.toLowerCase()),
-  );
+        .includes(busqueda.toLowerCase());
+    return matchSituacion && matchBusqueda;
+  });
 
   // ====== AGREGAR PRACTICANTE ======
   const agregarPracticante = async (
@@ -148,20 +152,43 @@ export default function PracticantesPage() {
     }
   };
 
-  // ====== ELIMINAR PRACTICANTE ======
-  const eliminarPracticante = async (id: number) => {
+  // ====== DESACTIVAR / ACTIVAR PRACTICANTE ======
+  const togglePracticante = async (practicante: Practicante) => {
     try {
-      await practicantesApi.eliminar(id);
+      if (practicante.situacion === "ACTIVO") {
+        await practicantesApi.desactivar(practicante.idPracticante);
+        toast.success(`Practicante ${practicante.nombreCompleto} desactivado. Fecha: ${new Date().toLocaleDateString("es-PE")}`);
+      } else {
+        await practicantesApi.activar(practicante.idPracticante);
+        toast.success(`Practicante ${practicante.nombreCompleto} activado correctamente`);
+      }
       await cargarPracticantes();
       setDialogEliminarAbierto(false);
-      toast.success(" Practicante eliminado correctamente");
     } catch (error: unknown) {
       const msg =
         error instanceof Error
           ? error.message
-          : "Error al eliminar el practicante";
+          : "Error al cambiar estado del practicante";
       console.error("Error:", error);
       toast.error(msg);
+    }
+  };
+
+  // Compatibilidad: mantener eliminarPracticante como desactivación lógica
+  const eliminarPracticante = async (id: number) => {
+    const p = practicantes.find((x) => x.idPracticante === id) || practicanteAEliminar;
+    if (p) {
+      await togglePracticante(p);
+    } else {
+      try {
+        await practicantesApi.desactivar(id);
+        await cargarPracticantes();
+        setDialogEliminarAbierto(false);
+        toast.success("Practicante desactivado correctamente");
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Error al desactivar";
+        toast.error(msg);
+      }
     }
   };
 
@@ -189,7 +216,7 @@ export default function PracticantesPage() {
 
       <PracticanteCards practicantes={practicantes} />
 
-      <PracticanteFilters busqueda={busqueda} onBusquedaChange={setBusqueda} />
+      <PracticanteFilters busqueda={busqueda} onBusquedaChange={setBusqueda} filtroSituacion={filtroSituacion} onFiltroSituacionChange={setFiltroSituacion} />
 
       {loading ? (
         <div className="flex justify-center items-center h-32">

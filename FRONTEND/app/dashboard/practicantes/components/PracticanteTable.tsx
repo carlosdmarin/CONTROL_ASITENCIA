@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -21,13 +21,14 @@ import {
 } from "lucide-react";
 import {
   Pencil,
-  Trash2,
   Search,
   Users,
   MoreHorizontal,
   ClipboardList,
   QrCode,
   User,
+  PowerOff,
+  RotateCcw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -167,6 +168,14 @@ export function PracticanteTable({
     setCurrentPage(page);
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [practicantes]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
+
   const renderPagination = () => {
     if (totalPages <= 1) return null;
 
@@ -305,10 +314,10 @@ export function PracticanteTable({
                 </TableRow>
               ) : (
                 currentItems.map((practicante, index) => {
-                  const globalIndex =  index + 1;
+                  const globalIndex =  startIndex + index + 1;
                   return (
                     <TableRow
-                    key={index}
+                    key={practicante.idPracticante}
                       className="hover:bg-slate-50 h-12"
                     >
                       <TableCell className="text-center text-sm text-gray-500">
@@ -381,15 +390,29 @@ export function PracticanteTable({
                             <span className="sr-only">Editar</span>
                           </Button>
 
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => onDelete(practicante)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Eliminar</span>
-                          </Button>
+                          {practicante.situacion === "ACTIVO" ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              onClick={() => onDelete(practicante)}
+                              title="Desactivar"
+                            >
+                              <PowerOff className="h-4 w-4" />
+                              <span className="sr-only">Desactivar</span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => onDelete(practicante)}
+                              title="Activar"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              <span className="sr-only">Activar</span>
+                            </Button>
+                          )}
 
                           <DropdownMenu>
                             <DropdownMenuTrigger>

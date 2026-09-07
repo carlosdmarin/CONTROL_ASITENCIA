@@ -127,10 +127,18 @@ public class PracticanteServiceImpl implements PracticanteService {
 
     @Override
     public void eliminar(Long id) {
-        log.info("Eliminando practicante ID: {}", id);
-        bloqueHorarioRepository.deleteByPracticanteIdPracticante(id);
-        practicanteRepository.deleteById(id);
-        log.info("Practicante eliminado ID: {}", id);
+        log.warn("DELETE físico deprecado - se convierte en desactivación lógica para ID: {}", id);
+        // No eliminar físicamente para conservar historial (asistencias, marcaciones, permisos)
+        Practicante practicante = practicanteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Practicante no encontrado con ID: " + id));
+        if (practicante.getSituacion() != Situacion.INACTIVO) {
+            practicante.setSituacion(Situacion.INACTIVO);
+            practicante.setFechaDesactivacion(java.time.LocalDateTime.now());
+            practicanteRepository.save(practicante);
+            log.info("Practicante desactivado (via DELETE deprecado) ID: {}", id);
+        } else {
+            log.info("Practicante ya estaba INACTIVO ID: {}", id);
+        }
     }
 
     @Override
@@ -192,8 +200,13 @@ public class PracticanteServiceImpl implements PracticanteService {
         Practicante practicante = practicanteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Practicante no encontrado con ID: " + id));
         practicante.setSituacion(nuevaSituacion);
+        if (nuevaSituacion == Situacion.INACTIVO) {
+            practicante.setFechaDesactivacion(java.time.LocalDateTime.now());
+        } else {
+            practicante.setFechaDesactivacion(null);
+        }
         practicanteRepository.save(practicante);
-        log.info("Situación cambiada a {} para practicante: {}", nuevaSituacion, practicante.getDocumento());
+        log.info("Situación cambiada a {} para practicante: {} (fechaDesactivacion={})", nuevaSituacion, practicante.getDocumento(), practicante.getFechaDesactivacion());
     }
 
     @Override
@@ -297,6 +310,7 @@ public class PracticanteServiceImpl implements PracticanteService {
         response.setTelefono(practicante.getTelefono());
         response.setFechaInicioPracticas(practicante.getFechaInicioPracticas());
         response.setFechaFinPracticas(practicante.getFechaFinPracticas());
+        response.setFechaDesactivacion(practicante.getFechaDesactivacion());
         return response;
     }
 }

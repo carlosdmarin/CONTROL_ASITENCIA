@@ -1,21 +1,23 @@
 // app/marcacion/components/QRScannerResult.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  CheckCircle, 
-  Building2, 
-  Briefcase, 
-  Clock, 
-  User, 
-  Sparkles, 
+import {
+  CheckCircle,
+  Building2,
+  Briefcase,
+  Clock,
+  User,
+  Sparkles,
   AlertTriangle,
   CalendarOff,
-  DoorClosed
+  DoorClosed,
+  UserX,
+  Ban,
 } from "lucide-react";
 import { practicantesApi } from "@/lib/api/practicantes";
 
@@ -25,7 +27,14 @@ interface QRScannerResultProps {
   marcacionStatus?: {
     success: boolean;
     message: string;
-    tipo?: 'ENTRADA' | 'SALIDA' | 'DESCANSO' | 'YA_REGISTRADO' | 'JORNADA_FINALIZADA' | 'ERROR';
+    tipo?:
+      | "ENTRADA"
+      | "SALIDA"
+      | "DESCANSO"
+      | "YA_REGISTRADO"
+      | "JORNADA_FINALIZADA"
+      | "INACTIVO"
+      | "ERROR";
   } | null;
 }
 
@@ -39,10 +48,10 @@ type PracticanteReal = {
   situacion: string;
 } | null;
 
-export default function QRScannerResult({ 
-  codigo, 
-  onClose, 
-  marcacionStatus 
+export default function QRScannerResult({
+  codigo,
+  onClose,
+  marcacionStatus,
 }: QRScannerResultProps) {
   const [practicante, setPracticante] = useState<PracticanteReal>(null);
   const [loading, setLoading] = useState(true);
@@ -51,13 +60,68 @@ export default function QRScannerResult({
   const [fecha, setFecha] = useState("");
   const [visible, setVisible] = useState(true);
 
-  const isDescanso = marcacionStatus?.tipo === 'DESCANSO';
-  const isYaRegistrado = marcacionStatus?.tipo === 'YA_REGISTRADO';
-  const isJornadaFinalizada = marcacionStatus?.tipo === 'JORNADA_FINALIZADA';
-  const isError = marcacionStatus?.tipo === 'ERROR' || (!marcacionStatus?.success && marcacionStatus !== null && !isDescanso && !isYaRegistrado && !isJornadaFinalizada);
+  // SONIDOS
+  const playedSoundRef = useRef<string | null>(null);
+
+  const isDescanso = marcacionStatus?.tipo === "DESCANSO";
+  const isYaRegistrado = marcacionStatus?.tipo === "YA_REGISTRADO";
+  const isJornadaFinalizada = marcacionStatus?.tipo === "JORNADA_FINALIZADA";
+  const isInactivo =
+    marcacionStatus?.tipo === "INACTIVO" ||
+    marcacionStatus?.message?.toLowerCase().includes("no activo") ||
+    marcacionStatus?.message?.toLowerCase().includes("inactivo");
+  const isError =
+    marcacionStatus?.tipo === "ERROR" ||
+    (!marcacionStatus?.success &&
+      marcacionStatus !== null &&
+      !isDescanso &&
+      !isYaRegistrado &&
+      !isJornadaFinalizada &&
+      !isInactivo);
   const isSuccess = marcacionStatus?.success === true;
-  const isEntrada = isSuccess && marcacionStatus?.tipo === 'ENTRADA';
-  const isSalida = isSuccess && marcacionStatus?.tipo === 'SALIDA';
+  const isEntrada = isSuccess && marcacionStatus?.tipo === "ENTRADA";
+  const isSalida = isSuccess && marcacionStatus?.tipo === "SALIDA";
+
+  useEffect(() => {
+    if (!marcacionStatus) return;
+
+    const sonido = `${codigo}-${marcacionStatus.tipo}`;
+
+    // Evita reproducir el mismo sonido mas de una vez
+    if (playedSoundRef.current === sonido) return;
+
+    let archivoSonido: string | null = null;
+
+    switch (marcacionStatus.tipo) {
+      case "ENTRADA":
+      case "SALIDA":
+        archivoSonido = "/sounds/success.mp3";
+        break;
+
+      case "YA_REGISTRADO":
+        archivoSonido = "/sounds/completed.mp3";
+        break;
+
+      case "ERROR":
+      case "INACTIVO":
+      case "DESCANSO":
+        archivoSonido = "/sounds/error.mp3";
+        break;
+
+      default:
+        break;
+    }
+
+    if (!archivoSonido) return;
+
+    playedSoundRef.current = sonido;
+
+    const audio = new Audio(archivoSonido);
+    audio.volume = 0.5;
+    audio.play().catch(() => {
+      // El navegador puede bloquear audio si no hubo interacción del usuario
+    });
+  },[marcacionStatus, codigo]);
 
   useEffect(() => {
     let mounted = true;
@@ -80,10 +144,42 @@ export default function QRScannerResult({
         if (!mounted) return;
         // Fallback a mock para pruebas
         const mock: Record<string, PracticanteReal> = {
-          "60563764": { idPracticante: 1, nombreCompleto: "Carlos Ramirez Torres", documento: "60563764", sede: "OFICINA PUCALLPA", puesto: "Tecnología", cargo: "PRACTICANTE PRE PROFESIONAL", situacion: "ACTIVO" },
-          "70000001": { idPracticante: 1, nombreCompleto: "Carlos Ramirez Torres", documento: "70000001", sede: "OFICINA PUCALLPA", puesto: "Tecnología de la Información", cargo: "PRACTICANTE PRE PROFESIONAL", situacion: "ACTIVO" },
-          "70000002": { idPracticante: 2, nombreCompleto: "Daniela Flores Mendoza", documento: "70000002", sede: "OFICINA PUCALLPA", puesto: "Recursos Humanos", cargo: "PRACTICANTE PRE PROFESIONAL", situacion: "ACTIVO" },
-          "70000003": { idPracticante: 3, nombreCompleto: "Miguel Sanchez Lopez", documento: "70000003", sede: "PLANTA NESHUYA", puesto: "Mantenimiento", cargo: "PRACTICANTE PRE PROFESIONAL", situacion: "ACTIVO" },
+          "60563764": {
+            idPracticante: 1,
+            nombreCompleto: "Carlos Ramirez Torres",
+            documento: "60563764",
+            sede: "OFICINA PUCALLPA",
+            puesto: "Tecnología",
+            cargo: "PRACTICANTE PRE PROFESIONAL",
+            situacion: "ACTIVO",
+          },
+          "70000001": {
+            idPracticante: 1,
+            nombreCompleto: "Carlos Ramirez Torres",
+            documento: "70000001",
+            sede: "OFICINA PUCALLPA",
+            puesto: "Tecnología de la Información",
+            cargo: "PRACTICANTE PRE PROFESIONAL",
+            situacion: "ACTIVO",
+          },
+          "70000002": {
+            idPracticante: 2,
+            nombreCompleto: "Daniela Flores Mendoza",
+            documento: "70000002",
+            sede: "OFICINA PUCALLPA",
+            puesto: "Recursos Humanos",
+            cargo: "PRACTICANTE PRE PROFESIONAL",
+            situacion: "ACTIVO",
+          },
+          "70000003": {
+            idPracticante: 3,
+            nombreCompleto: "Miguel Sanchez Lopez",
+            documento: "70000003",
+            sede: "PLANTA NESHUYA",
+            puesto: "Mantenimiento",
+            cargo: "PRACTICANTE PRE PROFESIONAL",
+            situacion: "ACTIVO",
+          },
         };
         const mockData = mock[codigo];
         if (mockData) {
@@ -101,8 +197,20 @@ export default function QRScannerResult({
     fetchData();
 
     const now = new Date();
-    setHora(now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-    setFecha(now.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }));
+    setHora(
+      now.toLocaleTimeString("es-PE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }),
+    );
+    setFecha(
+      now.toLocaleDateString("es-PE", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    );
 
     // Cerrar automático SOLO si es éxito
     let timer: NodeJS.Timeout;
@@ -140,7 +248,10 @@ export default function QRScannerResult({
         <Card className="max-w-sm w-full mx-4 border-amber-200 shadow-2xl overflow-hidden">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600">
             <CalendarOff className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold text-sm"> Día de Descanso</span>
+            <span className="text-white font-semibold text-sm">
+              {" "}
+              Día de Descanso
+            </span>
             <CalendarOff className="h-5 w-5 text-white" />
           </div>
 
@@ -149,7 +260,12 @@ export default function QRScannerResult({
               <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2 relative">
                 <Avatar className="w-20 h-20 border-4 border-amber-200">
                   <AvatarFallback className="text-2xl bg-amber-200 text-amber-700">
-                    {practicante?.nombreCompleto?.split(" ").map(p => p[0]).slice(0,2).join("").toUpperCase() || "??"}
+                    {practicante?.nombreCompleto
+                      ?.split(" ")
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase() || "??"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
@@ -176,7 +292,8 @@ export default function QRScannerResult({
                 <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-amber-800">
-                    {marcacionStatus?.message || "Hoy es tu día de descanso según tu horario."}
+                    {marcacionStatus?.message ||
+                      "Hoy es tu día de descanso según tu horario."}
                   </p>
                   <p className="text-xs text-amber-600 mt-1">
                     No puedes marcar asistencia los días de descanso.
@@ -191,32 +308,46 @@ export default function QRScannerResult({
                   <Building2 className="h-4 w-4" />
                   <span>Sede</span>
                 </div>
-                <span className="font-medium text-gray-800">{practicante?.sede || "—"}</span>
+                <span className="font-medium text-gray-800">
+                  {practicante?.sede || "—"}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Briefcase className="h-4 w-4" />
                   <span>Cargo</span>
                 </div>
-                <span className="font-medium text-gray-800">{practicante?.cargo || "—"}</span>
+                <span className="font-medium text-gray-800">
+                  {practicante?.cargo || "—"}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <User className="h-4 w-4" />
                   <span>Documento</span>
                 </div>
-                <span className="font-medium text-gray-800">{practicante?.documento || codigo}</span>
+                <span className="font-medium text-gray-800">
+                  {practicante?.documento || codigo}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Clock className="h-4 w-4" />
                   <span>Hora</span>
                 </div>
-                <span className="font-mono font-medium text-amber-600">{hora}</span>
+                <span className="font-mono font-medium text-amber-600">
+                  {hora}
+                </span>
               </div>
             </div>
 
-            <Button className="w-full bg-amber-600 hover:bg-amber-700" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>
+            <Button
+              className="w-full bg-amber-600 hover:bg-amber-700"
+              onClick={() => {
+                setVisible(false);
+                setTimeout(onClose, 300);
+              }}
+            >
               Entendido
             </Button>
             <p className="text-center text-xs text-gray-400">
@@ -235,18 +366,148 @@ export default function QRScannerResult({
         <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl overflow-hidden">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600">
             <AlertTriangle className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold text-sm"> Jornada finalizada</span>
+            <span className="text-white font-semibold text-sm">
+              {" "}
+              Jornada finalizada
+            </span>
             <AlertTriangle className="h-5 w-5 text-white" />
           </div>
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
               <Clock className="h-8 w-8 text-red-600" />
             </div>
-            <CardTitle className="text-lg text-red-700">No se puede registrar entrada</CardTitle>
+            <CardTitle className="text-lg text-red-700">
+              No se puede registrar entrada
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-center pb-6 space-y-3">
-            <p className="text-sm text-slate-600">{marcacionStatus?.message || "La jornada de ingreso ya terminó. No es posible registrar una entrada para esta jornada."}</p>
-            <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>Entendido</Button>
+            <p className="text-sm text-slate-600">
+              {marcacionStatus?.message ||
+                "La jornada de ingreso ya terminó. No es posible registrar una entrada para esta jornada."}
+            </p>
+            <Button
+              className="w-full bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                setVisible(false);
+                setTimeout(onClose, 300);
+              }}
+            >
+              Entendido
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ===== CARD: PRACTICANTE NO ACTIVO =====
+  if (isInactivo) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+        <Card className="max-w-sm w-full mx-4 border-orange-200 shadow-2xl overflow-hidden">
+          <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600">
+            <Ban className="h-5 w-5 text-white" />
+            <span className="text-white font-semibold text-sm">
+              {" "}
+              Practicante no activo
+            </span>
+            <Ban className="h-5 w-5 text-white" />
+          </div>
+
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto relative">
+              <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-2 relative">
+                <Avatar className="w-20 h-20 border-4 border-orange-200">
+                  <AvatarFallback className="text-2xl bg-orange-200 text-orange-700">
+                    {practicante?.nombreCompleto
+                      ?.split(" ")
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase() || "??"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
+                  <UserX className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            </div>
+            <CardTitle className="text-xl font-bold text-gray-800">
+              {practicante?.nombreCompleto || "Practicante"}
+            </CardTitle>
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+                INACTIVO
+              </Badge>
+              <Badge variant="outline" className="text-gray-500">
+                {fecha}
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-orange-800">
+                    Practicante no activo
+                  </p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    Este practicante se encuentra actualmente inactivo y no
+                    puede registrar asistencia.
+                  </p>
+                  {marcacionStatus?.message && (
+                    <p className="text-xs text-orange-700 mt-1 font-mono bg-white/60 px-2 py-1 rounded">
+                      {marcacionStatus.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Building2 className="h-4 w-4" />
+                  <span>Sede</span>
+                </div>
+                <span className="font-medium text-gray-800">
+                  {practicante?.sede || "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Briefcase className="h-4 w-4" />
+                  <span>Cargo</span>
+                </div>
+                <span className="font-medium text-gray-800">
+                  {practicante?.cargo || "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <User className="h-4 w-4" />
+                  <span>Documento</span>
+                </div>
+                <span className="font-medium text-gray-800">
+                  {practicante?.documento || codigo}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              className="w-full bg-orange-600 hover:bg-orange-700"
+              onClick={() => {
+                setVisible(false);
+                setTimeout(onClose, 300);
+              }}
+            >
+              Entendido
+            </Button>
+            <p className="text-center text-xs text-gray-400">
+              Contacte a RRHH para reactivar al practicante.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -260,7 +521,10 @@ export default function QRScannerResult({
         <Card className="max-w-sm w-full mx-4 border-blue-200 shadow-2xl overflow-hidden">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600">
             <DoorClosed className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold text-sm"> Jornada Completada</span>
+            <span className="text-white font-semibold text-sm">
+              {" "}
+              Jornada Completada
+            </span>
             <DoorClosed className="h-5 w-5 text-white" />
           </div>
 
@@ -269,7 +533,12 @@ export default function QRScannerResult({
               <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2 relative">
                 <Avatar className="w-20 h-20 border-4 border-blue-200">
                   <AvatarFallback className="text-2xl bg-blue-200 text-blue-700">
-                    {practicante?.nombreCompleto?.split(" ").map(p => p[0]).slice(0,2).join("").toUpperCase() || "??"}
+                    {practicante?.nombreCompleto
+                      ?.split(" ")
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase() || "??"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
@@ -296,7 +565,8 @@ export default function QRScannerResult({
                 <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-blue-800">
-                    {marcacionStatus?.message || "Ya registraste entrada y salida hoy."}
+                    {marcacionStatus?.message ||
+                      "Ya registraste entrada y salida hoy."}
                   </p>
                   <p className="text-xs text-blue-600 mt-1">
                     Tu jornada de hoy está completa. ¡Buen trabajo!
@@ -311,32 +581,46 @@ export default function QRScannerResult({
                   <Building2 className="h-4 w-4" />
                   <span>Sede</span>
                 </div>
-                <span className="font-medium text-gray-800">{practicante?.sede || "—"}</span>
+                <span className="font-medium text-gray-800">
+                  {practicante?.sede || "—"}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Briefcase className="h-4 w-4" />
                   <span>Cargo</span>
                 </div>
-                <span className="font-medium text-gray-800">{practicante?.cargo || "—"}</span>
+                <span className="font-medium text-gray-800">
+                  {practicante?.cargo || "—"}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <User className="h-4 w-4" />
                   <span>Documento</span>
                 </div>
-                <span className="font-medium text-gray-800">{practicante?.documento || codigo}</span>
+                <span className="font-medium text-gray-800">
+                  {practicante?.documento || codigo}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Clock className="h-4 w-4" />
                   <span>Hora</span>
                 </div>
-                <span className="font-mono font-medium text-blue-600">{hora}</span>
+                <span className="font-mono font-medium text-blue-600">
+                  {hora}
+                </span>
               </div>
             </div>
 
-            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setVisible(false);
+                setTimeout(onClose, 300);
+              }}
+            >
               Entendido
             </Button>
             <p className="text-center text-xs text-gray-400">
@@ -378,13 +662,18 @@ export default function QRScannerResult({
   // ===== CARD: ÉXITO (ENTRADA O SALIDA) =====
   const getInitials = () => {
     if (!practicante) return "??";
-    return practicante.nombreCompleto.split(" ").map(p => p[0]).slice(0,2).join("").toUpperCase();
+    return practicante.nombreCompleto
+      .split(" ")
+      .map((p) => p[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
   };
 
   const isInactive = practicante?.situacion !== "ACTIVO";
 
   return (
-    <div 
+    <div
       className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -394,10 +683,18 @@ export default function QRScannerResult({
       }}
     >
       <Card className="max-w-sm w-full mx-4 border-green-200 shadow-2xl overflow-hidden">
-        <div className={`px-6 py-3 flex items-center justify-center gap-2 ${isInactive ? 'bg-amber-500' : 'bg-gradient-to-r from-green-500 to-green-600'}`}>
+        <div
+          className={`px-6 py-3 flex items-center justify-center gap-2 ${isInactive ? "bg-amber-500" : "bg-gradient-to-r from-green-500 to-green-600"}`}
+        >
           <Sparkles className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">
-            {isInactive ? "Practicante inactivo" : isEntrada ? "Entrada registrada" : isSalida ? "✅ Salida registrada" : "¡Marcación exitosa!"}
+            {isInactive
+              ? "Practicante inactivo"
+              : isEntrada
+                ? "Entrada registrada"
+                : isSalida
+                  ? "✅ Salida registrada"
+                  : "¡Marcación exitosa!"}
           </span>
           <Sparkles className="h-5 w-5 text-white" />
         </div>
@@ -410,8 +707,14 @@ export default function QRScannerResult({
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
-              <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${isInactive ? 'bg-amber-500' : 'bg-green-500'}`}>
-                {isInactive ? <AlertTriangle className="h-4 w-4 text-white" /> : <CheckCircle className="h-4 w-4 text-white" />}
+              <div
+                className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${isInactive ? "bg-amber-500" : "bg-green-500"}`}
+              >
+                {isInactive ? (
+                  <AlertTriangle className="h-4 w-4 text-white" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-white" />
+                )}
               </div>
             </div>
           </div>
@@ -419,7 +722,13 @@ export default function QRScannerResult({
             {practicante?.nombreCompleto || "Practicante"}
           </CardTitle>
           <div className="flex items-center justify-center gap-2 mt-1">
-            <Badge className={isInactive ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-green-100 text-green-700 border-green-200"}>
+            <Badge
+              className={
+                isInactive
+                  ? "bg-amber-100 text-amber-700 border-amber-200"
+                  : "bg-green-100 text-green-700 border-green-200"
+              }
+            >
               {practicante?.situacion || "ACTIVO"}
             </Badge>
             <Badge variant="outline" className="text-gray-500">
@@ -435,36 +744,57 @@ export default function QRScannerResult({
                 <Building2 className="h-4 w-4" />
                 <span>Sede</span>
               </div>
-              <span className="font-medium text-gray-800">{practicante?.sede || "—"}</span>
+              <span className="font-medium text-gray-800">
+                {practicante?.sede || "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <Briefcase className="h-4 w-4" />
                 <span>Cargo</span>
               </div>
-              <span className="font-medium text-gray-800">{practicante?.cargo || "—"}</span>
+              <span className="font-medium text-gray-800">
+                {practicante?.cargo || "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <User className="h-4 w-4" />
                 <span>Documento</span>
               </div>
-              <span className="font-medium text-gray-800">{practicante?.documento || codigo}</span>
+              <span className="font-medium text-gray-800">
+                {practicante?.documento || codigo}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
               <div className="flex items-center gap-2 text-gray-500">
                 <Clock className="h-4 w-4" />
                 <span>Hora</span>
               </div>
-              <span className="font-mono font-medium text-green-600">{hora}</span>
+              <span className="font-mono font-medium text-green-600">
+                {hora}
+              </span>
             </div>
           </div>
 
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => { setVisible(false); setTimeout(onClose, 300); }}>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setVisible(false);
+                setTimeout(onClose, 300);
+              }}
+            >
               Cerrar
             </Button>
-            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => { setVisible(false); setTimeout(onClose, 600); }}>
+            <Button
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                setVisible(false);
+                setTimeout(onClose, 600);
+              }}
+            >
               Escanear otro
             </Button>
           </div>

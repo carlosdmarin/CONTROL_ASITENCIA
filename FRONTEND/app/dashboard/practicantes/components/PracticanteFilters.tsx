@@ -1,17 +1,21 @@
 "use client";
 
-import { Search, Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PracticanteFiltersProps {
   busqueda: string;
   onBusquedaChange: (value: string) => void;
+  filtroSituacion: string;
+  onFiltroSituacionChange: (value: string) => void;
 }
 
 export default function PracticanteFilters({ 
   busqueda, 
-  onBusquedaChange 
+  onBusquedaChange,
+  filtroSituacion,
+  onFiltroSituacionChange
 }: PracticanteFiltersProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -24,11 +28,17 @@ export default function PracticanteFilters({
           onChange={(e) => onBusquedaChange(e.target.value)}
         />
       </div>
-      <div className="flex gap-2 w-full sm:w-auto">
-        <Button variant="outline" size="sm" className="gap-2">
-          <Filter className="h-4 w-4" />
-          Filtrar
-        </Button>
+      <div className="flex gap-2 w-full sm:w-auto items-center">
+        <Select value={filtroSituacion} onValueChange={(v: any) => onFiltroSituacionChange(v)}>
+          <SelectTrigger className="w-[160px] h-10 bg-white">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ACTIVO">Activos</SelectItem>
+            <SelectItem value="INACTIVO">Inactivos</SelectItem>
+            <SelectItem value="TODOS">Todos</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

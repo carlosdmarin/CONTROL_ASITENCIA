@@ -69,6 +69,7 @@ export type Practicante = {
   telefono?: string;
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
+  fechaDesactivacion?: string | null;
   // Compatibilidad: backend aún puede devolver agencia/codigoTrabajador
   agencia?: string;
   codigoTrabajador?: string;

@@ -50,6 +50,9 @@ public class Practicante {
     @Column(name = "situacion", nullable = false)
     private Situacion situacion = Situacion.ACTIVO;
 
+    @Column(name = "fecha_desactivacion")
+    private LocalDateTime fechaDesactivacion;
+
     @Column(name = "correo_electronico", length = 100)
     private String correoElectronico;
 

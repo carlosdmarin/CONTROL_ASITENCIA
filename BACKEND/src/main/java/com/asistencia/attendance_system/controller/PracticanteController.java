@@ -49,7 +49,9 @@ public class PracticanteController {
     }
 
     @DeleteMapping("/{id}")
+    @Deprecated
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        // DEPRECADO: ya no elimina físicamente, hace soft-delete para conservar historial
         practicanteService.eliminar(id);
         return ResponseEntity.noContent().build();
     }

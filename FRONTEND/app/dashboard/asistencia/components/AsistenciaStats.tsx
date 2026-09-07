@@ -1,5 +1,7 @@
 "use client";
-
+// ============================
+// 📦 IMPORTS PRINCIPALES
+// ============================
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, UserCheck, Clock, UserX, Coffee, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
@@ -88,7 +90,7 @@ export default function AsistenciaStats({ resumen, loading = false }: Asistencia
                 {loading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  <p className="text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  <p className="text-3xl font-bold tracking-tight bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                     {stat.value}
                   </p>
                 )}
@@ -96,8 +98,8 @@ export default function AsistenciaStats({ resumen, loading = false }: Asistencia
               </div>
               
               <div className="relative">
-                <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-all duration-500 group-hover:scale-110`} />
-                <div className={`relative p-2.5 rounded-xl bg-gradient-to-r ${stat.gradient} shadow-lg`}>
+                <div className={`absolute inset-0 bg-linear-to-r ${stat.gradient} rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-all duration-500 group-hover:scale-110`} />
+                <div className={`relative p-2.5 rounded-xl bg-linear-to-r ${stat.gradient} shadow-lg`}>
                   <stat.icon className="h-5 w-5 text-white" />
                 </div>
               </div>
@@ -129,7 +131,7 @@ export default function AsistenciaStats({ resumen, loading = false }: Asistencia
             {!loading && (
               <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full bg-gradient-to-r ${stat.gradient} transition-all duration-1000 ease-out group-hover:opacity-80`}
+                  className={`h-full rounded-full bg-linear-to-r ${stat.gradient} transition-all duration-1000 ease-out group-hover:opacity-80`}
                   style={{ 
                     width: `${Math.min((stat.value / stats[0].value) * 100, 100)}%`,
                   }}

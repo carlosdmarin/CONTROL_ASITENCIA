@@ -38,7 +38,9 @@ public class AsistenciaController {
             errorResponse.put("message", e.getMessage());
             errorResponse.put("error", true);
             String mensaje = e.getMessage().toLowerCase();
-            if (mensaje.contains("descanso") || mensaje.contains("día de descanso")) {
+            if (mensaje.contains("no activo") || mensaje.contains("inactivo")) {
+                errorResponse.put("tipo", "INACTIVO");
+            } else if (mensaje.contains("descanso") || mensaje.contains("día de descanso")) {
                 errorResponse.put("tipo", "DESCANSO");
             } else if (mensaje.contains("jornada de ingreso ya terminó") || mensaje.contains("jornada ya terminó")) {
                 errorResponse.put("tipo", "JORNADA_FINALIZADA");

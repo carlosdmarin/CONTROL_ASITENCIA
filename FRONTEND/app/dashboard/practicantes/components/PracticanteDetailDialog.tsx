@@ -341,6 +341,27 @@ export function PracticanteDetailDialog({
               </div>
             </div>
 
+            {practicante.fechaDesactivacion && (
+              <>
+                <Separator />
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-1.5 rounded-lg bg-rose-50">
+                      <UserX className="h-4 w-4 text-rose-600" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-700">Estado de activación</h3>
+                  </div>
+                  <div className="p-3 rounded-lg border bg-rose-50/50 flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-rose-600" />
+                    <div>
+                      <p className="text-xs text-gray-500">Fecha de desactivación</p>
+                      <p className="text-sm font-medium text-gray-900">{new Date(practicante.fechaDesactivacion).toLocaleString("es-PE", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
             <Separator />
 
             {/* ====== HORARIO SEMANAL ====== */}

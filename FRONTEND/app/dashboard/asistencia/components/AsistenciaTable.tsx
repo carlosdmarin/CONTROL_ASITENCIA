@@ -59,69 +59,67 @@ import {
 } from "@/components/ui/select";
 // DIALOG - Ventana modal (popup que aparece encima)
 import {
-  Dialog,              // Contenedor del modal
-  DialogContent,       // Contenido del modal
-  DialogHeader,        // Encabezado del modal
-  DialogTitle,         // Título del modal
-  DialogDescription,   // Descripción del modal
+  Dialog, // Contenedor del modal
+  DialogContent, // Contenido del modal
+  DialogHeader, // Encabezado del modal
+  DialogTitle, // Título del modal
+  DialogDescription, // Descripción del modal
 } from "@/components/ui/dialog";
 // ============================================
 // 🎯 ICONOS - LUCIDE REACT
 // ============================================
 // → Cada ícono es un componente que puedes usar como <Calendar />
 import {
-  Calendar,              // 📅 Calendario/fecha
-  Users,                 // 👥 Usuarios/grupo
-  Pencil,                // ✏️ Editar
-  FileCheck,             // ✅ Documento verificado
-  Eye,                   // 👁️ Ver/visualizar
-  Save,                  // 💾 Guardar
-  FileSearchCorner,      // 🔍 Buscar en documento
-  X,                     // ❌ Cerrar/eliminar
+  Calendar, // 📅 Calendario/fecha
+  Users, // 👥 Usuarios/grupo
+  Pencil, // ✏️ Editar
+  FileCheck, // ✅ Documento verificado
+  Eye, // 👁️ Ver/visualizar
+  Save, // 💾 Guardar
+  FileSearchCorner, // 🔍 Buscar en documento
+  X, // ❌ Cerrar/eliminar
   SquareArrowRightEnter, // ➡️ Entrar/marcar entrada
-  AlertTriangle,         // ⚠️ Advertencia
-  CheckCircle,           // ✅ Éxito/confirmado
-  FileText,              // 📄 Documento/texto
-  Info,                  // ℹ️ Información
-  Clock,                 // 🕐 Reloj/hora
-  User,                  // 👤 Usuario individual
-  CalendarDays,          // 📆 Días del calendario
-  BadgeCheck,            // ✅ Verificado
-  AlertCircle,           // ⚠️ Alerta/círculo
-  Edit,                  // ✏️ Editar
-  ArrowLeftFromLine,     // ⬅️ Volver
-  EyeOff,                // 👁️‍🗨️ Ocultar
-  CheckCircle2,          // ✅ Presente
-  ClockAlert,            // ⏰ Tardanza
-  XCircle,               // ❌ Ausente
-  MinusCircle,           // ➖ Sin marcar
-  Coffee,                // ☕ Descanso
-  ShieldCheck,           // 🛡️ Tardanza justificada
-  ShieldOff,             // 🛡️ Sin protección
-  ChevronLeft,           // ◀️ Flecha izquierda
-  ChevronRight,          // ▶️ Flecha derecha
+  AlertTriangle, // ⚠️ Advertencia
+  CheckCircle, // ✅ Éxito/confirmado
+  FileText, // 📄 Documento/texto
+  Info, // ℹ️ Información
+  Clock, // 🕐 Reloj/hora
+  User, // 👤 Usuario individual
+  CalendarDays, // 📆 Días del calendario
+  BadgeCheck, // ✅ Verificado
+  AlertCircle, // ⚠️ Alerta/círculo
+  Edit, // ✏️ Editar
+  ArrowLeftFromLine, // ⬅️ Volver
+  EyeOff, // 👁️‍🗨️ Ocultar
+  CheckCircle2, // ✅ Presente
+  ClockAlert, // ⏰ Tardanza
+  XCircle, // ❌ Ausente
+  MinusCircle, // ➖ Sin marcar
+  Coffee, // ☕ Descanso
+  ShieldCheck, // 🛡️ Tardanza justificada
+  ShieldOff, // 🛡️ Sin protección
+  ChevronLeft, // ◀️ Flecha izquierda
+  ChevronRight, // ▶️ Flecha derecha
   MoreHorizontal as Ellipsis, // … Más opciones
-  Search,                // 🔍 Buscar
+  Search, // 🔍 Buscar
 } from "lucide-react";
 
 // ============================================
 // 📊 TIPOS Y UTILIDADES - ASISTENCIA
 // ============================================
 import {
-  AsistenciaDiaria,           // Tipo: Datos de asistencia de un día
-  AsistenciaDiariaResponse,   // Tipo: Respuesta del backend
-  normalizeEstadoDia,         // Función: Normaliza el estado (PRESENTE/AUSENTE)
-  isTardanza,                 // Función: ¿Es tardanza?
-  isAusente,                  // Función: ¿Está ausente?
-  getSituacionLabel,          // Función: Traduce el estado a texto
+  AsistenciaDiaria, // Tipo: Datos de asistencia de un día
+  AsistenciaDiariaResponse, // Tipo: Respuesta del backend
+  normalizeEstadoDia, // Función: Normaliza el estado (PRESENTE/AUSENTE)
+  isTardanza, // Función: ¿Es tardanza?
+  isAusente, // Función: ¿Está ausente?
+  getSituacionLabel, // Función: Traduce el estado a texto
 } from "@/types/asistencia";
-
 
 // ============================================
 // 📡 API - COMUNICACIÓN CON BACKEND
 // ============================================
 import { asistenciasApi } from "@/lib/api/asistencias";
-
 
 // ============================================
 // 🔔 NOTIFICACIONES - SONNER
@@ -134,10 +132,10 @@ import { toast } from "sonner";
 
 // Props que recibe el componente de tabla de asistencia
 interface AsistenciaTableProps {
-  asistencias: AsistenciaDiaria[];       // Lista de asistencias
-  rawData?: AsistenciaDiariaResponse[];  // Datos crudos del backend (opcional)
-  loading?: boolean;                     // ¿Está cargando? (opcional)
-  onRefresh?: () => void;               // Función para actualizar (opcional)
+  asistencias: AsistenciaDiaria[]; // Lista de asistencias
+  rawData?: AsistenciaDiariaResponse[]; // Datos crudos del backend (opcional)
+  loading?: boolean; // ¿Está cargando? (opcional)
+  onRefresh?: () => void; // Función para actualizar (opcional)
 }
 
 export default function AsistenciaTable({
@@ -146,13 +144,32 @@ export default function AsistenciaTable({
   loading = false,
   onRefresh,
 }: AsistenciaTableProps) {
+  // ===================== ESTADOS PARA MODALES =======================
+
+  //  Mostrar modal para justificar tardanza? true = sí, false = no;
   const [justificarOpen, setJustificarOpen] = useState(false);
+  //  Mostrar modal para editar marcación? true = sí, false = no
   const [editarOpen, setEditarOpen] = useState(false);
+  //  Mostrar modal para ver detalles? true = sí, false = no
   const [verOpen, setVerOpen] = useState(false);
+
+
+  // ============================================
+  // 📦 DATOS SELECCIONADOS (cuándo el usuario hace clic en una fila)
+  // ============================================
   const [selected, setSelected] = useState<AsistenciaDiariaResponse | null>(
     null,
   );
+  
+  // → Guarda el registro que el usuario eligió para justificar o editar
+  // → null = no hay nada seleccionado
   const [verData, setVerData] = useState<AsistenciaDiariaResponse | null>(null);
+  // → Guarda el registro que el usuario eligió para ver detalles
+  // → null = no hay nada seleccionado
+
+  // ============================================
+  // ✏️ FORMULARIOS (lo que el usuario escribe)
+  // ============================================
   const [motivo, setMotivo] = useState("");
   const [observacion, setObservacion] = useState("");
   const [tipoJust, setTipoJust] = useState("TARDANZA_JUSTIFICADA");

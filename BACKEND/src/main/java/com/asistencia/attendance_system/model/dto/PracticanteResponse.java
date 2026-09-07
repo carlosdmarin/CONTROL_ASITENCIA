@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -26,6 +27,7 @@ public class PracticanteResponse {
     private String telefono;
     private LocalDate fechaInicioPracticas;
     private LocalDate fechaFinPracticas;
+    private LocalDateTime fechaDesactivacion;
 
     // Compatibilidad: frontend antiguo espera "agencia"
     public String getAgencia() { return sede; }

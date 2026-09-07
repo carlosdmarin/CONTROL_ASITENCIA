@@ -20,7 +20,7 @@ export default function MarcacionPage() {
   const [marcacionStatus, setMarcacionStatus] = useState<{
     success: boolean;
     message: string;
-    tipo?: "ENTRADA" | "SALIDA" | "DESCANSO" | "YA_REGISTRADO" | "JORNADA_FINALIZADA" | "ERROR";
+    tipo?: "ENTRADA" | "SALIDA" | "DESCANSO" | "YA_REGISTRADO" | "JORNADA_FINALIZADA" | "INACTIVO" | "ERROR";
   } | null>(null);
 
   const cargarHistorial = async () => {
@@ -89,8 +89,14 @@ export default function MarcacionPage() {
       const isJornadaFinalizada =
         msg.toLowerCase().includes("jornada de ingreso ya terminó") ||
         msg.toLowerCase().includes("jornada ya terminó");
+      const isInactivo =
+        msg.toLowerCase().includes("no activo") ||
+        msg.toLowerCase().includes("inactivo");
 
-      if (isDescanso) {
+      if (isInactivo) {
+        setMarcacionStatus({ success: false, message: msg, tipo: "INACTIVO" });
+        toast.error(`🚫 ${msg}`);
+      } else if (isDescanso) {
         setMarcacionStatus({ success: false, message: msg, tipo: "DESCANSO" });
         toast.error(`🚫 ${msg}`);
       } else if (isJornadaFinalizada) {

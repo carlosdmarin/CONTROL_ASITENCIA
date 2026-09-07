@@ -113,6 +113,11 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         Practicante practicante = practicanteRepository.findByDocumento(request.getDocumento())
                 .orElseThrow(() -> new RuntimeException("Practicante no encontrado con código: " + request.getDocumento()));
 
+        // Validación INACTIVO: no permitir marcación a practicantes desactivados
+        if (practicante.getSituacion() == com.asistencia.attendance_system.model.enums.Situacion.INACTIVO) {
+            throw new RuntimeException("Practicante no activo: Este practicante se encuentra actualmente inactivo y no puede registrar asistencia.");
+        }
+
         // Usar zona America/Lima
         LocalDate fecha = hoyLima();
         LocalTime hora = ahoraLima();
