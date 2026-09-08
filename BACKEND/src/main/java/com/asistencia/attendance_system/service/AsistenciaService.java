@@ -92,4 +92,7 @@ public interface AsistenciaService {
 
     // Cierre diario: convierte SIN_MARCAR -> AUSENTE al finalizar jornada (excluye descansos y justificados)
     int cerrarJornadaDelDia(LocalDate fecha);
+
+    // Resumen por rango (para gráfico dashboard) - un registro por fecha
+    List<com.asistencia.attendance_system.model.dto.ResumenRangoDTO> obtenerResumenRango(LocalDate fechaInicio, LocalDate fechaFin);
 }

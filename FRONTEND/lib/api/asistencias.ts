@@ -123,4 +123,13 @@ export const asistenciasApi = {
       throw new Error(handleApiError(error));
     }
   },
+
+  getResumenRango: async (fechaInicio: string, fechaFin: string): Promise<{ fecha: string; presentes: number; tardanzas: number; faltas: number; total: number }[]> => {
+    try {
+      const response = await api.get(`/asistencias/resumen/rango?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
 };

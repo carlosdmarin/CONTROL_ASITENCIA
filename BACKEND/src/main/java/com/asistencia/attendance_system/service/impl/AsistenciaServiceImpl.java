@@ -892,6 +892,45 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         return actualizados;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<com.asistencia.attendance_system.model.dto.ResumenRangoDTO> obtenerResumenRango(LocalDate fechaInicio, LocalDate fechaFin) {
+        // Validar rango y limitar a 93 días (trimestre) para evitar carga excesiva
+        if (fechaInicio == null || fechaFin == null) {
+            throw new RuntimeException("fechaInicio y fechaFin son obligatorias");
+        }
+        if (fechaInicio.isAfter(fechaFin)) {
+            throw new RuntimeException("fechaInicio no puede ser posterior a fechaFin");
+        }
+        long dias = java.time.temporal.ChronoUnit.DAYS.between(fechaInicio, fechaFin) + 1;
+        if (dias > 93) {
+            throw new RuntimeException("Rango máximo permitido es 93 días");
+        }
+        List<com.asistencia.attendance_system.model.dto.ResumenRangoDTO> resultado = new java.util.ArrayList<>();
+        LocalDate cur = fechaInicio;
+        while (!cur.isAfter(fechaFin)) {
+            // Reutiliza lógica existente: obtenerAsistenciasDelDia ya respeta ACTIVO y CalculadoraEstadoAsistencia con America/Lima
+            // y obtenerResumenDiario cuenta presentes/tardanzas/faltas
+            com.asistencia.attendance_system.model.dto.ResumenAsistenciaDTO resumen = obtenerResumenDiario(cur);
+            // obtenerResumenDiario usa obtenerAsistenciasDelDia internamente, que ya filtra INACTIVOS
+            int presentes = resumen.getDiasPresente() != null ? resumen.getDiasPresente() : 0;
+            int tardanzas = resumen.getDiasTarde() != null ? resumen.getDiasTarde() : 0;
+            int faltas = resumen.getDiasFalta() != null ? resumen.getDiasFalta() : 0;
+            // total = activos considerados ese día (presentes+tardanzas+faltas+otros como descansos sin contar, pero usamos total de resumen sin justificados)
+            // Para coherencia con spec: total = presentes + tardanzas + faltas + descansos + ... = delDia.size()
+            // Usamos total de delDia via resumen: presentes+tardanzas+faltas+descansos, pero resumen no expone descansos directamente
+            // Re-calculamos total como suma de delDia obtenida, o fallback a presentes+tardanzas+faltas si no hay descansos
+            // Para simplicidad, total = presentes + tardanzas + faltas + (resumen.getDiasJustificado() ?? 0) + descansos
+            // Obtenemos delDia size directamente para exactitud
+            List<AsistenciaDiariaResponse> delDia = obtenerAsistenciasDelDia(cur);
+            int total = delDia.size();
+            // Si es día futuro en Lima, delDia puede estar vacío pero igual devolvemos 0
+            resultado.add(new com.asistencia.attendance_system.model.dto.ResumenRangoDTO(cur, presentes, tardanzas, faltas, total));
+            cur = cur.plusDays(1);
+        }
+        return resultado;
+    }
+
     // ========== MÉTODOS PRIVADOS ==========
 
     private MarcacionResponse convertMarcacionToResponse(Marcacion marcacion) {

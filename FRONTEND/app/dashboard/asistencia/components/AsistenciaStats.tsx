@@ -1,146 +1,263 @@
 "use client";
+
 // ============================
-// 📦 IMPORTS PRINCIPALES
+// 📦 IMPORTS
 // ============================
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, UserCheck, Clock, UserX, Coffee, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import {
+  Users,
+  UserCheck,
+  Clock,
+  UserX,
+  Coffee,
+} from "lucide-react";
 import { ResumenAsistencia } from "@/types/asistencia";
+
+// ============================
+// 🧩 PROPS
+// ============================
 
 interface AsistenciaStatsProps {
   resumen: ResumenAsistencia;
   loading?: boolean;
 }
 
-export default function AsistenciaStats({ resumen, loading = false }: AsistenciaStatsProps) {
+// ============================
+// 🎨 COLORES DEL SISTEMA
+// ============================
+
+const COLORS = {
+  total: "#475569",
+  presentes: "#227DC3",
+  tardanzas: "#CC8033",
+  ausentes: "#B82E5C",
+  descansos: "#94A3B8",
+} as const;
+
+// ============================
+// 🛠️ HELPERS
+// ============================
+
+function porcentaje(valor: number, total: number): string {
+  if (!total || total <= 0) {
+    return "Sin registros";
+  }
+
+  return `${Math.round((valor / total) * 100)}% del total`;
+}
+
+function hexToRgba(hex: string, opacity: number): string {
+  const cleanHex = hex.replace("#", "");
+
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+// ============================
+// 📊 COMPONENTE
+// ============================
+
+export default function AsistenciaStats({
+  resumen,
+  loading = false,
+}: AsistenciaStatsProps) {
   const stats = [
     {
       label: "Total Practicantes",
+      badge: "PERSONAL",
       value: resumen.total,
       icon: Users,
-      gradient: "from-blue-500 to-indigo-600",
-      bgGradient: "from-blue-50 to-indigo-50/50",
-      iconBg: "bg-gradient-to-br from-blue-500 to-indigo-600",
-      textColor: "text-blue-600",
-      detail: `${resumen.total} Practicantes registrados`,
-      trend: "+12%",
-      trendUp: true,
+      color: COLORS.total,
+      detail:
+        resumen.total > 0
+          ? `${resumen.total} practicantes registrados`
+          : "Sin practicantes registrados",
     },
     {
       label: "Presentes",
+      badge: "ASISTENCIA",
       value: resumen.presentes,
       icon: UserCheck,
-      gradient: "from-emerald-500 to-teal-600",
-      bgGradient: "from-emerald-50 to-teal-50/50",
-      iconBg: "bg-gradient-to-br from-emerald-500 to-teal-600",
-      textColor: "text-emerald-600",
-      detail: `${Math.round((resumen.presentes / resumen.total) * 100)}% del total`,
-      trend: "+5%",
-      trendUp: true,
+      color: COLORS.presentes,
+      detail: porcentaje(resumen.presentes, resumen.total),
     },
     {
       label: "Tardanzas",
+      badge: "INCIDENCIA",
       value: resumen.tardanzas,
       icon: Clock,
-      gradient: "from-amber-500 to-orange-600",
-      bgGradient: "from-amber-50 to-orange-50/50",
-      iconBg: "bg-gradient-to-br from-amber-500 to-orange-600",
-      textColor: "text-amber-600",
-      detail: `${Math.round((resumen.tardanzas / resumen.total) * 100)}% del total`,
-      trend: "-3%",
-      trendUp: false,
+      color: COLORS.tardanzas,
+      detail: porcentaje(resumen.tardanzas, resumen.total),
     },
     {
       label: "Ausentes",
+      badge: "INCIDENCIA",
       value: resumen.ausentes || 0,
       icon: UserX,
-      gradient: "from-rose-500 to-red-600",
-      bgGradient: "from-rose-50 to-red-50/50",
-      iconBg: "bg-gradient-to-br from-rose-500 to-red-600",
-      textColor: "text-rose-600",
-      detail: `${Math.round(((resumen.ausentes || 0) / resumen.total) * 100)}% del total`,
-      trend: "-8%",
-      trendUp: false,
+      color: COLORS.ausentes,
+      detail: porcentaje(resumen.ausentes || 0, resumen.total),
     },
     {
       label: "Descansos",
+      badge: "JORNADA",
       value: resumen.descansos || 0,
       icon: Coffee,
-      gradient: "from-slate-400 to-slate-500",
-      bgGradient: "from-slate-50 to-slate-100/50",
-      iconBg: "bg-gradient-to-br from-slate-400 to-slate-500",
-      textColor: "text-slate-500",
-      detail: `${Math.round(((resumen.descansos || 0) / resumen.total) * 100)}% del total`,
-      trend: "—",
-      trendUp: true,
+      color: COLORS.descansos,
+      detail: porcentaje(resumen.descansos || 0, resumen.total),
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      {stats.map((stat) => (
-        <Card
-          key={stat.label}
-          className="border-0 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 overflow-hidden group"
-        >
-          
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-0.5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {stats.map((stat) => {
+        const Icon = stat.icon;
+
+        return (
+          <Card
+            key={stat.label}
+            className="
+              group
+              relative
+              overflow-hidden
+              rounded-2xl
+              border
+              border-slate-200
+              bg-white
+              shadow-sm
+              transition-all
+              duration-200
+              hover:-translate-y-0.5
+              hover:shadow-lg
+            "
+          >
+            {/* ============================
+                LÍNEA DE ACENTO
+                ============================ */}
+
+            <div
+              className="absolute inset-x-0 top-0 h-0.5"
+              style={{
+                backgroundColor: stat.color,
+              }}
+            />
+
+            <CardContent className="p-5">
+              {/* ============================
+                  HEADER
+                  ============================ */}
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  {/* Badge */}
+
+                  <span
+                    className="
+                      inline-flex
+                      items-center
+                      rounded-full
+                      border
+                      px-2.5
+                      py-1
+                      text-[10px]
+                      font-semibold
+                      tracking-wider
+                    "
+                    style={{
+                      color: stat.color,
+                      backgroundColor: hexToRgba(stat.color, 0.08),
+                      borderColor: hexToRgba(stat.color, 0.18),
+                    }}
+                  >
+                    {stat.badge}
+                  </span>
+
+                  {/* Título */}
+
+                  <p className="mt-2.5 text-sm font-medium text-slate-600">
+                    {stat.label}
+                  </p>
+                </div>
+
+                {/* ============================
+                    ICONO
+                    ============================ */}
+
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    transition-transform
+                    duration-200
+                    group-hover:scale-[1.03]
+                  "
+                  style={{
+                    backgroundColor: hexToRgba(stat.color, 0.09),
+                    borderColor: hexToRgba(stat.color, 0.16),
+                  }}
+                >
+                  <Icon
+                    className="h-5 w-5"
+                    strokeWidth={2}
+                    style={{
+                      color: stat.color,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* ============================
+                  VALOR PRINCIPAL
+                  ============================ */}
+
+              <div className="mt-4">
                 {loading ? (
-                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-10 w-16 rounded-lg" />
                 ) : (
-                  <p className="text-3xl font-bold tracking-tight bg-linear-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  <p
+                    className="
+                      text-3xl
+                      font-semibold
+                      tracking-tight
+                      tabular-nums
+                    "
+                    style={{
+                      color: stat.color,
+                    }}
+                  >
                     {stat.value}
                   </p>
                 )}
-                <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
               </div>
-              
-              <div className="relative">
-                <div className={`absolute inset-0 bg-linear-to-r ${stat.gradient} rounded-xl blur-md opacity-30 group-hover:opacity-50 transition-all duration-500 group-hover:scale-110`} />
-                <div className={`relative p-2.5 rounded-xl bg-linear-to-r ${stat.gradient} shadow-lg`}>
-                  <stat.icon className="h-5 w-5 text-white" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-3 flex items-center justify-between">
-              {loading ? (
-                <Skeleton className="h-3 w-32" />
-              ) : (
-                <p className="text-xs text-gray-500">{stat.detail}</p>
-              )}
-              
-              {!loading && stat.trend !== "—" && (
-                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                  stat.trendUp 
-                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
-                    : 'bg-rose-50 text-rose-600 border border-rose-200'
-                }`}>
-                  {stat.trendUp ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <ArrowDownRight className="h-3 w-3" />
-                  )}
-                  {stat.trend}
-                </div>
-              )}
-            </div>
 
-            {!loading && (
-              <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full bg-linear-to-r ${stat.gradient} transition-all duration-1000 ease-out group-hover:opacity-80`}
-                  style={{ 
-                    width: `${Math.min((stat.value / stats[0].value) * 100, 100)}%`,
-                  }}
-                />
+              {/* ============================
+                  FOOTER / METADATA
+                  ============================ */}
+
+              <div className="mt-3 min-h-5">
+                {loading ? (
+                  <Skeleton className="h-3.5 w-32 rounded-md" />
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    {stat.detail}
+                  </p>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
+

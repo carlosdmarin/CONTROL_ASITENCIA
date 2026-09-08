@@ -125,6 +125,32 @@ public class AsistenciaController {
         return ResponseEntity.ok(resumen);
     }
 
+    @GetMapping("/resumen/rango")
+    public ResponseEntity<?> obtenerResumenRango(
+            @RequestParam String fechaInicio,
+            @RequestParam String fechaFin) {
+        try {
+            if (fechaInicio == null || fechaInicio.isBlank() || fechaFin == null || fechaFin.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "fechaInicio y fechaFin son obligatorias"));
+            }
+            LocalDate inicio = LocalDate.parse(fechaInicio);
+            LocalDate fin = LocalDate.parse(fechaFin);
+            if (inicio.isAfter(fin)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "fechaInicio no puede ser posterior a fechaFin"));
+            }
+            long dias = java.time.temporal.ChronoUnit.DAYS.between(inicio, fin) + 1;
+            if (dias > 93) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Rango máximo permitido es 93 días"));
+            }
+            var lista = asistenciaService.obtenerResumenRango(inicio, fin);
+            return ResponseEntity.ok(lista);
+        } catch (java.time.format.DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Formato de fecha inválido, use YYYY-MM-DD"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/diaria/practicante/{idPracticante}/fecha/{fecha}")
     public ResponseEntity<AsistenciaDiariaResponse> obtenerAsistenciaDiaria(
             @PathVariable Long idPracticante,
