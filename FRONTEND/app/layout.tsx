@@ -9,7 +9,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "ONE Attendance",
+  title: "PractiQR",
   description: "Control de asistencias inteligente",
 };
 

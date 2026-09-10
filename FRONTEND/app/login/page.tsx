@@ -245,7 +245,7 @@ const Login = () => {
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
               Gestiona la <span className="text-blue-400">asistencia</span>
               <br />
-              de tu equipo
+              de tus praticantes
             </h2>
             <p className="mt-2 text-sm md:text-base text-gray-300 max-w-xs transition-all duration-700 group-hover:text-white/90">
               Registra entradas, controla horarios y genera reportes en

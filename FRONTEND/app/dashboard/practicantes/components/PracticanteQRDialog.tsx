@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { QRCodeCanvas } from "qrcode.react";
+import { CustomQRCode } from "./CustomQRCode";
 import { Download, QrCode, Upload, X } from "lucide-react";
 import { Practicante } from "@/types/practicante";
 import { toPng } from "html-to-image";
@@ -26,7 +26,7 @@ export function PracticanteQRDialog({
 }: PracticanteQRDialogProps) {
   const carnetRef = useRef<HTMLDivElement>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false); // 
+  const [isDownloading, setIsDownloading] = useState(false); //
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!practicante) return null;
@@ -90,7 +90,7 @@ export function PracticanteQRDialog({
         <img
           src={fotoPreview}
           alt={`Foto de ${practicante.nombreCompleto}`}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-top"
         />
       );
     }
@@ -131,25 +131,16 @@ export function PracticanteQRDialog({
           style={{ borderRadius: "16px" }}
         >
           {/* ENCABEZADO */}
-          <div className="relative flex items-center bg-[#0A2F6B] px-2 py-3">
+          <div className="relative flex items-center justify-center h-22 bg-[#E64A19] px-2 py-3">
             <img
-              src="/images/LOGO-C2.png"
+              src="/images/LOGO-H6.png"
               alt="OLAMSA"
-              className="h-25 w-auto"
+              className="h-60 w-auto" // Usé w-auto para mantener la proporción del logo
               onError={(e) => {
                 e.currentTarget.src =
                   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='40'%3E%3Ctext x='0' y='30' font-family='Arial' font-size='24' fill='white' font-weight='bold'%3EOLAMSA%3C/text%3E%3C/svg%3E";
               }}
             />
-
-            <div className="mt-1 ml-2">
-              <p className="text-sm font-medium tracking-widest text-orange-600">
-                SISTEMA DE ASISTENCIA
-              </p>
-              <h2 className="mt-1 text-2xl font-bold text-white">
-                PRACTICANTE
-              </h2>
-            </div>
           </div>
 
           {/* DATOS */}
@@ -158,12 +149,12 @@ export function PracticanteQRDialog({
               {/* FOTO */}
               <div className="relative group">
                 <div
-                  className={`h-28 w-24 overflow-hidden rounded-xl border-2 transition-all ${
+                  className={`aspect-[3/4] w-28 overflow-hidden rounded-xl border-2 transition-all ${
                     fotoPreview
-                      ? "border-[#7CB342]"
+                      ? "border-[#E64A19]"
                       : isDownloading
                         ? "border-transparent" // sin punteado al exportar
-                        : "border-dashed border-gray-300 hover:border-[#7CB342]"
+                        : "border-dashed border-gray-300 hover:border-[#E64A19]"
                   } bg-slate-50`}
                   style={{ borderRadius: "12px" }}
                 >
@@ -202,20 +193,20 @@ export function PracticanteQRDialog({
               </div>
 
               {/* INFORMACIÓN */}
-              <div className="flex-1">
+              <div className="flex-1 pl-3">
                 <p className="text-lg font-bold uppercase text-[#0A2F6B]">
                   {practicante.nombreCompleto}
                 </p>
 
                 <div className="mt-3">
-                  <p className="text-xs font-semibold text-[#7CB342]">DNI</p>
+                  <p className="text-xs font-semibold text-[#E64A19]">DNI</p>
                   <p className="font-mono text-sm font-bold text-[#0A2F6B]">
                     {practicante.documento}
                   </p>
                 </div>
 
                 <div className="mt-2">
-                  <p className="text-xs font-semibold text-[#7CB342]">SEDE</p>
+                  <p className="text-xs font-semibold text-[#E64A19]">SEDE</p>
                   <p className="text-sm font-semibold text-[#0A2F6B]">
                     {practicante.sede ||
                       (practicante as any).agencia ||
@@ -227,14 +218,28 @@ export function PracticanteQRDialog({
 
             {/* QR */}
             <div className="mt-5 flex items-center gap-5">
-              <div className="rounded-xl border-2 border-[#7CB342] bg-white p-3">
-                <QRCodeCanvas
-                  value={qrValue}
-                  size={140}
-                  level="H"
-                  bgColor="#FFFFFF"
-                  fgColor="#000000"
-                />
+              <div className="rounded-xl border-2 border-[#E64A19] bg-white p-3">
+                <div className="relative inline-block">
+                  <CustomQRCode
+                    value={qrValue}
+                    size={140}
+                    cornerColor="#E64A19"
+                    fgColor="#000000"
+                    bgColor="#FFFFFF"
+                    excavateSize={44}
+                  />
+
+                  {/* Logo real, centrado, con círculo blanco tipo Starbucks */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="">
+                      <img
+                        src="/images/ISOTIPO-H6.png"
+                        alt="OLAMSA"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -253,9 +258,11 @@ export function PracticanteQRDialog({
           </div>
 
           {/* PIE */}
-          <div className="bg-[#0A2F6B] px-6 py-4 text-center">
-            <p className="text-xs font-medium text-white">Somos una gran familia sostenible</p>
-            <p className="text-xs font-medium text-orange-600">
+          <div className="bg-white px-6 py-4 text-center">
+            <p className="text-xs font-medium text-[#0A2F6B]">
+              Somos una gran familia sostenible
+            </p>
+            <p className="text-xs font-medium text-[#E64A19]">
               de palmicultores de Ucayali
             </p>
           </div>
@@ -265,7 +272,7 @@ export function PracticanteQRDialog({
         <div className="flex gap-2">
           <Button
             onClick={downloadCarnet}
-            className="flex-1 gap-2"
+            className="flex-1 gap-2 bg-[#0A2F6B] hover:bg-[#08244f]"
             disabled={isDownloading}
           >
             <Download className="h-4 w-4" />
