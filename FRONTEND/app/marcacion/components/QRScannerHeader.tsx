@@ -17,7 +17,7 @@ export default function QRScannerHeader() {
             <QrCode className="h-6 w-6 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">Attendance Scanner</h1>
+            <h1 className="text-lg font-bold text-slate-800">PractiQR Scanner</h1>
             <p className="text-xs text-slate-500">Escanea tu QR para marcar asistencia</p>
           </div>
         </div>

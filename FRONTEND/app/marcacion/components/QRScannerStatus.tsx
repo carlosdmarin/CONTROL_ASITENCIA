@@ -1,5 +1,5 @@
 "use client";
-
+import {ScanLine, ScanQrCode} from "lucide-react"
 interface QRScannerStatusProps {
   isScanning: boolean;
 }
@@ -11,12 +11,12 @@ export default function QRScannerStatus({ isScanning }: QRScannerStatusProps) {
         <div className="flex items-center gap-3">
           {isScanning ? (
             <>
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <ScanQrCode className="h-5 w-5 text-green-600"></ScanQrCode>
               <span className="text-sm font-medium text-slate-700">Scanner activo</span>
             </>
           ) : (
             <>
-              <div className="w-3 h-3 bg-slate-400 rounded-full"></div>
+              <ScanLine className="h-5 w-5 text-slate-600"></ScanLine>
               <span className="text-sm font-medium text-slate-500">Scanner pausado</span>
             </>
           )}
