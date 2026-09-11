@@ -63,11 +63,11 @@ export default function DashboardLayout({
             <div className="shrink-0 p-4">
               <div className="flex items-center gap-3 px-2">
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
-                  <span className="text-white font-bold text-sm">OA</span>
+                  <span className="text-white font-bold text-sm">QR</span>
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-800 tracking-tight">
-                   PRACTICANTE
+                   PractiQR
                   </h2>
                   <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
                     Control de asistencias

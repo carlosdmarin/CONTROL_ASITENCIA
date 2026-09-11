@@ -11,13 +11,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash, OctagonAlert } from "lucide-react";
+import { Area } from "@/types/area";
 import { Puesto } from "@/types/puestos";
 
 interface PuestoDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  puesto: Puesto | null;
+  puesto: Area | Puesto | null;
   onDelete: (id: number) => void;
+}
+
+function getIdCompat(p: Area | Puesto): number {
+  return (p as Area).idArea ?? (p as Puesto).idPuesto ?? 0;
+}
+function getNombreCompat(p: Area | Puesto): string {
+  return (p as Area).nombreArea ?? (p as Puesto).nombrePuesto ?? "";
 }
 
 export default function PuestoDeleteDialog({
@@ -28,7 +36,7 @@ export default function PuestoDeleteDialog({
 }: PuestoDeleteDialogProps) {
   const handleDelete = () => {
     if (puesto) {
-      onDelete(puesto.idPuesto);
+      onDelete(getIdCompat(puesto));
     }
   };
 
@@ -43,9 +51,9 @@ export default function PuestoDeleteDialog({
             ¿Estás completamente seguro?
           </AlertDialogTitle>
           <AlertDialogDescription className="text-[15px]">
-            Esta acción eliminará el puesto{" "}
+            Esta acción eliminará el área{" "}
             <strong className="text-foreground font-semibold">
-              {puesto?.nombrePuesto}
+              {puesto ? getNombreCompat(puesto) : ""}
             </strong>
             . Este proceso es irreversible.
           </AlertDialogDescription>

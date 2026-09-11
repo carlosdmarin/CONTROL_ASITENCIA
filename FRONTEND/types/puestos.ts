@@ -1,11 +1,15 @@
-// types/puesto.ts
+// types/puestos.ts - @deprecated Usar types/area.ts
+// Mantenido solo para compatibilidad temporal. Nuevo código debe usar Area/NuevaArea desde './area'
 export type Puesto = {
-  idPuesto: number;        // Long en Java → number en TypeScript
+  idPuesto: number;
   nombrePuesto: string;
   area: string;
   descripcion?: string;
   activo: boolean;
-  fechaCreacion?: string;  // LocalDateTime → string ISO
+  fechaCreacion?: string;
+  // Alias canónicos opcionales para migración
+  idArea?: number;
+  nombreArea?: string;
 };
 
 export type NuevoPuesto = {
@@ -13,4 +17,5 @@ export type NuevoPuesto = {
   area: string;
   descripcion?: string;
   activo: boolean;
+  nombreArea?: string;
 };

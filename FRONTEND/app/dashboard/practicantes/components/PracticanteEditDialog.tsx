@@ -44,12 +44,14 @@ import {
   Practicante,
   Sede,
   Cargo,
-  Puesto,
+  Area,
   TipoInstituto,
+  ActualizarPracticante,
+  BloqueHorarioRequest,
 } from "@/types/practicante";
 import { sedeApi } from "@/lib/api/agencias";
 import { cargosApi } from "@/lib/api/cargos";
-import { puestosApi } from "@/lib/api/puestos";
+import { areasApi } from "@/lib/api/areas";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
 import { practicantesApi } from "@/lib/api/practicantes";
 import {
@@ -61,7 +63,7 @@ interface PracticanteEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   practicante: Practicante | null;
-  onSave: (practicanteEditado: any) => void;
+  onSave: (practicanteEditado: ActualizarPracticante & { idPracticante: number; horario?: BloqueHorarioRequest[] }) => void;
 }
 
 interface DiaHorario {
@@ -115,11 +117,11 @@ const MOCK_CARGOS: Cargo[] = [
   { idCargo: 2, nombre: "PRACTICANTE PRE PROFESIONAL", descripcion: "Nivel pre-profesional", horasSemanales: 30, activo: true },
 ];
 
-const MOCK_PUESTOS: Puesto[] = [
-  { idPuesto: 1, nombrePuesto: "Logística y servicios", area: "Logística", descripcion: "", activo: true },
-  { idPuesto: 2, nombrePuesto: "Mantenimiento", area: "Operaciones", descripcion: "", activo: true },
-  { idPuesto: 3, nombrePuesto: "Recursos Humanos", area: "Administración", descripcion: "", activo: true },
-  { idPuesto: 4, nombrePuesto: "Tecnología de la Información", area: "Sistemas", descripcion: "", activo: true },
+const MOCK_AREAS: Area[] = [
+  { idArea: 1, nombreArea: "Logística y servicios", descripcion: "Gestión de insumos y despachos", activo: true },
+  { idArea: 2, nombreArea: "Mantenimiento", descripcion: "Control de maquinaria y equipos", activo: true },
+  { idArea: 3, nombreArea: "Recursos Humanos", descripcion: "Control administrativo y financiero", activo: true },
+  { idArea: 4, nombreArea: "Tecnología de la Información", descripcion: "Soporte y desarrollo de sistemas", activo: true },
 ];
 
 const MOCK_TIPOS_INSTITUTO: TipoInstituto[] = [
@@ -151,7 +153,7 @@ export function PracticanteEditDialog({
 
   const [sedes, setSedes] = useState<Sede[]>(MOCK_SEDES);
   const [cargos, setCargos] = useState<Cargo[]>(MOCK_CARGOS);
-  const [puestos, setPuestos] = useState<Puesto[]>(MOCK_PUESTOS);
+  const [areas, setAreas] = useState<Area[]>(MOCK_AREAS);
   const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>(MOCK_TIPOS_INSTITUTO);
   const [loadingSelects, setLoadingSelects] = useState(false);
 
@@ -161,7 +163,7 @@ export function PracticanteEditDialog({
     documento: "",
     idSede: 0,
     idCargo: 0,
-    idPuesto: 0,
+    idArea: 0,
     idTipoInstituto: 0,
     correoElectronico: "",
     telefono: "",
@@ -233,16 +235,16 @@ export function PracticanteEditDialog({
     const cargarSelects = async () => {
       try {
         setLoadingSelects(true);
-        const [sedesData, cargosData, puestosData, tiposData] = await Promise.all([
+        const [sedesData, cargosData, areasData, tiposData] = await Promise.all([
           sedeApi.getAll().catch(() => MOCK_SEDES),
           cargosApi.getAll().catch(() => MOCK_CARGOS),
-          puestosApi.getAll().catch(() => MOCK_PUESTOS),
+          areasApi.getAll().catch(() => MOCK_AREAS),
           tiposInstitutoApi.getAll().catch(() => MOCK_TIPOS_INSTITUTO),
         ]);
 
         setSedes(sedesData.length > 0 ? sedesData : MOCK_SEDES);
         setCargos(cargosData.length > 0 ? cargosData : MOCK_CARGOS);
-        setPuestos(puestosData.length > 0 ? puestosData : MOCK_PUESTOS);
+        setAreas(areasData.length > 0 ? areasData : MOCK_AREAS);
         setTiposInstituto(tiposData.length > 0 ? tiposData : MOCK_TIPOS_INSTITUTO);
       } catch (error) {
         console.error("Error al cargar selects:", error);
@@ -283,10 +285,10 @@ export function PracticanteEditDialog({
       return cargos.find(c => normalizar(c.nombre) === normalizado);
     };
 
-    const buscarPuesto = (nombrePuesto: string) => {
-      if (!nombrePuesto) return null;
-      const normalizado = normalizar(nombrePuesto);
-      return puestos.find(p => normalizar(p.nombrePuesto) === normalizado);
+    const buscarArea = (nombreArea: string) => {
+      if (!nombreArea) return null;
+      const normalizado = normalizar(nombreArea);
+      return areas.find(p => normalizar(p.nombreArea) === normalizado);
     };
 
     const buscarTipoInstituto = (nombreTipo: string) => {
@@ -301,18 +303,18 @@ export function PracticanteEditDialog({
     }
 
     const cargoEncontrado = buscarCargo(practicante.cargo);
-    const puestoEncontrado = buscarPuesto(practicante.puesto);
+    const areaEncontrada = buscarArea(practicante.nombreArea || practicante.area || practicante.puesto);
     const tipoEncontrado = buscarTipoInstituto(practicante.tipoInstituto);
 
     const idSedeFinal = sedeEncontrada?.idSede || (sedes.length > 0 ? sedes[0].idSede : 0);
     const idCargoFinal = cargoEncontrado?.idCargo || (cargos.length > 0 ? cargos[0].idCargo : 0);
-    const idPuestoFinal = puestoEncontrado?.idPuesto || (puestos.length > 0 ? puestos[0].idPuesto : 0);
+    const idAreaFinal = areaEncontrada?.idArea || (areas.length > 0 ? areas[0].idArea : 0);
     const idTipoFinal = tipoEncontrado?.idTipoInstituto || (tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 0);
 
     console.log("🔍 Búsqueda de IDs:", {
       sede: { buscado: practicante.sede, encontrado: sedeEncontrada?.nombre, id: idSedeFinal },
       cargo: { buscado: practicante.cargo, encontrado: cargoEncontrado?.nombre, id: idCargoFinal },
-      puesto: { buscado: practicante.puesto, encontrado: puestoEncontrado?.nombrePuesto, id: idPuestoFinal },
+      area: { buscado: practicante.nombreArea || practicante.area || practicante.puesto, encontrado: areaEncontrada?.nombreArea, id: idAreaFinal },
       tipo: { buscado: practicante.tipoInstituto, encontrado: tipoEncontrado?.nombre, id: idTipoFinal },
     });
 
@@ -322,7 +324,7 @@ export function PracticanteEditDialog({
       documento: practicante.documento || "",
       idSede: idSedeFinal,
       idCargo: idCargoFinal,
-      idPuesto: idPuestoFinal,
+      idArea: idAreaFinal,
       idTipoInstituto: idTipoFinal,
       correoElectronico: practicante.correoElectronico || "",
       telefono: practicante.telefono || "",
@@ -375,7 +377,7 @@ export function PracticanteEditDialog({
     };
 
     cargarHorario();
-  }, [practicante, open, sedes, cargos, puestos, tiposInstituto]);
+  }, [practicante, open, sedes, cargos, areas, tiposInstituto]);
 
   // ====== HANDLERS ======
   const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -477,7 +479,7 @@ export function PracticanteEditDialog({
       !telefonoError &&
       formData.fechaInicioPracticas !== "" &&
       formData.idSede > 0 &&
-      formData.idPuesto > 0 &&
+      formData.idArea > 0 &&
       formData.idCargo > 0 &&
       formData.idTipoInstituto > 0
     );
@@ -510,12 +512,15 @@ export function PracticanteEditDialog({
 
     const nombreCompleto = `${formData.nombre} ${formData.apellido}`.trim();
 
+    if (!practicante?.idPracticante) return;
     const practicanteEditado = {
-      idPracticante: practicante?.idPracticante,
+      idPracticante: practicante.idPracticante,
+      nombre: formData.nombre,
+      apellido: formData.apellido,
       nombreCompleto: nombreCompleto,
       documento: formData.documento,
       idSede: formData.idSede,
-      idPuesto: formData.idPuesto,
+      idArea: formData.idArea,
       idTipoInstituto: formData.idTipoInstituto,
       idCargo: formData.idCargo,
       correoElectronico: formData.correoElectronico || undefined,
@@ -758,25 +763,25 @@ export function PracticanteEditDialog({
             </div>
           </div>
 
-          {/* Puesto / Área */}
+          {/* Area / Área */}
           <div className="grid gap-1.5">
-            <Label htmlFor="idPuesto" className="text-xs font-medium">
+            <Label htmlFor="idArea" className="text-xs font-medium">
               Área *
             </Label>
             <div className="relative">
               <BriefcaseBusiness className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
-                id="idPuesto"
-                name="idPuesto"
-                value={formData.idPuesto}
+                id="idArea"
+                name="idArea"
+                value={formData.idArea}
                 onChange={handleSelectChange}
                 className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={loadingSelects}
               >
                 <option value="0">Seleccionar área</option>
-                {puestos.map((puesto) => (
-                  <option key={puesto.idPuesto} value={puesto.idPuesto}>
-                    {puesto.nombrePuesto}
+                {areas.map((area) => (
+                  <option key={area.idArea} value={area.idArea}>
+                    {area.nombreArea}
                   </option>
                 ))}
               </select>
@@ -1247,8 +1252,8 @@ export function PracticanteEditDialog({
     const cargoItem = cargos.find(
       (c) => c.idCargo === Number(formData.idCargo),
     );
-    const puestoItem = puestos.find(
-      (p) => p.idPuesto === Number(formData.idPuesto),
+    const areaItem = areas.find(
+      (p) => p.idArea === Number(formData.idArea),
     );
     const tipoItem = tiposInstituto.find(
       (t) => t.idTipoInstituto === Number(formData.idTipoInstituto),
@@ -1257,7 +1262,7 @@ export function PracticanteEditDialog({
     // 1. Intentar por ID
     let sedeFinal = sedeItem?.nombre || "—";
     let cargoFinal = cargoItem?.nombre || "—";
-    let puestoFinal = puestoItem?.nombrePuesto || "—";
+    let areaFinal = areaItem?.nombreArea || "—";
     let tipoFinal = tipoItem?.nombre || "—";
 
     // 2. Si no, usar el practicante original como fallback
@@ -1267,8 +1272,8 @@ export function PracticanteEditDialog({
     if (cargoFinal === "—" && practicante) {
       cargoFinal = practicante.cargo || "—";
     }
-    if (puestoFinal === "—" && practicante) {
-      puestoFinal = practicante.puesto || "—";
+    if (areaFinal === "—" && practicante) {
+      areaFinal = practicante.nombreArea || practicante.area || practicante.puesto || "—";
     }
     if (tipoFinal === "—" && practicante) {
       tipoFinal = practicante.tipoInstituto || "—";
@@ -1287,11 +1292,11 @@ export function PracticanteEditDialog({
       );
       cargoFinal = encontrado?.nombre || practicante.cargo || "—";
     }
-    if (puestoFinal === "—" && practicante?.puesto) {
-      const encontrado = puestos.find(
-        (p) => normalizar(p.nombrePuesto) === normalizar(practicante.puesto)
+    if (areaFinal === "—" && practicante?.area) {
+      const encontrado = areas.find(
+        (p) => normalizar(p.nombreArea) === normalizar(practicante.nombreArea || practicante.area || practicante.puesto)
       );
-      puestoFinal = encontrado?.nombrePuesto || practicante.puesto || "—";
+      areaFinal = encontrado?.nombreArea || practicante.nombreArea || practicante.area || practicante.puesto || "—";
     }
     if (tipoFinal === "—" && practicante?.tipoInstituto) {
       const encontrado = tiposInstituto.find(
@@ -1304,11 +1309,11 @@ export function PracticanteEditDialog({
     console.log("📋 Step 3 - Mostrando:", {
       sede: sedeFinal,
       cargo: cargoFinal,
-      puesto: puestoFinal,
+      area: areaFinal,
       tipo: tipoFinal,
       idSede: formData.idSede,
       idCargo: formData.idCargo,
-      idPuesto: formData.idPuesto,
+      idArea: formData.idArea,
       idTipo: formData.idTipoInstituto,
     });
 
@@ -1345,7 +1350,7 @@ export function PracticanteEditDialog({
             <span className="text-gray-500">Sede:</span>
             <span className="font-medium">{sedeFinal}</span>
             <span className="text-gray-500">Área:</span>
-            <span className="font-medium">{puestoFinal}</span>
+            <span className="font-medium">{areaFinal}</span>
             <span className="text-gray-500">Cargo:</span>
             <span className="font-medium">{cargoFinal}</span>
             <span className="text-gray-500">Centro de Estudios:</span>

@@ -44,6 +44,8 @@ import {
   CalendarDays,
   Activity,
   TrendingUp,
+  TrendingDown,
+  Minus,
   Zap,
   AlertTriangle,
   ClockAlert,
@@ -54,6 +56,7 @@ import {
   ChevronRight,
   LogIn,
   LogOut,
+  Coffee,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -104,6 +107,40 @@ function iniciales(nombre: string) {
     .toUpperCase();
 }
 
+const COLORS = {
+  total: "#0f172a",
+  presentes: "#227DC3",
+  tardanzas: "#CC8033",
+  faltas: "#B82E5C",
+  descansos: "#64748b",
+} as const;
+
+function porcentaje(valor: number, total: number): string {
+  if (!total || total <= 0) return "Sin registros";
+  return `${Math.round((valor / total) * 100)}% del total`;
+}
+function porcentajeBadge(valor: number, total: number): string {
+  if (!total || total <= 0) return "—";
+  return `${Math.round((valor / total) * 100)}%`;
+}
+function hexToRgba(hex: string, opacity: number): string {
+  const cleanHex = hex.replace("#", "");
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+function TrendIcon({ percent }: { percent: string }) {
+  if (percent === "—") return <Minus className="h-3.5 w-3.5" strokeWidth={2.25} />;
+  const value = parseInt(percent.replace("%", ""), 10);
+  if (Number.isNaN(value)) return <Minus className="h-3.5 w-3.5" strokeWidth={2.25} />;
+  return value >= 50 ? (
+    <TrendingUp className="h-3.5 w-3.5" strokeWidth={2.25} />
+  ) : (
+    <TrendingDown className="h-3.5 w-3.5" strokeWidth={2.25} />
+  );
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [practicantes, setPracticantes] = useState<Practicante[]>([]);
@@ -131,6 +168,7 @@ export default function DashboardPage() {
     { usuario: string; accion: string; hora: string; tipo: string }[]
   >([]);
   const [actividadLoading, setActividadLoading] = useState(true);
+  const [asistenciasHoy, setAsistenciasHoy] = useState<AsistenciaDiariaResponse[]>([]);
 
   const cargarDatos = async () => {
     try {
@@ -180,6 +218,7 @@ export default function DashboardPage() {
           (a, b) => prioridad(a.estadoDia) - prioridad(b.estadoDia),
         );
         setAtencion(filtradas);
+        setAsistenciasHoy(asistenciasDia);
 
         const acts: {
           usuario: string;
@@ -216,6 +255,7 @@ export default function DashboardPage() {
         console.warn("No se pudo cargar requiere atención/actividad:", error);
         setAtencion([]);
         setActividades([]);
+        setAsistenciasHoy([]);
       } finally {
         setAtencionLoading(false);
         setActividadLoading(false);
@@ -280,37 +320,26 @@ export default function DashboardPage() {
   );
   const yAxisMax = Math.max(4, chartMax + 2);
 
-  // Donut: distribución de hoy
-  const donutTotal =
-    (resumenAsistencia.presentes || 0) +
-    (resumenAsistencia.tardes || 0) +
-    (resumenAsistencia.faltas || 0);
+  // Puntualidad de hoy: solo quienes debían asistir hoy (excluye DESCANSO), solo PRESENTE vs TARDANZA
+  // Usa asistenciasHoy (datos reales de GET /diaria?fecha, que ya filtra INACTIVOS y usa horaFin para SIN_MARCAR/AUSENTE)
+  const descansos = asistenciasHoy.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length;
+  const esperados = asistenciasHoy.filter((a) => normalizeEstadoDia(a.estadoDia) !== "DESCANSO").length;
+  const puntuales = asistenciasHoy.filter((a) => normalizeEstadoDia(a.estadoDia) === "PRESENTE").length;
+  const tardanzasPunt = asistenciasHoy.filter((a) => {
+    const n = normalizeEstadoDia(a.estadoDia);
+    return n === "TARDANZA" || isTardanza(a.estadoDia);
+  }).length;
+  const marcados = puntuales + tardanzasPunt;
+  const puntualidad = marcados > 0 ? (puntuales / marcados) * 100 : 0;
+  const puntualidadStr = marcados > 0 ? `${puntualidad.toFixed(1).replace(/\.0$/, "")}%` : "0%";
   const donutData = [
-    {
-      name: "Presentes",
-      value: resumenAsistencia.presentes || 0,
-      fill: "var(--color-presentes)",
-    },
-    {
-      name: "Tardanzas",
-      value: resumenAsistencia.tardes || 0,
-      fill: "var(--color-tardanzas)",
-    },
-    {
-      name: "Faltas",
-      value: resumenAsistencia.faltas || 0,
-      fill: "var(--color-faltas)",
-    },
+    { name: "Puntuales", value: puntuales, fill: "var(--color-presentes)" },
+    { name: "Tardanzas", value: tardanzasPunt, fill: "var(--color-tardanzas)" },
   ].filter((d) => d.value > 0);
-  const donutPorcentaje =
-    donutTotal > 0
-      ? Math.round(((resumenAsistencia.presentes || 0) / donutTotal) * 100)
-      : 0;
 
   const donutConfig: ChartConfig = {
-    presentes: { label: "Presentes", color: "hsl(206, 70%, 45%)" },
-    tardanzas: { label: "Tardanzas", color: "hsl(30, 60%, 50%)" },
-    faltas: { label: "Faltas", color: "hsl(340, 60%, 45%)" },
+    presentes: { label: "Puntuales", color: "hsl(142, 76%, 36%)" },
+    tardanzas: { label: "Tardanzas", color: "hsl(38, 92%, 50%)" },
   };
 
   return (
@@ -365,96 +394,117 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
+      {/* KPIs - lenguaje visual inspirado en AsistenciaStats */}
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
+        {(() => {
+          const totalDia = resumenAsistencia.total;
+          const kpis = [
+            {
+              label: "Total practicantes",
+              badge: "PERSONAL",
+              value: totalPracticantes,
+              icon: Users,
+              color: COLORS.total,
+              detail: "Practicantes registrados",
+              percent: "—",
+            },
+            {
+              label: "Presentes hoy",
+              badge: "ASISTENCIA",
+              value: resumenAsistencia.presentes,
+              icon: UserCheck,
+              color: COLORS.presentes,
+              detail: porcentaje(resumenAsistencia.presentes, totalDia),
+              percent: porcentajeBadge(resumenAsistencia.presentes, totalDia),
+            },
+            {
+              label: "Tardanzas hoy",
+              badge: "INCIDENCIA",
+              value: resumenAsistencia.tardes,
+              icon: ClockAlert,
+              color: COLORS.tardanzas,
+              detail: porcentaje(resumenAsistencia.tardes, totalDia),
+              percent: porcentajeBadge(resumenAsistencia.tardes, totalDia),
+            },
+            {
+              label: "Ausentes hoy",
+              badge: "INCIDENCIA",
+              value: resumenAsistencia.faltas,
+              icon: UserX,
+              color: COLORS.faltas,
+              detail: porcentaje(resumenAsistencia.faltas, totalDia),
+              percent: porcentajeBadge(resumenAsistencia.faltas, totalDia),
+            },
+            {
+              label: "Descansos hoy",
+              badge: "DESCANSO",
+              value: descansos,
+              icon: Coffee,
+              color: COLORS.descansos,
+              detail: "No laboran hoy",
+              percent: "—",
+            },
+          ];
+          return kpis.map((stat) => {
+            const Icon = stat.icon;
+            return (
               <Card
-                key={i}
-                className="rounded-2xl border border-slate-200 shadow-sm"
+                key={stat.label}
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-4 w-24" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-16" />
-                  <Skeleton className="h-3 w-20 mt-2" />
-                </CardContent>
-              </Card>
-            ))
-          : [
-              {
-                title: "Total practicantes",
-                value: totalPracticantes,
-                description: "Registrados en el sistema",
-                icon: Users,
-                iconBg: "bg-slate-100",
-                iconColor: "text-slate-700",
-                alert: false,
-              },
-              {
-                title: "Presentes hoy",
-                value: resumenAsistencia.presentes,
-                description:
-                  donutTotal > 0
-                    ? `${Math.round((resumenAsistencia.presentes / donutTotal) * 100)}% del día`
-                    : "Sin registros hoy",
-                icon: UserCheck,
-                iconBg: "bg-emerald-50",
-                iconColor: "text-emerald-600",
-                alert: false,
-              },
-              {
-                title: "Tardanzas hoy",
-                value: resumenAsistencia.tardes,
-                description:
-                  resumenAsistencia.tardes === 0
-                    ? "Sin tardanzas"
-                    : `${resumenAsistencia.tardes} requieren seguimiento`,
-                icon: ClockAlert,
-                iconBg: "bg-amber-50",
-                iconColor: "text-amber-600",
-                alert: resumenAsistencia.tardes > 0,
-              },
-              {
-                title: "Faltas hoy",
-                value: resumenAsistencia.faltas,
-                description:
-                  resumenAsistencia.faltas === 0
-                    ? "Sin faltas"
-                    : "Requieren justificación",
-                icon: UserX,
-                iconBg: "bg-rose-50",
-                iconColor: "text-rose-600",
-                alert: resumenAsistencia.faltas > 0,
-              },
-            ].map((stat) => (
-              <Card
-                key={stat.title}
-                className={`rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-md ${
-                  stat.alert ? "border-rose-100" : "border-slate-200"
-                }`}
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-xs font-medium tracking-wide text-slate-500">
-                      {stat.title}
-                    </CardTitle>
-                    <div className={`p-2 rounded-xl ${stat.iconBg}`}>
-                      <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span
+                        className="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold tracking-wider"
+                        style={{
+                          color: stat.color,
+                          backgroundColor: hexToRgba(stat.color, 0.08),
+                          borderColor: hexToRgba(stat.color, 0.18),
+                        }}
+                      >
+                        {stat.badge}
+                      </span>
+                      <div className="mt-2.5 flex items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0" strokeWidth={2} style={{ color: stat.color }} />
+                        <p className="truncate text-sm font-medium text-slate-600">{stat.label}</p>
+                      </div>
+                    </div>
+                    <div
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold tabular-nums text-slate-700 transition-transform duration-200 group-hover:scale-[1.03]"
+                      aria-label={`Indicador: ${stat.percent}`}
+                    >
+                      {loading ? (
+                        <Skeleton className="h-3 w-10 rounded-full" />
+                      ) : (
+                        <>
+                          <TrendIcon percent={stat.percent} />
+                          <span>{stat.percent}</span>
+                        </>
+                      )}
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-[32px] font-semibold tracking-tight text-slate-900 leading-none tabular-nums">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-2.5">
-                    {stat.description}
-                  </p>
+                  <div className="mt-4">
+                    {loading ? (
+                      <Skeleton className="h-10 w-16 rounded-lg" />
+                    ) : (
+                      <p className="text-3xl font-semibold tracking-tight tabular-nums" style={{ color: stat.color }}>
+                        {stat.value}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-3 min-h-5">
+                    {loading ? (
+                      <Skeleton className="h-3.5 w-32 rounded-md" />
+                    ) : (
+                      <p className="text-xs text-slate-500">{stat.detail}</p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
-            ))}
+            );
+          });
+        })()}
       </div>
 
       {/* Gráfico semanal + Donut */}
@@ -483,9 +533,9 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pt-2">
             {chartLoading ? (
-              <Skeleton className="h-[260px] w-full rounded-xl" />
+              <Skeleton className="h-65 w-full rounded-xl" />
             ) : chartError ? (
-              <div className="h-[260px] w-full flex flex-col items-center justify-center text-sm text-red-500">
+              <div className="h-65 w-full flex flex-col items-center justify-center text-sm text-red-500">
                 <p>{chartError}</p>
                 <p className="text-xs text-slate-500 mt-1">
                   No se pudo cargar el gráfico
@@ -615,90 +665,69 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Donut Estado de hoy */}
+        {/* Donut Puntualidad de hoy */}
         <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-[15px] font-semibold text-slate-900">
-              Estado de hoy
+              Puntualidad de hoy
             </CardTitle>
             <CardDescription className="text-xs">
-              Distribución de asistencia del día
+              Practicantes que marcaron entrada
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col items-center justify-center pt-2">
-            {loading ? (
+            {atencionLoading ? (
               <Skeleton className="h-[220px] w-[220px] rounded-full" />
-            ) : donutTotal === 0 ? (
+            ) : esperados === 0 ? (
               <div className="h-[220px] flex flex-col items-center justify-center text-center">
                 <div className="p-3 bg-slate-50 rounded-full mb-3">
                   <Clock className="h-6 w-6 text-slate-400" />
                 </div>
-                <p className="text-sm font-medium text-slate-600">
-                  Sin registros hoy
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Aún no hay asistencias
-                </p>
+                <p className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">--</p>
+                <p className="text-xs font-medium text-slate-500">Puntualidad</p>
+                <p className="text-[11px] text-slate-400 mt-2">Sin jornada programada</p>
               </div>
             ) : (
               <>
                 <div className="relative h-55 w-full">
                   <ChartContainer config={donutConfig} className="h-55 w-full">
                     <PieChart>
-                      <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent hideLabel />}
-                      />
+                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                       <Pie
-                        data={donutData}
+                        data={donutData.length > 0 ? donutData : [{ name: "Sin datos", value: 1, fill: "hsl(var(--muted))" }]}
                         dataKey="value"
                         nameKey="name"
                         innerRadius={62}
                         outerRadius={88}
-                        paddingAngle={3}
+                        paddingAngle={donutData.length > 0 ? 3 : 0}
                         strokeWidth={0}
+                        isAnimationActive={false}
                       />
                     </PieChart>
                   </ChartContainer>
-                  {/* Centro, centrado de forma robusta sobre el donut */}
                   <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">
-                      {donutPorcentaje}%
+                      {marcados === 0 ? "0%" : puntualidadStr}
                     </span>
-                    <span className="text-xs font-medium text-slate-500">
-                      Asistencia
-                    </span>
-                    <span className="text-[11px] text-slate-400">
-                      {donutTotal} registros
-                    </span>
+                    <span className="text-xs font-medium text-slate-500">Puntualidad</span>
                   </div>
                 </div>
                 <div className="w-full space-y-2 mt-4">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[hsl(206,72%,45%)]" />{" "}
-                      Presentes
+                      <span className="h-2 w-2 rounded-full bg-[hsl(142,76%,36%)]" /> Puntuales
                     </span>
-                    <span className="font-medium text-slate-900 tabular-nums">
-                      {resumenAsistencia.presentes}
-                    </span>
+                    <span className="font-medium text-slate-900 tabular-nums">{puntuales}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[hsl(30,60%,50%)]" />{" "}
-                      Tardanzas
+                      <span className="h-2 w-2 rounded-full bg-[hsl(38,92%,50%)]" /> Tardanzas
                     </span>
-                    <span className="font-medium text-slate-900 tabular-nums">
-                      {resumenAsistencia.tardes}
-                    </span>
+                    <span className="font-medium text-slate-900 tabular-nums">{tardanzasPunt}</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[hsl(340,60%,45%)]" />{" "}
-                      Faltas
-                    </span>
-                    <span className="font-medium text-slate-900 tabular-nums">
-                      {resumenAsistencia.faltas}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-center">
+                    <span className="text-xs text-slate-500">
+                      <span className="font-medium text-slate-700">{marcados}</span> de <span className="font-medium text-slate-700">{esperados}</span> marcaron
                     </span>
                   </div>
                 </div>
@@ -861,7 +890,7 @@ export default function DashboardPage() {
                     (p) => p.idPracticante === a.idPracticante,
                   );
                   const area =
-                    practicanteInfo?.area || practicanteInfo?.puesto || "—";
+                    practicanteInfo?.nombreArea || practicanteInfo?.area || practicanteInfo?.puesto || "—";
                   let badgeClass =
                     "bg-slate-100 text-slate-700 border-slate-200";
                   let Icon = MinusCircle;

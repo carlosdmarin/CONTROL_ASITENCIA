@@ -29,6 +29,7 @@ import {
   User,
   PowerOff,
   RotateCcw,
+  MapPin,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,6 +61,21 @@ const getInitials = (nombreCompleto: string) => {
   }
   return nombreCompleto.charAt(0) || "?";
 };
+
+const AVATAR_COLORS = [
+  "bg-blue-100 text-blue-700 border-blue-200",
+  "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "bg-amber-100 text-amber-700 border-amber-200",
+  "bg-rose-100 text-rose-700 border-rose-200",
+  "bg-violet-100 text-violet-700 border-violet-200",
+  "bg-slate-100 text-slate-700 border-slate-200",
+];
+function getAvatarColor(id: number, nombre: string) {
+  const str = `${id}-${nombre}`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
 
 // ---------------------------------------------------------------------------
 // Paginación con truncado
@@ -121,7 +137,10 @@ const TableSkeleton = () => (
           </div>
         </TableCell>
         <TableCell>
-          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-20 mx-auto" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-4 w-16 mx-auto" />
         </TableCell>
         <TableCell>
           <Skeleton className="h-5 w-16 rounded-full" />
@@ -262,21 +281,22 @@ export function PracticanteTable({
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-100 hover:bg-gray-50/80">
-                <TableHead className="font-semibold w-12 text-center">
+              <TableRow className="bg-slate-50 hover:bg-slate-50/80 border-b border-slate-200">
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider w-10 text-center">
                   #
                 </TableHead>
-                <TableHead className="font-semibold">Nombre completo</TableHead>
-                <TableHead className="font-semibold">Documento</TableHead>
-                <TableHead className="font-semibold">Sede</TableHead>
-                <TableHead className="font-semibold">Cargo</TableHead>
-                <TableHead className="font-semibold text-center">
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider min-w-[200px]">Practicante</TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">DNI</TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Sede</TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Área</TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Cargo</TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">
                   Horas
                 </TableHead>
-                <TableHead className="font-semibold text-center">
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">
                   Estado
                 </TableHead>
-                <TableHead className="font-semibold text-right">
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-right">
                   Acciones
                 </TableHead>
               </TableRow>
@@ -286,7 +306,7 @@ export function PracticanteTable({
                 <TableSkeleton />
               ) : currentItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-48 text-center">
+                  <TableCell colSpan={9} className="h-48 text-center">
                     <div className="flex flex-col items-center justify-center">
                       {busqueda ? (
                         <>
@@ -314,55 +334,51 @@ export function PracticanteTable({
                 </TableRow>
               ) : (
                 currentItems.map((practicante, index) => {
-                  const globalIndex =  startIndex + index + 1;
+                  const globalIndex = startIndex + index + 1;
                   return (
                     <TableRow
-                    key={practicante.idPracticante}
-                      className="hover:bg-slate-50 h-12"
+                      key={practicante.idPracticante}
+                      className="hover:bg-slate-50 h-11"
                     >
-                      <TableCell className="text-center text-sm text-gray-500">
+                      <TableCell className="text-center text-xs text-slate-500">
                         {globalIndex}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8 text-xs font-medium">
-                            <AvatarFallback className="text-blue-700 bg-blue-200">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar className="h-8 w-8 text-xs font-medium border">
+                            <AvatarFallback className={getAvatarColor(practicante.idPracticante, practicante.nombreCompleto)}>
                               {getInitials(practicante.nombreCompleto)}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {practicante.nombreCompleto}
-                            </p>
-                          </div>
+                          <p className="text-sm font-medium text-slate-900 truncate max-w-[160px]">
+                            {practicante.nombreCompleto}
+                          </p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="font-mono text-xs text-slate-600">
                         {practicante.documento}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-purple-50 text-black border-purple-200"
-                        >
-                          {practicante.sede || (practicante as any).agencia}
-                        </Badge>
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-600">
+                          <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                          {practicante.sede || practicante.agencia || "—"}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-50 text-blue-700 border-blue-200"
-                        >
+                        <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs text-slate-600">
+                          {practicante.nombreArea || practicante.area || practicante.puesto || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-white border-slate-200 text-slate-700 text-xs font-medium">
                           {practicante.cargo}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600 text-center">
+                      <TableCell className="text-xs text-slate-600 text-center tabular-nums">
                         {practicante.horasSemanalesRequeridas}h
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge
-                          className={getStatusColor(practicante.situacion)}
-                        >
+                        <Badge className={`${getStatusColor(practicante.situacion)} rounded-full px-2 py-0.5 text-xs`}>
                           {practicante.situacion}
                         </Badge>
                       </TableCell>
@@ -371,66 +387,60 @@ export function PracticanteTable({
                           {onShowQR && (
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                              size="icon"
+                              className="h-7 w-7  bg-slate-100 border-accent- text-orange-600 hover:text-orange-800 hover:bg-slate-100"
                               onClick={() => onShowQR(practicante)}
                               title="Ver QR"
+                              aria-label="Ver QR"
                             >
-                              <QrCode className="h-4 w-4" />
-                              <span className="sr-only">QR</span>
+                              <QrCode className="h-3.5 w-3.5" />
                             </Button>
                           )}
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            size="icon"
+                            className="h-7 w-7 text-blue-500 hover:text-blue-900 hover:bg-blue-100"
                             onClick={() => onEdit(practicante)}
+                            title="Editar"
+                            aria-label="Editar"
                           >
-                            <Pencil className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
+                            <Pencil className="h-3.5 w-3.5" />
                           </Button>
-
                           {practicante.situacion === "ACTIVO" ? (
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              size="icon"
+                              className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                               onClick={() => onDelete(practicante)}
                               title="Desactivar"
+                              aria-label="Desactivar"
                             >
-                              <PowerOff className="h-4 w-4" />
-                              <span className="sr-only">Desactivar</span>
+                              <PowerOff className="h-3.5 w-3.5" />
                             </Button>
                           ) : (
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              size="icon"
+                              className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                               onClick={() => onDelete(practicante)}
                               title="Activar"
+                              aria-label="Activar"
                             >
-                              <RotateCcw className="h-4 w-4" />
-                              <span className="sr-only">Activar</span>
+                              <RotateCcw className="h-3.5 w-3.5" />
                             </Button>
                           )}
-
                           <DropdownMenu>
                             <DropdownMenuTrigger>
-                              <div className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer text-gray-600">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Más acciones</span>
+                              <div className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 cursor-pointer text-slate-500" aria-label="Más acciones">
+                                <MoreHorizontal className="h-3.5 w-3.5" />
                               </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuGroup>
-                                <DropdownMenuLabel>
-                                  Más acciones
-                                </DropdownMenuLabel>
+                                <DropdownMenuLabel>Más acciones</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => onShowDetail?.(practicante)}
-                                >
-                                <User className="h-4 w-4 mr-2" /> Ver detalles
+                                <DropdownMenuItem onClick={() => onShowDetail?.(practicante)}>
+                                  <User className="h-4 w-4 mr-2" /> Ver detalles
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>Historial</DropdownMenuItem>
                                 <DropdownMenuItem>Reportes</DropdownMenuItem>

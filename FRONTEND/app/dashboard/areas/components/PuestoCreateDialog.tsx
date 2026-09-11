@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { NuevoPuesto } from "@/types/puestos";
+import { NuevaArea } from "@/types/area";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,7 @@ import {
 interface PuestoCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (nuevoPuesto: NuevoPuesto) => void;
+  onSave: (nuevaArea: NuevaArea) => void;
 }
 
 export default function PuestoCreateDialog({
@@ -28,29 +28,26 @@ export default function PuestoCreateDialog({
   onSave,
 }: PuestoCreateDialogProps) {
   const [formData, setFormData] = useState({
-    nombrePuesto: "",
-    area: "",
+    nombreArea: "",
     descripcion: "",
   });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const nombreError = !formData.nombrePuesto.trim() ? "Requerido" : undefined;
-  const areaError = !formData.area.trim() ? "Requerido" : undefined;
-  const isValid = !nombreError && !areaError;
+  const nombreError = !formData.nombreArea.trim() ? "Requerido" : undefined;
+  const isValid = !nombreError;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) {
-      setTouched({ nombrePuesto: true, area: true });
+      setTouched({ nombreArea: true });
       return;
     }
     onSave({
-      nombrePuesto: formData.nombrePuesto.trim(),
-      area: formData.area.trim(),
+      nombreArea: formData.nombreArea.trim(),
       descripcion: formData.descripcion.trim() || undefined,
       activo: true,
-    });
-    setFormData({ nombrePuesto: "", area: "", descripcion: "" });
+    } as NuevaArea);
+    setFormData({ nombreArea: "", descripcion: "" });
     setTouched({});
   };
 
@@ -63,9 +60,9 @@ export default function PuestoCreateDialog({
               <BriefcaseBusiness className="h-4 w-4" />
             </div>
             <div>
-              <DialogTitle className="text-base font-semibold tracking-tight">Nuevo puesto</DialogTitle>
+              <DialogTitle className="text-base font-semibold tracking-tight">Nueva área</DialogTitle>
               <DialogDescription className="text-[13px] leading-4">
-                Crea un puesto para asignar practicantes.
+                Crea un área para asignar practicantes.
               </DialogDescription>
             </div>
           </div>
@@ -73,38 +70,21 @@ export default function PuestoCreateDialog({
 
         <form onSubmit={handleSubmit} className="space-y-5 p-6">
           <div className="grid gap-1.5">
-            <Label htmlFor="nombrePuesto" className="text-[13px] font-medium">
-              Nombre del puesto <span className="text-red-500">*</span>
+            <Label htmlFor="nombreArea" className="text-[13px] font-medium">
+              Nombre del Área <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="nombrePuesto"
-              value={formData.nombrePuesto}
-              onChange={(e) => setFormData({ ...formData, nombrePuesto: e.target.value })}
-              onBlur={() => setTouched((s) => ({ ...s, nombrePuesto: true }))}
-              placeholder="Ej. Soporte TI"
+              id="nombreArea"
+              value={formData.nombreArea}
+              onChange={(e) => setFormData({ ...formData, nombreArea: e.target.value })}
+              onBlur={() => setTouched((s) => ({ ...s, nombreArea: true }))}
+              placeholder="Ej. Logística y servicios"
               className="h-9"
-              aria-invalid={touched.nombrePuesto && !!nombreError}
+              aria-invalid={touched.nombreArea && !!nombreError}
             />
-            {touched.nombrePuesto && nombreError && (
+            {touched.nombreArea && nombreError && (
               <p className="text-xs text-red-600">{nombreError}</p>
             )}
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="area" className="text-[13px] font-medium">
-              Área <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="area"
-              value={formData.area}
-              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-              onBlur={() => setTouched((s) => ({ ...s, area: true }))}
-              placeholder="Ej. Tecnología, Logística, Operaciones"
-              className="h-9"
-              aria-invalid={touched.area && !!areaError}
-            />
-            {touched.area && areaError && <p className="text-xs text-red-600">{areaError}</p>}
-            <p className="text-xs text-slate-500">Se mostrará como subtítulo del puesto.</p>
           </div>
 
           <div className="grid gap-1.5">
@@ -126,7 +106,7 @@ export default function PuestoCreateDialog({
               Cancelar
             </Button>
             <Button type="submit" disabled={!isValid} className="h-9 bg-blue-600 hover:bg-blue-700">
-              Guardar puesto
+              Guardar área
             </Button>
           </DialogFooter>
         </form>

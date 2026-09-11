@@ -293,6 +293,8 @@ public class PracticanteServiceImpl implements PracticanteService {
 
     /**
      * Convierte una entidad Practicante a PracticanteResponse
+     * Contrato canónico: idArea / nombreArea / descripcionArea
+     * Legacy: puesto / area mantienen nombreArea para compat (corregido bug donde area era descripcion)
      */
     private PracticanteResponse convertToResponse(Practicante practicante) {
         PracticanteResponse response = new PracticanteResponse();
@@ -300,8 +302,19 @@ public class PracticanteServiceImpl implements PracticanteService {
         response.setNombreCompleto(practicante.getNombre() + " " + practicante.getApellido());
         response.setDocumento(practicante.getDocumento());
         response.setSede(practicante.getSede().getNombre());
-        response.setPuesto(practicante.getPuesto().getNombrePuesto());
-        response.setArea(practicante.getPuesto().getArea());
+        response.setIdSede(practicante.getSede().getIdSede());
+        // Canónico Area
+        Long idArea = practicante.getPuesto().getIdPuesto();
+        String nombreArea = practicante.getPuesto().getNombrePuesto();
+        String descripcionArea = practicante.getPuesto().getDescripcion();
+        response.setIdArea(idArea);
+        response.setNombreArea(nombreArea);
+        response.setDescripcionArea(descripcionArea);
+        response.setIdCargo(practicante.getCargo().getIdCargo());
+        response.setIdTipoInstituto(practicante.getTipoInstituto().getIdTipoInstituto());
+        // Legacy compat: puesto y area ahora ambos = nombreArea (corrige bug tabla donde area mostraba descripcion)
+        response.setPuesto(nombreArea);
+        response.setArea(nombreArea);
         response.setTipoInstituto(practicante.getTipoInstituto().getNombre());
         response.setCargo(practicante.getCargo().getNombre());
         response.setSituacion(practicante.getSituacion().toString());

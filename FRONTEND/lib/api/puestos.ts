@@ -1,6 +1,11 @@
 import { api, handleApiError } from './axios';
 import { Puesto, NuevoPuesto } from '@/types/puestos';
 
+/**
+ * @deprecated Usar areasApi desde '@/lib/api/areas'. Este módulo se mantiene solo para compatibilidad.
+ * Internamente delega a /api/puestos que sigue funcionando como alias de /api/areas.
+ */
+
 export const puestosApi = {
   // ============================================
   // OBTENER TODOS LOS PUESTOS

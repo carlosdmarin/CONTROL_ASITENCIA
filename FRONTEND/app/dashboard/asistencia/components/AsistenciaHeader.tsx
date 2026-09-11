@@ -22,20 +22,25 @@ export default function AsistenciaHeader({ fecha, onPrev, onNext, onFechaChange,
   });
 
   const isToday = new Date().toDateString() === fecha.toDateString();
-  const iso = fecha.toISOString().split("T")[0];
+  const iso = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
 
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Asistencia Diaria</h1>
-        <div className="flex items-center gap-2 mt-1">
-          {loading ? (
-            <Skeleton className="h-5 w-48" />
-          ) : (
-            <span className="text-sm text-gray-500 capitalize">
-              {fechaFormateada}
-            </span>
-          )}
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:flex p-3.5 bg-blue-100 rounded-xl">
+          <CalendarDays className="h-7 w-7 text-blue-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Asistencia Diaria</h1>
+          <div className="flex items-center gap-2 mt-1">
+            {loading ? (
+              <Skeleton className="h-5 w-48" />
+            ) : (
+              <span className="text-sm text-slate-500 capitalize">
+                {fechaFormateada}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -65,7 +70,7 @@ export default function AsistenciaHeader({ fecha, onPrev, onNext, onFechaChange,
         {loading ? (
           <Skeleton className="h-6 w-12" />
         ) : (
-          isToday && <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">Hoy</Badge>
+          isToday && <Badge variant="outline" className="ml-2 h-10 w-10 bg-blue-50 text-blue-700 border-blue-200">Hoy</Badge>
         )}
       </div>
     </div>

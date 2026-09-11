@@ -8,23 +8,14 @@ import PuestoTable from "./components/PuestoTable";
 import PuestoCreateDialog from "./components/PuestoCreateDialog";
 import PuestoEditDialog from "./components/PuestoEditDialog";
 import PuestoDeleteDialog from "./components/PuestoDeleteDialog";
-import { puestosApi } from "@/lib/api/puestos";
-import { Puesto, NuevoPuesto } from "@/types/puestos";
-
-// Mock profesional si backend no responde
-const MOCK_PUESTOS: Puesto[] = [
-  { idPuesto: 1, nombrePuesto: "Soporte TI", area: "Tecnología", descripcion: "Atención a usuarios, mantenimiento de equipos y redes", activo: true },
-  { idPuesto: 2, nombrePuesto: "Asistente Logística", area: "Logística", descripcion: "Control de inventarios y coordinación de despachos", activo: true },
-  { idPuesto: 3, nombrePuesto: "Auxiliar Contable", area: "Administración", descripcion: "Registro de comprobantes y conciliaciones", activo: true },
-  { idPuesto: 4, nombrePuesto: "Operario Planta", area: "Operaciones", descripcion: "Operación de línea de producción Neshuya", activo: false },
-  { idPuesto: 5, nombrePuesto: "Analista de Calidad", area: "Calidad", descripcion: "Muestreo y control de parámetros físico-químicos", activo: true },
-  { idPuesto: 6, nombrePuesto: "Asistente RRHH", area: "Recursos Humanos", descripcion: "Apoyo en reclutamiento y control de asistencia", activo: true },
-];
+import { areasApi } from "@/lib/api/areas";
+import { Area, NuevaArea } from "@/types/area";
+import { MOCK_AREAS } from "@/lib/mocks/areas";
 
 type EstadoFiltro = "todos" | "activos" | "inactivos";
 
 export default function PuestosPage() {
-  const [puestos, setPuestos] = useState<Puesto[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [estado, setEstado] = useState<EstadoFiltro>("todos");
@@ -32,16 +23,18 @@ export default function PuestosPage() {
   const [modalCrearAbierto, setModalCrearAbierto] = useState(false);
   const [dialogEditarAbierto, setDialogEditarAbierto] = useState(false);
   const [dialogEliminarAbierto, setDialogEliminarAbierto] = useState(false);
-  const [puestoSeleccionado, setPuestoSeleccionado] = useState<Puesto | null>(null);
+  const [areaSeleccionada, setAreaSeleccionada] = useState<Area | null>(null);
+
+  // Alias para compatibilidad con componentes legacy que esperan puestos
 
   const cargarPuestos = async () => {
     try {
       setLoading(true);
-      const data = await puestosApi.getAll();
-      setPuestos(data.length ? data : MOCK_PUESTOS);
+      const data = await areasApi.getAll();
+      setAreas(data.length ? data : MOCK_AREAS);
     } catch (error: unknown) {
       console.error("Error:", error);
-      setPuestos(MOCK_PUESTOS);
+      setAreas(MOCK_AREAS);
       toast.error("Sin conexión al backend — mostrando datos de ejemplo");
     } finally {
       setLoading(false);
@@ -52,20 +45,19 @@ export default function PuestosPage() {
     cargarPuestos();
   }, []);
 
-  const totalActivos = useMemo(() => puestos.filter((p) => p.activo).length, [puestos]);
+  const totalActivos = useMemo(() => areas.filter((p) => p.activo).length, [areas]);
 
   const puestosFiltrados = useMemo(() => {
-    return puestos.filter((p) => {
+    return areas.filter((p) => {
       const matchBusqueda =
         !busqueda ||
-        p.nombrePuesto.toLowerCase().includes(busqueda.toLowerCase()) ||
-        p.area.toLowerCase().includes(busqueda.toLowerCase()) ||
+        p.nombreArea.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) ?? false);
       const matchEstado =
         estado === "todos" || (estado === "activos" ? p.activo : !p.activo);
       return matchBusqueda && matchEstado;
     });
-  }, [puestos, busqueda, estado]);
+  }, [areas, busqueda, estado]);
 
   // ====== FUNCIÓN getStatusColor ======
   const getStatusColor = (activo: boolean): string => {
@@ -74,53 +66,53 @@ export default function PuestosPage() {
       : "bg-red-100 text-red-700 border-red-200 hover:bg-red-200";
   };
 
-  const agregarPuesto = async (nuevoPuesto: NuevoPuesto) => {
+  const agregarPuesto = async (nuevaArea: NuevaArea) => {
     try {
-      const creado = await puestosApi.create(nuevoPuesto);
-      setPuestos((prev) => [creado, ...prev]);
+      const creado = await areasApi.create(nuevaArea);
+      setAreas((prev) => [creado, ...prev]);
       setModalCrearAbierto(false);
-      toast.success(`Puesto "${nuevoPuesto.nombrePuesto}" creado`);
+      toast.success(`Área "${nuevaArea.nombreArea}" creada`);
     } catch {
-      const mockNuevo: Puesto = {
-        idPuesto: Math.max(...puestos.map((p) => p.idPuesto), 0) + 1,
-        ...nuevoPuesto,
+      const mockNuevo: Area = {
+        idArea: Math.max(...areas.map((p) => p.idArea), 0) + 1,
+        ...nuevaArea,
       };
-      setPuestos((prev) => [mockNuevo, ...prev]);
+      setAreas((prev) => [mockNuevo, ...prev]);
       setModalCrearAbierto(false);
-      toast.success(`Puesto "${nuevoPuesto.nombrePuesto}" creado (mock)`);
+      toast.success(`Área "${nuevaArea.nombreArea}" creada (mock)`);
     }
   };
 
-  const editarPuesto = async (puestoEditado: Puesto) => {
+  const editarPuesto = async (areaEditada: Area) => {
     try {
-      const actualizado = await puestosApi.update(puestoEditado.idPuesto, puestoEditado);
-      setPuestos((prev) => prev.map((p) => (p.idPuesto === actualizado.idPuesto ? actualizado : p)));
+      const actualizado = await areasApi.update(areaEditada.idArea, areaEditada);
+      setAreas((prev) => prev.map((p) => (p.idArea === actualizado.idArea ? actualizado : p)));
       setDialogEditarAbierto(false);
-      toast.success(`Puesto "${puestoEditado.nombrePuesto}" actualizado`);
+      toast.success(`Área "${areaEditada.nombreArea}" actualizada`);
     } catch {
-      setPuestos((prev) => prev.map((p) => (p.idPuesto === puestoEditado.idPuesto ? puestoEditado : p)));
+      setAreas((prev) => prev.map((p) => (p.idArea === areaEditada.idArea ? areaEditada : p)));
       setDialogEditarAbierto(false);
-      toast.success(`Puesto actualizado (mock)`);
+      toast.success(`Área actualizada (mock)`);
     }
   };
 
   const eliminarPuesto = async (id: number) => {
     try {
-      await puestosApi.eliminar(id);
-      setPuestos((prev) => prev.filter((p) => p.idPuesto !== id));
+      await areasApi.eliminar(id);
+      setAreas((prev) => prev.filter((p) => p.idArea !== id));
       setDialogEliminarAbierto(false);
-      toast.success("Puesto eliminado");
+      toast.success("Área eliminada");
     } catch {
-      setPuestos((prev) => prev.filter((p) => p.idPuesto !== id));
+      setAreas((prev) => prev.filter((p) => p.idArea !== id));
       setDialogEliminarAbierto(false);
-      toast.success("Puesto eliminado (mock)");
+      toast.success("Área eliminada (mock)");
     }
   };
 
   return (
     <div className="space-y-6">
       <PuestoHeader
-        total={puestos.length}
+        total={areas.length}
         totalActivos={totalActivos}
         onOpenCreate={() => setModalCrearAbierto(true)}
         loading={loading}
@@ -134,7 +126,7 @@ export default function PuestosPage() {
             estado={estado}
             onEstadoChange={setEstado}
             totalFiltrados={puestosFiltrados.length}
-            total={puestos.length}
+            total={areas.length}
             loading={loading}
           />
         </div>
@@ -142,11 +134,11 @@ export default function PuestosPage() {
         <PuestoTable
           puestos={puestosFiltrados}
           onEdit={(p) => {
-            setPuestoSeleccionado(p);
+            setAreaSeleccionada(p as Area);
             setDialogEditarAbierto(true);
           }}
           onDelete={(p) => {
-            setPuestoSeleccionado(p);
+            setAreaSeleccionada(p as Area);
             setDialogEliminarAbierto(true);
           }}
           getStatusColor={getStatusColor}  // ← AGREGAR ESTA LÍNEA
@@ -164,14 +156,14 @@ export default function PuestosPage() {
       <PuestoEditDialog
         open={dialogEditarAbierto}
         onOpenChange={setDialogEditarAbierto}
-        puesto={puestoSeleccionado}
+        puesto={areaSeleccionada}
         onSave={editarPuesto}
       />
 
       <PuestoDeleteDialog
         open={dialogEliminarAbierto}
         onOpenChange={setDialogEliminarAbierto}
-        puesto={puestoSeleccionado}
+        puesto={areaSeleccionada}
         onDelete={eliminarPuesto}
       />
     </div>

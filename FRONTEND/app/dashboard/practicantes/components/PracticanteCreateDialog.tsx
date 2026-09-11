@@ -46,12 +46,12 @@ import {
   NuevoPracticante,
   Sede,
   Cargo,
-  Puesto,
+  Area,
   TipoInstituto,
 } from "@/types/practicante";
 import { sedeApi } from "@/lib/api/agencias";
 import { cargosApi } from "@/lib/api/cargos";
-import { puestosApi } from "@/lib/api/puestos";
+import { areasApi } from "@/lib/api/areas";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
 import {
   calcularMinutosTrabajados,
@@ -145,33 +145,29 @@ const MOCK_CARGOS: Cargo[] = [
   },
 ];
 
-const MOCK_PUESTOS: Puesto[] = [
+const MOCK_AREAS: Area[] = [
   {
-    idPuesto: 1,
-    nombrePuesto: "Logística y servicios",
-    area: "Logística",
-    descripcion: "",
+    idArea: 1,
+    nombreArea: "Logística y servicios",
+    descripcion: "Gestión de insumos y despachos",
     activo: true,
   },
   {
-    idPuesto: 2,
-    nombrePuesto: "Mantenimiento",
-    area: "Operaciones",
-    descripcion: "",
+    idArea: 2,
+    nombreArea: "Mantenimiento",
+    descripcion: "Control de maquinaria y equipos",
     activo: true,
   },
   {
-    idPuesto: 3,
-    nombrePuesto: "Recursos Humanos",
-    area: "Administración",
-    descripcion: "",
+    idArea: 3,
+    nombreArea: "Recursos Humanos",
+    descripcion: "Control administrativo y financiero",
     activo: true,
   },
   {
-    idPuesto: 4,
-    nombrePuesto: "Tecnología de la Información",
-    area: "Sistemas",
-    descripcion: "",
+    idArea: 4,
+    nombreArea: "Tecnología de la Información",
+    descripcion: "Soporte y desarrollo de sistemas",
     activo: true,
   },
 ];
@@ -202,7 +198,7 @@ export function PracticanteCreateDialog({
   // Datos de selects
   const [sedes, setSedes] = useState<Sede[]>(MOCK_SEDES);
   const [cargos, setCargos] = useState<Cargo[]>(MOCK_CARGOS);
-  const [puestos, setPuestos] = useState<Puesto[]>(MOCK_PUESTOS);
+  const [areas, setAreas] = useState<Area[]>(MOCK_AREAS);
   const [tiposInstituto, setTiposInstituto] =
     useState<TipoInstituto[]>(MOCK_TIPOS_INSTITUTO);
   const [loadingSelects, setLoadingSelects] = useState(false);
@@ -214,7 +210,7 @@ export function PracticanteCreateDialog({
     documento: "",
     idSede: 1,
     idCargo: 1,
-    idPuesto: 1,
+    idArea: 1,
     idTipoInstituto: 1,
     correoElectronico: "",
     telefono: "",
@@ -290,17 +286,17 @@ export function PracticanteCreateDialog({
     const cargarSelects = async () => {
       try {
         setLoadingSelects(true);
-        const [sedesData, cargosData, puestosData, tiposData] =
+        const [sedesData, cargosData, areasData, tiposData] =
           await Promise.all([
             sedeApi.getAll().catch(() => MOCK_SEDES),
             cargosApi.getAll().catch(() => MOCK_CARGOS),
-            puestosApi.getAll().catch(() => MOCK_PUESTOS),
+            areasApi.getAll().catch(() => MOCK_AREAS),
             tiposInstitutoApi.getAll().catch(() => MOCK_TIPOS_INSTITUTO),
           ]);
 
         setSedes(sedesData.length > 0 ? sedesData : MOCK_SEDES);
         setCargos(cargosData.length > 0 ? cargosData : MOCK_CARGOS);
-        setPuestos(puestosData.length > 0 ? puestosData : MOCK_PUESTOS);
+        setAreas(areasData.length > 0 ? areasData : MOCK_AREAS);
         setTiposInstituto(
           tiposData.length > 0 ? tiposData : MOCK_TIPOS_INSTITUTO,
         );
@@ -311,10 +307,10 @@ export function PracticanteCreateDialog({
         if (cargosData.length > 0) {
           setFormData((prev) => ({ ...prev, idCargo: cargosData[0].idCargo }));
         }
-        if (puestosData.length > 0) {
+        if (areasData.length > 0) {
           setFormData((prev) => ({
             ...prev,
-            idPuesto: puestosData[0].idPuesto,
+            idArea: areasData[0].idArea,
           }));
         }
         if (tiposData.length > 0) {
@@ -459,7 +455,7 @@ export function PracticanteCreateDialog({
       !telefonoError &&
       formData.fechaInicioPracticas !== "" &&
       formData.idSede > 0 &&
-      formData.idPuesto > 0 &&
+      formData.idArea > 0 &&
       formData.idCargo > 0 &&
       formData.idTipoInstituto > 0
     );
@@ -500,7 +496,7 @@ export function PracticanteCreateDialog({
       apellido: formData.apellido,
       documento: formData.documento,
       idSede: formData.idSede,
-      idPuesto: formData.idPuesto,
+      idArea: formData.idArea,
       idTipoInstituto: formData.idTipoInstituto,
       idCargo: formData.idCargo,
       correoElectronico: formData.correoElectronico || undefined,
@@ -523,7 +519,7 @@ export function PracticanteCreateDialog({
       documento: "",
       idSede: sedes.length > 0 ? sedes[0].idSede : 1,
       idCargo: cargos.length > 0 ? cargos[0].idCargo : 1,
-      idPuesto: puestos.length > 0 ? puestos[0].idPuesto : 1,
+      idArea: areas.length > 0 ? areas[0].idArea : 1,
       idTipoInstituto:
         tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 1,
       correoElectronico: "",
@@ -764,17 +760,17 @@ export function PracticanteCreateDialog({
             </div>
           </div>
 
-          {/* Puesto / Área */}
+          {/* Area / Área */}
           <div className="grid gap-1.5">
-            <Label htmlFor="idPuesto" className="text-xs font-medium">
+            <Label htmlFor="idArea" className="text-xs font-medium">
               Área *
             </Label>
             <div className="relative">
               <BriefcaseBusiness className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
-                id="idPuesto"
-                name="idPuesto"
-                value={formData.idPuesto}
+                id="idArea"
+                name="idArea"
+                value={formData.idArea}
                 onChange={handleChange}
                 className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={loadingSelects}
@@ -782,9 +778,9 @@ export function PracticanteCreateDialog({
                 {loadingSelects ? (
                   <option value="0">Cargando...</option>
                 ) : (
-                  puestos.map((puesto) => (
-                    <option key={puesto.idPuesto} value={puesto.idPuesto}>
-                      {puesto.nombrePuesto}
+                  areas.map((area) => (
+                    <option key={area.idArea} value={area.idArea}>
+                      {area.nombreArea}
                     </option>
                   ))
                 )}
@@ -1253,8 +1249,8 @@ export function PracticanteCreateDialog({
     const cargoItem = cargos.find(
       (c) => c.idCargo === Number(formData.idCargo),
     );
-    const puestoItem = puestos.find(
-      (p) => p.idPuesto === Number(formData.idPuesto),
+    const areaItem = areas.find(
+      (p) => p.idArea === Number(formData.idArea),
     );
     const tipoItem = tiposInstituto.find(
       (t) => t.idTipoInstituto === Number(formData.idTipoInstituto),
@@ -1263,18 +1259,18 @@ export function PracticanteCreateDialog({
     // Obtener nombres directamente de los items encontrados
     const sedeFinal = sedeItem?.nombre || "—";
     const cargoFinal = cargoItem?.nombre || "—";
-    const puestoFinal = puestoItem?.nombrePuesto || "—";
+    const areaFinal = areaItem?.nombreArea || "—";
     const tipoFinal = tipoItem?.nombre || "—";
 
     // Debug para ver qué se está mostrando
     console.log("📋 Step 3 - Mostrando:", {
       sede: sedeFinal,
       cargo: cargoFinal,
-      puesto: puestoFinal,
+      area: areaFinal,
       tipo: tipoFinal,
       idSede: formData.idSede,
       idCargo: formData.idCargo,
-      idPuesto: formData.idPuesto,
+      idArea: formData.idArea,
       idTipo: formData.idTipoInstituto,
     });
 
@@ -1311,7 +1307,7 @@ export function PracticanteCreateDialog({
             <span className="text-gray-500">Sede:</span>
             <span className="font-medium">{sedeFinal}</span>
             <span className="text-gray-500">Área:</span>
-            <span className="font-medium">{puestoFinal}</span>
+            <span className="font-medium">{areaFinal}</span>
             <span className="text-gray-500">Cargo:</span>
             <span className="font-medium">{cargoFinal}</span>
             <span className="text-gray-500">Centro de Estudios:</span>

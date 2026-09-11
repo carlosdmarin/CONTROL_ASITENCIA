@@ -1,6 +1,8 @@
 // types/practicante.ts - Sincronizado con nueva BD (sin codigoTrabajador, Sede en lugar de Agencia)
+import { Area } from './area';
 import { Puesto } from './puestos';
 export type { Puesto } from './puestos';
+export type { Area } from './area';
 
 // ====== BLOQUE HORARIO ======
 export type BloqueHorarioRequest = {
@@ -59,8 +61,18 @@ export type Practicante = {
   nombreCompleto: string;
   documento: string;
   sede: string;
+  // Legacy (deprecated): puesto = nombreArea, area = nombreArea (antes area era descripcion)
+  /** @deprecated usar nombreArea */
   puesto: string;
+  /** @deprecated usar nombreArea */
   area: string;
+  // Canónico nuevo
+  idArea?: number;
+  nombreArea?: string;
+  descripcionArea?: string;
+  idSede?: number;
+  idCargo?: number;
+  idTipoInstituto?: number;
   tipoInstituto: string;
   cargo: string;
   situacion: string;
@@ -77,6 +89,7 @@ export type Practicante = {
   sedeObj?: Sede;
   agenciaObj?: Sede;
   puestoObj?: Puesto;
+  areaObj?: Area;
   tipoInstitutoObj?: TipoInstituto;
   cargoObj?: Cargo;
   horario?: BloqueHorarioRequest[];
@@ -88,7 +101,7 @@ export type NuevoPracticante = {
   apellido: string;
   documento: string;
   idSede: number;
-  idPuesto: number;
+  idArea: number;
   idTipoInstituto: number;
   idCargo: number;
   correoElectronico?: string;
@@ -96,7 +109,25 @@ export type NuevoPracticante = {
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
   horario?: BloqueHorarioRequest[];  // ← NUEVO
-  // Alias para compatibilidad
+  // Alias compatibilidad (deprecated)
+  /** @deprecated usar idArea */
+  idPuesto?: number;
   idAgencia?: number;
   codigoTrabajador?: string;
+};
+
+// Tipo para actualización (usa IDs reales seleccionados, no hardcode)
+export type ActualizarPracticante = {
+  nombre: string;
+  apellido: string;
+  documento: string;
+  idSede: number;
+  idArea: number;
+  idTipoInstituto: number;
+  idCargo: number;
+  correoElectronico?: string;
+  telefono?: string;
+  fechaInicioPracticas: string;
+  fechaFinPracticas?: string;
+  horario?: BloqueHorarioRequest[];
 };

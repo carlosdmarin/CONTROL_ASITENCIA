@@ -1,66 +1,40 @@
 "use client";
-// → Este componente corre en el navegador (usa hooks, eventos, etc.)
 
-// ============================
-// 📦 IMPORTS PRINCIPALES
-// ============================
 import { useState, useEffect, useMemo } from "react";
-// useState → Guardar datos que cambian
-// useEffect → Ejecutar algo al cargar o cuando cambia algo
-// useMemo → Guardar cálculos para no repetirlos
-
 import { toast } from "sonner";
-// → Notificaciones emergentes (éxito/error)
-
-// Componentes de nuestra propia interfaz, cada uno componen una parte de la página.
 import AsistenciaHeader from "./components/AsistenciaHeader";
-import AsistenciaStats from "./components/AsistenciaStats";
 import AsistenciaFilters from "./components/AsistenciaFilters";
 import AsistenciaTable from "./components/AsistenciaTable";
-
-// asistenciasApi: objeto con funciones para hablar con el backend (pedir asistencias, cerrar jornada, registrar permiso, etc).
 import { asistenciasApi } from "@/lib/api/asistencias";
-
-// practicantesApi: objeto para pedir la lista de practicantes al backend.
 import { practicantesApi } from "@/lib/api/practicantes";
-
 import {
-  AsistenciaDiaria, // Tipo para la tabla de UI (id, practicante, entrada, salida, horas, estado)
-  AsistenciaDiariaResponse, // Tipo tal cual viene del backend (con muchos más campos)
-  normalizeEstadoDia, // Función que normaliza "TARDE" -> "TARDANZA" etc.
-  isTardanza, // Función helper: ¿es tardanza?
-  isAusente, // Función helper: ¿es ausente?
+  AsistenciaDiaria,
+  AsistenciaDiariaResponse,
+  normalizeEstadoDia,
+  isTardanza,
+  isAusente,
 } from "@/types/asistencia";
-// → Tipos y funciones para manejar estados de asistencia
+import { Practicante } from "@/types/practicante";
+import { Card, CardContent } from "@/components/ui/card";
+import { Users } from "lucide-react";
 
-// --- FUNCIONES SUELTAS (helpers) ---
-
-// formatFechaISO: convierte un objeto Date a texto "YYYY-MM-DD" que entiende el backend.
-// Ejemplo: new Date(2024,0,5) -> "2024-01-05"
-// function ... (date: Date): string  significa: recibe un Date y devuelve un string.
 function formatFechaISO(date: Date): string {
-  const y = date.getFullYear(); // año
-  const m = String(date.getMonth() + 1).padStart(2, "0"); // mes (0-11) +1 y con 2 dígitos
-  const d = String(date.getDate()).padStart(2, "0"); // día con 2 dígitos
-  return `${y}-${m}-${d}`; // une con guiones
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
-// formatHoras: convierte horas en número (ej 7.5) a texto "7h 30m".
-// number | null | undefined significa: puede ser un número, o null, o undefined (es decir, puede no haber valor).
-// : string | null significa: devuelve un string o null si no hay horas.
 function formatHoras(horas: number | null | undefined): string | null {
-  // || significa "o". && significa "y".
-  // aquí: si horas es null/undefined o es 0, no mostramos nada -> return null
   if (horas == null || horas === 0) return null;
-  const h = Math.floor(horas); // parte entera de horas
-  const m = Math.round((horas - h) * 60); // parte decimal *60 para minutos
+  const h = Math.floor(horas);
+  const m = Math.round((horas - h) * 60);
   return `${h}h ${m}m`;
 }
 
 function mapEstado(
   estadoDia: AsistenciaDiariaResponse["estadoDia"],
 ): AsistenciaDiaria["estado"] {
-  // switch compara estadoDia con cada caso
   switch (estadoDia) {
     case "SIN_MARCAR":
       return "SIN_MARCAR";
@@ -77,221 +51,218 @@ function mapEstado(
     case "JUSTIFICADO":
       return "JUSTIFICADO";
     default: {
-      // Si llega un valor que no esperábamos, TypeScript lo detecta aquí.
-      // never significa "nunca debería llegar nada aquí". Si llega, lo marcamos como error de tipo.
       const _exhaustiveCheck: never = estadoDia;
-      // void ... es para decirle a TypeScript "sí, sé que no uso esta variable, no me molestes"
       void _exhaustiveCheck;
       return "AUSENTE";
     }
   }
 }
-// → Traduce el estado del backend al de la tabla (unifica "TARDE" y "TARDANZA")
 
-// ============================
-// 🧩 COMPONENTE PRINCIPAL
-// ============================
 export default function AsistenciaPage() {
-  // ============================
-  // 📦 ESTADOS
-  // ============================
   const [fecha, setFecha] = useState<Date>(new Date());
-  // → Fecha actual que se está viendo
-
-  const [asistencias, setAsistencias] = useState<AsistenciaDiariaResponse[]>(
-    [],
-  );
-  // → Lista de asistencias del día desde el backend
-
-  // resumen guarda 5 números para las tarjetitas de arriba.
-  // useState sin <Tipo> porque TypeScript lo infiere solo a partir del objeto inicial.
+  const [asistencias, setAsistencias] = useState<AsistenciaDiariaResponse[]>([]);
   const [resumen, setResumen] = useState({
     total: 0,
     presentes: 0,
     tardanzas: 0,
     ausentes: 0,
     descansos: 0,
+    sinMarcar: 0,
+    justificados: 0,
   });
-
-  // loading es true mientras esperamos al backend, false cuando ya tenemos datos.
   const [loading, setLoading] = useState(true);
-
-  // busqueda guarda lo que el usuario escribe en la cajita de "Buscar practicante"
   const [busqueda, setBusqueda] = useState("");
-
-  // filtroEstado guarda qué filtro eligió el usuario: "todos", "presente", "tardanza", etc.
   const [filtroEstado, setFiltroEstado] = useState("todos");
-
-  // Estados para el diálogo de "Registrar permiso previo"
+  const [filtroSede, setFiltroSede] = useState("todas");
+  const [tabEstado, setTabEstado] = useState("todos");
   const [permisoOpen, setPermisoOpen] = useState(false);
-  // formatFechaISO(new Date()) -> fecha de hoy en texto para el input de fecha
   const [permisoFecha, setPermisoFecha] = useState(formatFechaISO(new Date()));
   const [permisoMotivo, setPermisoMotivo] = useState("");
   const [permisoObs, setPermisoObs] = useState("");
   const [permisoTipo, setPermisoTipo] = useState("PERSONAL");
   const [permisoPracticante, setPermisoPracticante] = useState("");
+  const [practicantes, setPracticantes] = useState<Practicante[]>([]);
+  const [practicantesAll, setPracticantesAll] = useState<Practicante[]>([]);
 
-  // any[] significa: lista de cualquier cosa. Aquí no tipamos fino porque viene directo del backend y puede variar.
-  const [practicantes, setPracticantes] = useState<any[]>([]);
-
-  // fechaISO es la fecha actual pero en texto "YYYY-MM-DD".
-  // No es un estado, es una variable que se recalcula en cada render a partir de fecha.
   const fechaISO = formatFechaISO(fecha);
 
-  // ============================
-  // 📥 CARGAR DATOS DEL BACKEND
-  // ============================
   const cargarDatos = async () => {
-    // try intenta hacer algo que puede fallar (internet caído, backend con error)
     try {
-      setLoading(true); // mostramos "cargando..."
-      // await asistenciasApi.getAsistenciasDelDia(...) espera la respuesta
-      // .catch(() => [] as ... ) significa: si falla, en vez de romper, devuelve una lista vacía.
-      // as AsistenciaDiariaResponse[] es un "cast": le decimos a TypeScript "trátalo como si fuera de este tipo"
+      setLoading(true);
       const data = await asistenciasApi
         .getAsistenciasDelDia(fechaISO)
         .catch(() => [] as AsistenciaDiariaResponse[]);
-      // Array.isArray(data) ? data : [] -> si lo que vino no es un array, lo convertimos a array vacío para no romper
-      const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data)
-        ? data
-        : [];
-      setAsistencias(dataArray); // guardamos la lista y React vuelve a pintar la tabla
-      // Cálculo de los números para AsistenciaStats (las tarjetitas)
-      const total = dataArray.length; // length es cuántos elementos hay
-      // filter() recorre la lista y se queda solo con los que cumplen la condición
-      // (a) => ... es una arrow function: "para cada elemento a, devuelve true/false"
-      // || es "o": si es PRESENTE o es tardanza, cuenta como presente
-      const presentes = dataArray.filter(
-        (a) => a.estadoDia === "PRESENTE" || isTardanza(a.estadoDia),
-      ).length;
-      const tardanzas = dataArray.filter((a) => isTardanza(a.estadoDia)).length;
-      const descansos = dataArray.filter(
-        (a) => a.estadoDia === "DESCANSO",
-      ).length;
-      const ausentes = dataArray.filter((a) => isAusente(a.estadoDia)).length;
-      // también contar SIN_MARCAR separado pero para resumen lo agrupamos
-      setResumen({ total, presentes, tardanzas, ausentes, descansos });
-      // catch atrapa el error si algo dentro del try falló
-      // e: unknown significa: "no sabemos qué tipo de error es" (TypeScript te obliga a comprobarlo antes de usarlo)
+      const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data) ? data : [];
+      setAsistencias(dataArray);
+      const presentes = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "PRESENTE").length;
+      const tardanzas = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "TARDANZA").length;
+      const ausentes = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "AUSENTE").length;
+      const descansos = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length;
+      const sinMarcar = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "SIN_MARCAR").length;
+      const justificados = dataArray.filter((a) => {
+        const det = a.situacionesDetalle;
+        const situacion = a.situacion;
+        return Boolean(a.justificado) || Boolean(situacion && situacion !== "NINGUNA") || Boolean(det && det.length > 0);
+      }).length;
+      const total = dataArray.length;
+      setResumen({ total, presentes, tardanzas, ausentes, descansos, sinMarcar, justificados });
     } catch (e: unknown) {
-      // e instanceof Error pregunta: "¿es un Error de verdad con .message?"
-      // ? : es operador ternario: condición ? valor_si_true : valor_si_false
-      const msg =
-        e instanceof Error ? e.message : "Error al cargar asistencias";
-      toast.error(msg); // muestra el error en un toast
-      // finally siempre se ejecuta, haya error o no
+      const msg = e instanceof Error ? e.message : "Error al cargar asistencias";
+      toast.error(msg);
     } finally {
-      setLoading(false); // quitamos el estado de cargando
+      setLoading(false);
     }
   };
 
-  // useEffect sirve para ejecutar algo automáticamente.
-  // En este caso, cada vez que cambia fechaISO, volvemos a cargar las asistencias de ese día.
-  // () => { cargarDatos() } es una función sin parámetros que llama a cargarDatos.
-  // [fechaISO] es el array de dependencias: "solo vuelve a ejecutar si fechaISO cambió".
+  const cargarPracticantesSede = async () => {
+    try {
+      const list = await practicantesApi.getAll().catch(() => [] as Practicante[]);
+      setPracticantesAll(Array.isArray(list) ? list : []);
+    } catch {}
+  };
+
   useEffect(() => {
     cargarDatos();
   }, [fechaISO]);
 
-  // handlePrev: ir un día atrás
-  // () => ... es arrow function sin parámetros
-  // setFecha((d) => { ... }) es la forma segura de actualizar un estado que depende del valor anterior
-  // d es el valor anterior de fecha. Creamos una copia con new Date(d) para no modificar el original.
+  useEffect(() => {
+    cargarPracticantesSede();
+  }, []);
+
   const handlePrev = () =>
     setFecha((d) => {
-      const n = new Date(d); // new Date(d) crea una copia de la fecha d
-      n.setDate(n.getDate() - 1); // le resta 1 día
-      return n; // React guarda esta nueva fecha
+      const n = new Date(d);
+      n.setDate(n.getDate() - 1);
+      return n;
     });
-  // handleNext: ir un día adelante, igual pero +1
   const handleNext = () =>
     setFecha((d) => {
       const n = new Date(d);
       n.setDate(n.getDate() + 1);
       return n;
     });
-  // handleFechaChange: cuando el usuario elige una fecha en el calendario, viene como texto "2024-01-05"
-  // (iso: string) significa: recibe un string llamado iso
   const handleFechaChange = (iso: string) => {
-    const [y, m, d] = iso.split("-").map(Number); // split corta por "-", map(Number) convierte cada parte a número
-    setFecha(new Date(y, m - 1, d)); // mes -1 porque en Date los meses van 0-11
+    const [y, m, d] = iso.split("-").map(Number);
+    setFecha(new Date(y, m - 1, d));
   };
 
-  // Mapear backend -> UI para tabla
-  // useMemo sirve para no recalcular esto en cada render si asistencias no cambió.
-  // Es como decir: "calcula esto una vez y guárdalo, solo recalcula si [asistencias] cambia"
+  const practicantesMap = useMemo(
+    () => new Map(practicantesAll.map((p) => [p.idPracticante, p])),
+    [practicantesAll],
+  );
+
+  const sedeMap = useMemo(() => {
+    const m = new Map<number, string>();
+    practicantesAll.forEach((p) => {
+      const sede = p.sede || p.agencia || p.sedeObj?.nombre || "";
+      if (p.idPracticante) m.set(p.idPracticante, sede);
+    });
+    return m;
+  }, [practicantesAll]);
+
+  const sedesDisponibles = useMemo(() => {
+    const s = new Set<string>();
+    asistencias.forEach((a) => {
+      const sede = sedeMap.get(a.idPracticante) || "";
+      if (sede) s.add(sede);
+    });
+    practicantesAll.forEach((p) => {
+      const sede = p.sede || p.agencia || "";
+      if (sede) s.add(sede);
+    });
+    return Array.from(s).sort();
+  }, [asistencias, sedeMap, practicantesAll]);
+
   const asistenciasUI = useMemo(() => {
-    // map() transforma cada elemento de la lista en otra cosa
-    // (a) => ({...}) es arrow function que para cada a devuelve un objeto nuevo
-    return asistencias.map((a) => ({
-      id: a.idAsistencia || a.idPracticante, // || significa "si no hay idAsistencia, usa idPracticante"
-      practicante: a.nombreCompleto,
-      // ?. es optional chaining: si a.entradaReal es null/undefined, no intenta hacer .substring y devuelve undefined
-      // substring(0,5) corta el texto para quedarse con "HH:mm" de "HH:mm:ss"
-      entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : null,
-      salida: a.salidaReal ? a.salidaReal.substring(0, 5) : null,
-      horas: formatHoras(a.horasTrabajadas),
-      estado: mapEstado(a.estadoDia),
-    }));
-  }, [asistencias]); // solo se recalcula si asistencias cambia
+    return asistencias.map((a) => {
+      const practInfo = practicantesMap.get(a.idPracticante);
+      const sede = sedeMap.get(a.idPracticante) || practInfo?.sede || practInfo?.agencia || "";
+      const area = practInfo?.nombreArea || practInfo?.area || practInfo?.puesto || "";
+      const documento = practInfo?.documento || "";
+      return {
+        id: a.idAsistencia || a.idPracticante,
+        practicante: a.nombreCompleto,
+        documento,
+        sede,
+        area,
+        jornada: a.entradaEsperada && a.salidaEsperada ? `${a.entradaEsperada.substring(0, 5)} – ${a.salidaEsperada.substring(0, 5)}` : a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : "—",
+        programada: a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : null,
+        entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : null,
+        tardanza: a.minutosTardanza ?? null,
+        salida: a.salidaReal ? a.salidaReal.substring(0, 5) : null,
+        horas: formatHoras(a.horasTrabajadas),
+        estado: mapEstado(a.estadoDia),
+        _sede: sede,
+        _justificado: Boolean(a.justificado) || Boolean(a.situacion && a.situacion !== "NINGUNA") || Boolean(a.situacionesDetalle?.length),
+      };
+    });
+  }, [asistencias, sedeMap, practicantesMap]);
 
-  // Filtros en memoria (sin filtro por área)
-  // Otro useMemo: solo refiltra si cambian asistenciasUI, busqueda o filtroEstado
+  const tabCounts = useMemo(() => {
+    return {
+      todos: asistencias.length,
+      presente: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "PRESENTE").length,
+      tardanza: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "TARDANZA").length,
+      ausente: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "AUSENTE").length,
+      sin_marcar: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "SIN_MARCAR").length,
+      descanso: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length,
+      justificado: asistencias.filter((a) => {
+        const det = a.situacionesDetalle;
+        return Boolean(a.justificado) || Boolean(a.situacion && a.situacion !== "NINGUNA") || Boolean(det && det.length > 0);
+      }).length,
+    };
+  }, [asistencias]);
+
   const filtradasIndices = useMemo(() => {
-    return (
-      asistenciasUI
-        // .map((a, idx) => ({ ...a, _idx: idx })) copia cada objeto y le agrega _idx que es su posición original
-        // { ...a, _idx: idx } usa spread ...a que significa "copia todas las propiedades de a"
-        .map((a, idx) => ({ ...a, _idx: idx }))
-        // filter se queda solo con los que pasan las dos condiciones
-        .filter((a) => {
-          // !busqueda es true si busqueda está vacía. Si está vacía, no filtramos por nombre.
-          // toLowerCase() pasa a minúsculas para que la búsqueda no distinga mayúsculas
-          // includes() pregunta si el texto contiene la búsqueda
-          const matchBusqueda =
-            !busqueda ||
-            a.practicante.toLowerCase().includes(busqueda.toLowerCase());
-          // Si filtro es "todos" pasa todo, si no solo los que su estado coincida (también sin mayúsculas)
-          const matchEstado =
-            filtroEstado === "todos" ||
-            a.estado.toLowerCase() === filtroEstado.toLowerCase();
-          // && significa "y": debe cumplir búsqueda Y estado
-          return matchBusqueda && matchEstado;
-        })
-    );
-  }, [asistenciasUI, busqueda, filtroEstado]);
+    return asistenciasUI
+      .map((a, idx) => ({ ...a, _idx: idx }))
+      .filter((a) => {
+        const matchBusqueda =
+          !busqueda ||
+          a.practicante.toLowerCase().includes(busqueda.toLowerCase()) ||
+          a._sede.toLowerCase().includes(busqueda.toLowerCase()) ||
+          a.documento.toLowerCase().includes(busqueda.toLowerCase());
+        let matchEstado = true;
+        if (filtroEstado !== "todos") {
+          if (filtroEstado === "justificado") {
+            matchEstado = a._justificado;
+          } else {
+            matchEstado = a.estado.toLowerCase() === filtroEstado.toLowerCase();
+          }
+        }
+        let matchTab = true;
+        if (tabEstado !== "todos") {
+          if (tabEstado === "justificado") {
+            matchTab = a._justificado;
+          } else {
+            matchTab = a.estado.toLowerCase() === tabEstado.toLowerCase();
+          }
+        }
+        const matchSede = filtroSede === "todas" || a._sede === filtroSede;
+        return matchBusqueda && matchEstado && matchTab && matchSede;
+      });
+  }, [asistenciasUI, busqueda, filtroEstado, tabEstado, filtroSede]);
 
-  // filtradas es solo un alias para no renombrar todo abajo
   const filtradas = filtradasIndices;
-  // filtradasRaw: necesitamos los datos completos del backend (con justificación, etc) pero solo de los que pasaron el filtro
-  // map((f) => asistencias[f._idx]) busca en la lista original usando el índice que guardamos
   const filtradasRaw = filtradasIndices.map((f) => asistencias[f._idx]);
 
-  // handleCerrarJornada: botón para cerrar el día (convierte SIN_MARCAR en AUSENTE)
-  // async/await porque habla con el backend
-
-  // openPermiso: abre el diálogo y carga la lista de practicantes activos
   const openPermiso = async () => {
-    setPermisoOpen(true); // abre el modal
+    setPermisoOpen(true);
     try {
       const list = await practicantesApi.getActivos();
       setPracticantes(list);
     } catch {}
-    // catch vacío significa: si falla, no hacemos nada (no mostramos error)
   };
-  // handlePermiso: envía el permiso al backend
   const handlePermiso = async () => {
-    // Validaciones simples antes de enviar
     if (!permisoPracticante) {
       toast.error("Seleccione practicante");
-      return; // return corta la función aquí
+      return;
     }
     if (!permisoMotivo.trim()) {
       toast.error("Motivo obligatorio");
       return;
     }
     try {
-      // Number(...) convierte texto a número
       await asistenciasApi.registrarPermiso(
         Number(permisoPracticante),
         permisoFecha,
@@ -309,9 +280,15 @@ export default function AsistenciaPage() {
     }
   };
 
-  // return es lo que React va a pintar en pantalla
+  const fechaLarga = fecha.toLocaleDateString("es-PE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AsistenciaHeader
         fecha={fecha}
         onPrev={handlePrev}
@@ -320,14 +297,39 @@ export default function AsistenciaPage() {
         loading={loading}
       />
 
-      <AsistenciaStats resumen={resumen} loading={loading} />
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={openPermiso}
-          className="text-xs border rounded px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700"
-        >
-          Registrar permiso previo
-        </button>
+      {/* Resumen compacto del día */}
+
+
+      {/* Tabs de estados */}
+      <div className="flex gap-2 pt-7 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+        {[
+          { key: "todos", label: "Todos", count: tabCounts.todos },
+          { key: "presente", label: "Presentes", count: tabCounts.presente },
+          { key: "tardanza", label: "Tardanzas", count: tabCounts.tardanza },
+          { key: "ausente", label: "Ausentes", count: tabCounts.ausente },
+          { key: "sin_marcar", label: "Sin marcar", count: tabCounts.sin_marcar },
+          { key: "descanso", label: "Descanso", count: tabCounts.descanso },
+          { key: "justificado", label: "Justificados", count: tabCounts.justificado },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setTabEstado(tab.key)}
+            className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
+              tabEstado === tab.key
+                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            {tab.label}
+            <span
+              className={`rounded-full px-1.5 py-0 text-xs font-semibold ${
+                tabEstado === tab.key ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {tab.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       <AsistenciaFilters
@@ -335,11 +337,14 @@ export default function AsistenciaPage() {
         onBusquedaChange={setBusqueda}
         filtroEstado={filtroEstado}
         onFiltroEstadoChange={setFiltroEstado}
+        filtroSede={filtroSede}
+        onFiltroSedeChange={setFiltroSede}
+        sedes={sedesDisponibles}
         loading={loading}
       />
 
       <AsistenciaTable
-        asistencias={filtradas.map(({ _idx, ...rest }) => rest)}
+        asistencias={filtradas.map(({ _idx, _sede, _justificado, ...rest }) => rest)}
         rawData={filtradasRaw}
         loading={loading}
         onRefresh={cargarDatos}

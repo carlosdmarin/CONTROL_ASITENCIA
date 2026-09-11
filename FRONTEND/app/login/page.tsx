@@ -77,7 +77,7 @@ const Login = () => {
             {/* ====== LOGO ====== */}
             <div className="text-center">
               <Image
-                src="/images/ONE.png"
+                src="/images/LOGO-C1.png"
                 alt="Logo XEO - Sistema de Asistencias"
                 width={160}
                 height={160}

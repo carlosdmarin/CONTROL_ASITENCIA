@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Area } from "@/types/area";
 import { Puesto } from "@/types/puestos";
 import {
   Dialog,
@@ -20,8 +21,21 @@ import {
 interface PuestoEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  puesto: Puesto | null;
-  onSave: (puesto: Puesto) => void;
+  puesto: Area | Puesto | null;
+  onSave: (puesto: Area) => void;
+}
+
+function toAreaCompat(p: Area | Puesto): Area {
+  const a = p as Area;
+  if (a.nombreArea !== undefined) return a as Area;
+  const legacy = p as Puesto;
+  return {
+    idArea: legacy.idArea ?? legacy.idPuesto ?? 0,
+    nombreArea: legacy.nombreArea ?? legacy.nombrePuesto ?? (legacy as any).area ?? "",
+    descripcion: legacy.descripcion ?? (legacy as any).area,
+    activo: legacy.activo,
+    fechaCreacion: legacy.fechaCreacion,
+  };
 }
 
 export default function PuestoEditDialog({
@@ -30,23 +44,22 @@ export default function PuestoEditDialog({
   puesto,
   onSave,
 }: PuestoEditDialogProps) {
-  const [formData, setFormData] = useState<Puesto | null>(null);
+  const [formData, setFormData] = useState<Area | null>(null);
 
   useEffect(() => {
-    setFormData(puesto);
+    setFormData(puesto ? toAreaCompat(puesto) : null);
   }, [puesto]);
 
   if (!formData) return null;
 
-  const isValid = formData.nombrePuesto.trim() && formData.area.trim();
+  const isValid = formData.nombreArea.trim().length > 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
     onSave({
       ...formData,
-      nombrePuesto: formData.nombrePuesto.trim(),
-      area: formData.area.trim(),
+      nombreArea: formData.nombreArea.trim(),
       descripcion: formData.descripcion?.trim() || undefined,
     });
   };
@@ -60,9 +73,9 @@ export default function PuestoEditDialog({
               <BriefcaseBusiness className="h-4 w-4" />
             </div>
             <div>
-              <DialogTitle className="text-base font-semibold tracking-tight">Editar puesto</DialogTitle>
+              <DialogTitle className="text-base font-semibold tracking-tight">Editar área</DialogTitle>
               <DialogDescription className="text-[13px] leading-4">
-                Modifica nombre, área o descripción. Cambia el estado si es necesario.
+                Modifica nombre o descripción. Cambia el estado si es necesario.
               </DialogDescription>
             </div>
           </div>
@@ -70,26 +83,13 @@ export default function PuestoEditDialog({
 
         <form onSubmit={handleSubmit} className="space-y-5 p-6">
           <div className="grid gap-1.5">
-            <Label htmlFor="edit-nombrePuesto" className="text-[13px] font-medium">
-              Nombre del puesto <span className="text-red-500">*</span>
+            <Label htmlFor="edit-nombreArea" className="text-[13px] font-medium">
+              Nombre del Área <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="edit-nombrePuesto"
-              value={formData.nombrePuesto}
-              onChange={(e) => setFormData({ ...formData, nombrePuesto: e.target.value })}
-              className="h-9"
-              required
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="edit-area" className="text-[13px] font-medium">
-              Área <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="edit-area"
-              value={formData.area}
-              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+              id="edit-nombreArea"
+              value={formData.nombreArea}
+              onChange={(e) => setFormData({ ...formData, nombreArea: e.target.value })}
               className="h-9"
               required
             />

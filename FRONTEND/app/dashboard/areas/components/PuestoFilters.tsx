@@ -33,7 +33,7 @@ export default function PuestoFilters({
         <div className="relative w-full sm:max-w-[360px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Buscar por puesto o área…"
+            placeholder="Buscar por nombre o descripción…"
             className="h-9 pl-9 pr-9 bg-white border-slate-200 placeholder:text-slate-400"
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}

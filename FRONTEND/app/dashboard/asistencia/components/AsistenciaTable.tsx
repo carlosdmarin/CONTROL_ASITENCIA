@@ -65,6 +65,12 @@ import {
   DialogTitle, // Título del modal
   DialogDescription, // Descripción del modal
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 // ============================================
 // 🎯 ICONOS - LUCIDE REACT
 // ============================================
@@ -100,8 +106,10 @@ import {
   ShieldOff, // 🛡️ Sin protección
   ChevronLeft, // ◀️ Flecha izquierda
   ChevronRight, // ▶️ Flecha derecha
+  MoreHorizontal, // ⋯ Más
   MoreHorizontal as Ellipsis, // … Más opciones
   Search, // 🔍 Buscar
+  MapPin, // 📍 Sede
 } from "lucide-react";
 
 // ============================================
@@ -131,8 +139,14 @@ import { toast } from "sonner";
 //   - toast.warning("⚠️ Advertencia")
 
 // Props que recibe el componente de tabla de asistencia
+type AsistenciaRow = AsistenciaDiaria & {
+  documento?: string;
+  sede?: string;
+  area?: string;
+  jornada?: string;
+};
 interface AsistenciaTableProps {
-  asistencias: AsistenciaDiaria[]; // Lista de asistencias
+  asistencias: AsistenciaRow[]; // Lista de asistencias
   rawData?: AsistenciaDiariaResponse[]; // Datos crudos del backend (opcional)
   loading?: boolean; // ¿Está cargando? (opcional)
   onRefresh?: () => void; // Función para actualizar (opcional)
@@ -153,14 +167,13 @@ export default function AsistenciaTable({
   //  Mostrar modal para ver detalles? true = sí, false = no
   const [verOpen, setVerOpen] = useState(false);
 
-
   // ============================================
   // 📦 DATOS SELECCIONADOS (cuándo el usuario hace clic en una fila)
   // ============================================
   const [selected, setSelected] = useState<AsistenciaDiariaResponse | null>(
     null,
   );
-  
+
   // → Guarda el registro que el usuario eligió para justificar o editar
   // → null = no hay nada seleccionado
   const [verData, setVerData] = useState<AsistenciaDiariaResponse | null>(null);
@@ -365,31 +378,38 @@ export default function AsistenciaTable({
     return pages;
   }
 
+  const AVATAR_COLORS = [
+    "bg-blue-100 text-blue-700 border-blue-200",
+    "bg-emerald-100 text-emerald-700 border-emerald-200",
+    "bg-amber-100 text-amber-700 border-amber-200",
+    "bg-rose-100 text-rose-700 border-rose-200",
+    "bg-violet-100 text-violet-700 border-violet-200",
+    "bg-slate-100 text-slate-700 border-slate-200",
+  ];
+  function getAvatarColor(id: number | null | undefined, nombre: string) {
+    const str = `${id ?? 0}-${nombre}`;
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+    return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  }
+
   const TableSkeleton = () => (
     <>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index}>
-          <TableCell>
-            <Skeleton className="h-4 w-32" />
-          </TableCell>
-          <TableCell className="text-center">
-            <Skeleton className="h-4 w-12 mx-auto" />
-          </TableCell>
-          <TableCell className="text-center">
-            <Skeleton className="h-4 w-12 mx-auto" />
-          </TableCell>
-          <TableCell className="text-center">
-            <Skeleton className="h-4 w-16 mx-auto" />
-          </TableCell>
-          <TableCell className="text-center">
-            <Skeleton className="h-6 w-20 mx-auto rounded-full" />
-          </TableCell>
-          <TableCell className="text-center">
-            <Skeleton className="h-6 w-24 mx-auto rounded-full" />
-          </TableCell>
-          <TableCell className="text-center">
-            <Skeleton className="h-6 w-20 mx-auto" />
-          </TableCell>
+          <TableCell><Skeleton className="h-4 w-6 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-20 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-16 mx-auto" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-20 mx-auto rounded-full" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-20 mx-auto rounded-full" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-20 mx-auto" /></TableCell>
         </TableRow>
       ))}
     </>
@@ -613,27 +633,22 @@ export default function AsistenciaTable({
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-100 hover:bg-gray-50/80">
-                  <TableHead className="font-semibold">#</TableHead>
-                  <TableHead className="font-semibold ">Practicante</TableHead>
-                  <TableHead className="font-semibold text-center">
-                    Entrada
+                <TableRow className="bg-slate-50 hover:bg-slate-50/80 border-b border-slate-200">
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider w-10 text-center">#</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider min-w-45">Practicante</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Sede</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Área</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center whitespace-nowrap">Jornada</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center" title="Hora programada de entrada">
+                    Hora prog.
                   </TableHead>
-                  <TableHead className="font-semibold text-center">
-                    Salida
-                  </TableHead>
-                  <TableHead className="font-semibold text-center">
-                    Horas
-                  </TableHead>
-                  <TableHead className="font-semibold text-center">
-                    Estado
-                  </TableHead>
-                  <TableHead className="font-semibold text-center">
-                    Situación
-                  </TableHead>
-                  <TableHead className="font-semibold text-center">
-                    Acciones
-                  </TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Entrada</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Tardanza</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Salida</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center" title="Tiempo trabajado">Tiempo trab.</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Estado</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Situación</TableHead>
+                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -641,7 +656,7 @@ export default function AsistenciaTable({
                   <TableSkeleton />
                 ) : currentAsistencias.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-48 text-center">
+                    <TableCell colSpan={13} className="h-48 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <Search className="h-10 w-10 text-gray-500 mb-3" />
                         <p className="text-sm font-medium text-gray-400">
@@ -668,19 +683,57 @@ export default function AsistenciaTable({
                     const puedeVer = hasJustificacion(raw) && !descanso;
                     const editarDisabled = justificado || descanso;
                     const globalIndex = startIndex + index;
+                    const rowKey = raw?.idAsistencia ? String(raw.idAsistencia) : `${raw?.idPracticante ?? globalIndex}-${(raw as any)?.fecha ?? globalIndex}`;
+                    const avatarColor = getAvatarColor(raw?.idPracticante, asistencia.practicante);
+                    const documento = asistencia.documento;
                     return (
                       <TableRow
-                        key={globalIndex}
-                        className="hover:bg-slate-50 h-12"
+                        key={rowKey}
+                        className="hover:bg-slate-50  h-16"
                       >
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-xs pl-7">
                           {globalIndex + 1}
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {asistencia.practicante}
+                        <TableCell>
+                          <div className="flex items-center gap-2.5 pl-4">
+                            <div className={`h-8 w-8  rounded-full border flex items-center justify-center text-[11px] font-medium shrink-0 ${avatarColor}`}>
+                              {(asistencia.practicante || "?").split(" ").map((p: string) => p[0]).slice(0,2).join("").toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate">{asistencia.practicante}</p>
+                              <p className="text-xs text-slate-500 font-mono">DNI: {documento && documento.trim() ? documento : "—"}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-600">
+                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                            {asistencia.sede || "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs text-slate-600">
+                            {asistencia.area || "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-xs whitespace-nowrap" title={raw?.salidaEsperada ? `Jornada hasta ${raw.salidaEsperada.substring(0,5)}` : undefined}>
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+                            {asistencia.jornada || (raw?.entradaEsperada && raw?.salidaEsperada ? `${raw.entradaEsperada.substring(0,5)} – ${raw.salidaEsperada.substring(0,5)}` : "—")}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">
+                          {raw?.entradaEsperada?.substring(0,5) || "—"}
                         </TableCell>
                         <TableCell className="text-center font-mono text-sm">
                           {asistencia.entrada || "—"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {raw?.minutosTardanza && raw.minutosTardanza > 0 ? (
+                            <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 text-xs font-medium">+{raw.minutosTardanza} min</span>
+                          ) : (
+                            <span className="text-slate-400 text-sm">—</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center font-mono text-sm">
                           {asistencia.salida || "—"}
@@ -732,62 +785,56 @@ export default function AsistenciaTable({
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="flex gap-1 justify-center">
+                          <div className="flex items-center justify-center gap-1">
                             <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 disabled:opacity-50"
-                              disabled={editarDisabled}
-                              title={
-                                descanso
-                                  ? "No editable: descanso"
-                                  : justificado
-                                    ? "No editable: justificado"
-                                    : "Editar horas"
-                              }
-                              onClick={() => openEditar(globalIndex)}
-                            >
-                              <Pencil className="h-3 w-3" />
-                              Editar
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1 bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 disabled:opacity-50"
-                              disabled={!puedeJustificar}
-                              title={
-                                !puedeJustificar
-                                  ? descanso
-                                    ? "No justificable: descanso"
-                                    : !raw?.idAsistencia
-                                      ? "Sin registro para justificar"
-                                      : opcionesDisponiblesRow.length === 0
-                                        ? "No quedan situaciones pendientes por justificar"
-                                        : "No justificable"
-                                  : "Justificar"
-                              }
-                              onClick={() => openJustificar(globalIndex)}
-                            >
-                              <FileCheck className="h-3 w-3" />
-                              Justificar
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1 bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 disabled:opacity-50"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                               disabled={!puedeVer}
-                              title={
-                                !puedeVer
-                                  ? "Sin justificación"
-                                  : "Ver justificación"
-                              }
+                              title={!puedeVer ? "Sin justificación" : "Ver"}
+                              aria-label="Ver"
                               onClick={() => openVer(globalIndex)}
                             >
-                              <Eye className="h-3 w-3" />
-                              Ver
+                              <Eye className="h-4 w-4" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-blue-500 hover:text-blue-900 hover:bg-blue-100"
+                              disabled={editarDisabled}
+                              title={descanso ? "No editable: descanso" : justificado ? "No editable: justificado" : "Corregir"}
+                              aria-label="Corregir"
+                              onClick={() => openEditar(globalIndex)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <div className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 cursor-pointer text-slate-500" aria-label="Más acciones">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </div>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                  onClick={() => openVer(globalIndex)}
+                                  disabled={!puedeVer}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" /> Ver detalle
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => openEditar(globalIndex)}
+                                  disabled={editarDisabled}
+                                >
+                                  <Pencil className="h-4 w-4 mr-2" /> Corregir
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => openJustificar(globalIndex)}
+                                  disabled={!puedeJustificar}
+                                >
+                                  <FileCheck className="h-4 w-4 mr-2" /> Justificar
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>

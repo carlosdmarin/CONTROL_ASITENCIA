@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import PracticanteHeader from "./components/PracticanteHeader";
-import PracticanteCards from "./components/PracticanteCards";
 import PracticanteFilters from "./components/PracticanteFilters";
 import { PracticanteTable } from "./components/PracticanteTable";
 import { PracticanteDeleteDialog } from "./components/PracticanteDeleteDialog";
@@ -12,13 +11,14 @@ import { PracticanteEditDialog } from "./components/PracticanteEditDialog";
 import { PracticanteQRDialog } from "./components/PracticanteQRDialog";
 import { PracticanteDetailDialog } from "./components/PracticanteDetailDialog";
 import { practicantesApi } from "@/lib/api/practicantes";
-import { Practicante, NuevoPracticante } from "@/types/practicante";
+import { Practicante, NuevoPracticante, ActualizarPracticante, BloqueHorarioRequest } from "@/types/practicante";
 
 export default function PracticantesPage() {
   const [practicantes, setPracticantes] = useState<Practicante[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroSituacion, setFiltroSituacion] = useState("ACTIVO");
+  const [filtroSede, setFiltroSede] = useState("todas");
+  const [filtroSituacion, setFiltroSituacion] = useState("TODOS");
 
   const [modalAbierto, setModalAbierto] = useState(false);
   const [dialogEditarAbierto, setDialogEditarAbierto] = useState(false);
@@ -57,26 +57,34 @@ export default function PracticantesPage() {
     cargarPracticantes();
   }, []);
 
+  // ====== SEDES DISPONIBLES ======
+  const sedesDisponibles = Array.from(
+    new Set(practicantes.map((p) => p.sede || p.agencia).filter(Boolean) as string[]),
+  ).sort();
+
   // ====== FILTRAR ======
   const practicantesFiltrados = practicantes.filter((p) => {
-    const matchSituacion =
-      filtroSituacion === "TODOS" || p.situacion === filtroSituacion;
+    const matchSituacion = filtroSituacion === "TODOS" || p.situacion === filtroSituacion;
+    const sede = p.sede || p.agencia || "";
+    const nombreArea = p.nombreArea || p.area || p.puesto || "";
+    const matchSede = filtroSede === "todas" || sede === filtroSede;
     const matchBusqueda =
+      !busqueda ||
       p.nombreCompleto?.toLowerCase().includes(busqueda.toLowerCase()) ||
       p.documento?.includes(busqueda) ||
-      (p.sede || (p as any).agencia || "")
-        .toLowerCase()
-        .includes(busqueda.toLowerCase());
-    return matchSituacion && matchBusqueda;
+      sede.toLowerCase().includes(busqueda.toLowerCase()) ||
+      nombreArea.toLowerCase().includes(busqueda.toLowerCase()) ||
+      p.cargo?.toLowerCase().includes(busqueda.toLowerCase());
+    return matchSituacion && matchBusqueda && matchSede;
   });
 
   // ====== AGREGAR PRACTICANTE ======
   const agregarPracticante = async (
-    nuevoPracticante: NuevoPracticante & { horario?: any[] },
+    nuevoPracticante: NuevoPracticante & { horario?: BloqueHorarioRequest[] },
   ) => {
     try {
-      const { horario, ...practicanteData } = nuevoPracticante as any;
-      const creado = await practicantesApi.create(practicanteData);
+      const { horario, ...practicanteData } = nuevoPracticante;
+      const creado = await practicantesApi.create(practicanteData as NuevoPracticante);
       // Guardar horario si existe
       if (horario && horario.length > 0 && creado?.idPracticante) {
         try {
@@ -109,18 +117,29 @@ export default function PracticantesPage() {
 
   // ====== EDITAR PRACTICANTE ======
   const guardarCambios = async (
-    practicanteEditado: Practicante & { horario?: any[] },
+    practicanteEditado: ActualizarPracticante & { idPracticante: number; nombreCompleto?: string; horario?: BloqueHorarioRequest[] },
   ) => {
     try {
-      const data: any = {
-        nombre: practicanteEditado.nombreCompleto.split(" ")[0] || "",
-        apellido:
-          practicanteEditado.nombreCompleto.split(" ").slice(1).join(" ") || "",
+      const nombre = practicanteEditado.nombre || practicanteEditado.nombreCompleto?.split(" ")[0] || "";
+      const apellido = practicanteEditado.apellido || practicanteEditado.nombreCompleto?.split(" ").slice(1).join(" ") || "";
+      const idSede = practicanteEditado.idSede;
+      const idArea = practicanteEditado.idArea;
+      const idTipoInstituto = practicanteEditado.idTipoInstituto;
+      const idCargo = practicanteEditado.idCargo;
+
+      if (!idSede || !idArea || !idTipoInstituto || !idCargo) {
+        toast.error("Faltan datos de sede/área/cargo/centro. Verifique selección.");
+        return;
+      }
+
+      const data: ActualizarPracticante = {
+        nombre,
+        apellido,
         documento: practicanteEditado.documento,
-        idSede: 1,
-        idPuesto: 1,
-        idTipoInstituto: 1,
-        idCargo: 1,
+        idSede,
+        idArea,
+        idTipoInstituto,
+        idCargo,
         correoElectronico: practicanteEditado.correoElectronico,
         telefono: practicanteEditado.telefono,
         fechaInicioPracticas: practicanteEditado.fechaInicioPracticas,
@@ -128,7 +147,7 @@ export default function PracticantesPage() {
       };
       await practicantesApi.update(practicanteEditado.idPracticante, data);
       // Actualizar horario si viene
-      const horario = (practicanteEditado as any).horario;
+      const horario = (practicanteEditado as { horario?: BloqueHorarioRequest[] }).horario;
       if (horario && horario.length > 0) {
         try {
           await practicantesApi.updateHorario(
@@ -214,9 +233,16 @@ export default function PracticantesPage() {
         onSave={agregarPracticante}
       />
 
-      <PracticanteCards practicantes={practicantes} />
 
-      <PracticanteFilters busqueda={busqueda} onBusquedaChange={setBusqueda} filtroSituacion={filtroSituacion} onFiltroSituacionChange={setFiltroSituacion} />
+      <PracticanteFilters
+        busqueda={busqueda}
+        onBusquedaChange={setBusqueda}
+        filtroSituacion={filtroSituacion}
+        onFiltroSituacionChange={setFiltroSituacion}
+        filtroSede={filtroSede}
+        onFiltroSedeChange={setFiltroSede}
+        sedes={sedesDisponibles}
+      />
 
       {loading ? (
         <div className="flex justify-center items-center h-32">

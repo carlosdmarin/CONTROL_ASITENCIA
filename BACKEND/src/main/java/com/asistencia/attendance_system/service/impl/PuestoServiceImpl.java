@@ -50,15 +50,16 @@ public class PuestoServiceImpl implements PuestoService {
         Puesto puestoExistente = puestoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + id));
 
-        // Actualizar solo los campos permitidos
-        if (puestoActualizado.getNombrePuesto() != null) {
-            puestoExistente.setNombrePuesto(puestoActualizado.getNombrePuesto());
+        // Actualizar solo los campos permitidos - contrato canónico: nombreArea (nombrePuesto) + descripcion
+        // Soporta alias legacy: nombreArea -> nombrePuesto, area -> descripcion
+        String nuevoNombre = puestoActualizado.getNombrePuesto() != null ? puestoActualizado.getNombrePuesto() : puestoActualizado.getNombreArea();
+        if (nuevoNombre != null) {
+            puestoExistente.setNombrePuesto(nuevoNombre);
         }
-        if (puestoActualizado.getArea() != null) {
-            puestoExistente.setArea(puestoActualizado.getArea());
-        }
-        if (puestoActualizado.getDescripcion() != null) {
-            puestoExistente.setDescripcion(puestoActualizado.getDescripcion());
+        // descripcion es canónico; area es alias legacy que delega a descripcion
+        String nuevaDesc = puestoActualizado.getDescripcion() != null ? puestoActualizado.getDescripcion() : puestoActualizado.getArea();
+        if (nuevaDesc != null) {
+            puestoExistente.setDescripcion(nuevaDesc);
         }
         if (puestoActualizado.getActivo() != null) {
             puestoExistente.setActivo(puestoActualizado.getActivo());

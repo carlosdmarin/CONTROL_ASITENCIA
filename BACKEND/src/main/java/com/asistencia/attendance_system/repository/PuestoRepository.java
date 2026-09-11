@@ -15,9 +15,20 @@ public interface PuestoRepository extends JpaRepository<Puesto, Long> {
     // Buscar por nombre (opcional)
     List<Puesto> findByNombrePuestoContainingIgnoreCase(String nombre);
 
-    // Buscar por área (opcional)
-    List<Puesto> findByAreaContainingIgnoreCase(String area);
+    // Buscar por descripcion (canónico)
+    List<Puesto> findByDescripcionContainingIgnoreCase(String descripcion);
 
-    // Buscar por nombre y área (opcional)
-    List<Puesto> findByNombrePuestoContainingIgnoreCaseOrAreaContainingIgnoreCase(String nombre, String area);
+    // Buscar por nombre y descripcion (canónico)
+    List<Puesto> findByNombrePuestoContainingIgnoreCaseOrDescripcionContainingIgnoreCase(String nombre, String descripcion);
+
+    // Compat legacy: búsqueda por area (delegada a descripcion)
+    @Deprecated
+    default List<Puesto> findByAreaContainingIgnoreCase(String area) {
+        return findByDescripcionContainingIgnoreCase(area);
+    }
+
+    @Deprecated
+    default List<Puesto> findByNombrePuestoContainingIgnoreCaseOrAreaContainingIgnoreCase(String nombre, String area) {
+        return findByNombrePuestoContainingIgnoreCaseOrDescripcionContainingIgnoreCase(nombre, area);
+    }
 }
