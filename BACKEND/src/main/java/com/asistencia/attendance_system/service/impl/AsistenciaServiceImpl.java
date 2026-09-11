@@ -564,9 +564,9 @@ public class AsistenciaServiceImpl implements AsistenciaService {
     public ResumenAsistenciaDTO obtenerResumenDiario(LocalDate fecha) {
         List<AsistenciaDiariaResponse> delDia = obtenerAsistenciasDelDia(fecha);
         long total = delDia.size();
-        long presentes = delDia.stream().filter(a -> "PRESENTE".equals(a.getEstadoDia()) || "PRESENTE".equals(a.getEstadoVisual())).count();
-        long tardanzas = delDia.stream().filter(a -> "TARDANZA".equals(a.getEstadoDia())).count();
-        long ausentes = delDia.stream().filter(a -> "AUSENTE".equals(a.getEstadoDia())).filter(a -> !Boolean.TRUE.equals(a.getJustificado())).count();
+        long presentes = delDia.stream().filter(a -> "PRESENTE".equals(a.getEstadoDia()) || "TARDANZA".equals(a.getEstadoDia()) || "TARDE".equals(a.getEstadoDia()) || "PRESENTE".equals(a.getEstadoVisual()) || "TARDANZA".equals(a.getEstadoVisual()) || "TARDE".equals(a.getEstadoVisual())).count();
+        long tardanzas = delDia.stream().filter(a -> "TARDANZA".equals(a.getEstadoDia()) || "TARDE".equals(a.getEstadoDia())).count();
+        long ausentes = delDia.stream().filter(a -> "AUSENTE".equals(a.getEstadoDia()) || "FALTA".equals(a.getEstadoDia())).filter(a -> !Boolean.TRUE.equals(a.getJustificado())).count();
         long justificados = delDia.stream().filter(a -> Boolean.TRUE.equals(a.getJustificado()) || "JUSTIFICADO".equals(a.getEstadoDia())).count();
         long descansos = delDia.stream().filter(a -> "DESCANSO".equals(a.getEstadoDia())).count();
         long sinMarcar = delDia.stream().filter(a -> "SIN_MARCAR".equals(a.getEstadoDia())).count();

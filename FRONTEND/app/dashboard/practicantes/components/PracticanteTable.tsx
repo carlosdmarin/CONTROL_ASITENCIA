@@ -11,6 +11,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -212,7 +217,7 @@ export function PracticanteTable({
             size="sm"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors duration-150"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Anterior</span>
@@ -249,7 +254,7 @@ export function PracticanteTable({
             size="sm"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors duration-150"
           >
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Siguiente</span>
@@ -338,7 +343,7 @@ export function PracticanteTable({
                   return (
                     <TableRow
                       key={practicante.idPracticante}
-                      className="hover:bg-slate-50 h-11"
+                      className="hover:bg-slate-50 h-11 transition-colors duration-150"
                     >
                       <TableCell className="text-center text-xs text-slate-500">
                         {globalIndex}
@@ -390,8 +395,6 @@ export function PracticanteTable({
                               size="icon"
                               className="h-7 w-7  bg-slate-100 border-accent- text-orange-600 hover:text-orange-800 hover:bg-slate-100"
                               onClick={() => onShowQR(practicante)}
-                              title="Ver QR"
-                              aria-label="Ver QR"
                             >
                               <QrCode className="h-3.5 w-3.5" />
                             </Button>

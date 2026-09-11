@@ -230,7 +230,7 @@ export default function AsistenciaTable({
             size="sm"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors duration-150"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Anterior</span>
@@ -265,7 +265,7 @@ export default function AsistenciaTable({
             size="sm"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors duration-150"
           >
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Siguiente</span>

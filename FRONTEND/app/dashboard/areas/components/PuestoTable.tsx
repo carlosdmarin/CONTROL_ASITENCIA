@@ -151,7 +151,7 @@ export default function PuestoTable({
             size="sm"
             onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors duration-150"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Anterior</span>
@@ -184,7 +184,7 @@ export default function PuestoTable({
             size="sm"
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors duration-150"
           >
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Siguiente</span>
@@ -261,7 +261,7 @@ export default function PuestoTable({
                 currentItems.map((puesto, index) => {
                   const globalIndex = startIndex + index + 1;
                   return (
-                    <TableRow key={getIdAreaCompat(puesto)} className="hover:bg-slate-50 h-11">
+                    <TableRow key={getIdAreaCompat(puesto)} className="hover:bg-slate-50 h-11 transition-colors duration-150">
                       <TableCell className="text-center text-xs text-slate-500">
                         {globalIndex}
                       </TableCell>

@@ -94,7 +94,10 @@ export default function AsistenciaPage() {
         .catch(() => [] as AsistenciaDiariaResponse[]);
       const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data) ? data : [];
       setAsistencias(dataArray);
-      const presentes = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "PRESENTE").length;
+      const presentes = dataArray.filter((a) => {
+        const n = normalizeEstadoDia(a.estadoDia);
+        return n === "PRESENTE" || n === "TARDANZA";
+      }).length;
       const tardanzas = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "TARDANZA").length;
       const ausentes = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "AUSENTE").length;
       const descansos = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length;

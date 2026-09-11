@@ -245,7 +245,7 @@ export default function QRScannerResult({
   if (isDescanso) {
     return (
       <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-        <Card className="max-w-sm w-full mx-4 border-amber-200 shadow-2xl overflow-hidden">
+        <Card className="max-w-sm w-full mx-4 border-amber-200 shadow-2xl overflow-hidden animate-success-pop">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600">
             <CalendarOff className="h-5 w-5 text-white" />
             <span className="text-white font-semibold text-sm">
@@ -636,7 +636,7 @@ export default function QRScannerResult({
   if (isError || error || !practicante) {
     return (
       <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-        <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl">
+        <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl animate-shake-subtle">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
               <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -682,7 +682,7 @@ export default function QRScannerResult({
         }
       }}
     >
-      <Card className="max-w-sm w-full mx-4 border-green-200 shadow-2xl overflow-hidden">
+      <Card className="max-w-sm w-full mx-4 border-green-200 shadow-2xl overflow-hidden animate-success-pop">
         <div
           className={`px-6 py-3 flex items-center justify-center gap-2 ${isInactive ? "bg-amber-500" : "bg-gradient-to-r from-green-500 to-green-600"}`}
         >

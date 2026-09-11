@@ -95,7 +95,6 @@ const DIAS_LABELS: Record<string, string> = {
   "4": "Jueves",
   "5": "Viernes",
   "6": "Sábado",
-  "0": "Domingo",
 };
 
 function iniciales(nombre: string) {
@@ -185,7 +184,6 @@ export default function DashboardPage() {
             faltas: resumen.diasFalta || 0,
             total:
               (resumen.diasPresente || 0) +
-              (resumen.diasTarde || 0) +
               (resumen.diasFalta || 0),
           });
         }
@@ -310,6 +308,9 @@ export default function DashboardPage() {
       tardanzas: r.tardanzas ?? 0,
       faltas: r.faltas ?? 0,
     };
+    }).filter((d) =>{
+      const date = new Date(d.fecha +  "T00:00:00");
+      return date.getDay() !== 0;
   });
 
   // Techo dinámico del eje Y para que el área no quede "aplastada" contra el
@@ -338,8 +339,8 @@ export default function DashboardPage() {
   ].filter((d) => d.value > 0);
 
   const donutConfig: ChartConfig = {
-    presentes: { label: "Puntuales", color: "hsl(142, 76%, 36%)" },
-    tardanzas: { label: "Tardanzas", color: "hsl(38, 92%, 50%)" },
+    presentes: { label: "Puntuales", color: "hsl(206, 70%, 45%)" },
+    tardanzas: { label: "Tardanzas", color: "hsl(30, 60%, 50%)" },
   };
 
   return (
@@ -445,12 +446,13 @@ export default function DashboardPage() {
               percent: "—",
             },
           ];
-          return kpis.map((stat) => {
+          return kpis.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <Card
                 key={stat.label}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg animate-kpi-enter"
+                style={{ animationDelay: `${index * 70}ms` }}
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3">
@@ -520,7 +522,7 @@ export default function DashboardPage() {
                   Asistencias semanales
                 </CardTitle>
                 <CardDescription className="text-xs mt-1">
-                  Lunes a domingo · presentes, tardanzas y faltas
+                  Lunes a sabado · presentes, tardanzas y faltas
                 </CardDescription>
               </div>
               <Badge
@@ -633,6 +635,8 @@ export default function DashboardPage() {
                   />
                   <ChartLegend content={<ChartLegendContent />} />
                   <Area
+                    isAnimationActive={true}
+                    animationDuration={700}
                     dataKey="presentes"
                     type="natural"
                     fill="url(#fillPresentes)"
@@ -642,6 +646,8 @@ export default function DashboardPage() {
                     activeDot={{ r: 4, strokeWidth: 0 }}
                   />
                   <Area
+                    isAnimationActive={true}
+                    animationDuration={700}
                     dataKey="tardanzas"
                     type="natural"
                     fill="url(#fillTardanzas)"
@@ -651,6 +657,8 @@ export default function DashboardPage() {
                     activeDot={{ r: 4, strokeWidth: 0 }}
                   />
                   <Area
+                    isAnimationActive={true}
+                    animationDuration={700}
                     dataKey="faltas"
                     type="natural"
                     fill="url(#fillFaltas)"
@@ -701,7 +709,7 @@ export default function DashboardPage() {
                         outerRadius={88}
                         paddingAngle={donutData.length > 0 ? 3 : 0}
                         strokeWidth={0}
-                        isAnimationActive={false}
+                        isAnimationActive={true}
                       />
                     </PieChart>
                   </ChartContainer>
@@ -715,7 +723,7 @@ export default function DashboardPage() {
                 <div className="w-full space-y-2 mt-4">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[hsl(142,76%,36%)]" /> Puntuales
+                      <span className="h-2 w-2 rounded-full bg-[#227DC3]" /> Puntuales
                     </span>
                     <span className="font-medium text-slate-900 tabular-nums">{puntuales}</span>
                   </div>
