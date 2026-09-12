@@ -1484,7 +1484,7 @@ export function PracticanteEditDialog({
 
         <div className="flex-1 p-5 overflow-hidden px-6">
           {renderStepIndicator()}
-          <div className="mt-4">
+          <div key={currentStep} className="mt-4 animate-in fade-in slide-in-from-bottom-1 duration-250">
             {currentStep === 1 && renderStep1()}
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}

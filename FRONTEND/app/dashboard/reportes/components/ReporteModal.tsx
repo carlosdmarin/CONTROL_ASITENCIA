@@ -108,7 +108,7 @@ export function ReporteModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 h-10">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

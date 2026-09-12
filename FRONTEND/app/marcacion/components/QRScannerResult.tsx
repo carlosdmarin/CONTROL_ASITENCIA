@@ -121,7 +121,7 @@ export default function QRScannerResult({
     audio.play().catch(() => {
       // El navegador puede bloquear audio si no hubo interacción del usuario
     });
-  },[marcacionStatus, codigo]);
+  }, [marcacionStatus, codigo]);
 
   useEffect(() => {
     let mounted = true;
@@ -301,7 +301,7 @@ export default function QRScannerResult({
                 </div>
               </div>
             </div>
-
+            
             <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
