@@ -54,3 +54,46 @@ export type ReporteSemanalResponse = {
   incidencias: string[];
   fechaGeneracion: string;
 };
+
+export type ReporteMensualDetalleDTO = {
+  fecha: string; // yyyy-MM-dd
+  diaSemana: string; // LUNES..DOMINGO
+  horaInicio: string | null;
+  horaFin: string | null;
+  esDescanso: boolean;
+  horasEsperadas: number;
+  asistencia: AsistenciaDiariaResponse;
+  estado: string;
+  situacion: string | null;
+  horasTrabajadas: number;
+  situacionesDetalle?: any[] | null;
+};
+
+export type ReporteMensualResumenDTO = {
+  diasProgramados: number;
+  diasTrabajados: number;
+  diasPresentes: number;
+  tardanzas: number;
+  ausencias: number;
+  justificaciones: number;
+  descansos: number;
+  horasProgramadas: number;
+  horasTrabajadas: number;
+  horasFaltantes: number;
+  horasAdicionales: number;
+  porcentajeCumplimiento: number;
+  estadoBalance: string;
+};
+
+export type ReporteMensualResponse = {
+  practicante: Practicante;
+  mesInicio: string; // yyyy-MM-dd
+  mesFin: string;
+  mesLabel: string; // "Septiembre 2026"
+  anio: number;
+  mes: number;
+  resumen: ReporteMensualResumenDTO;
+  detalleDiario: ReporteMensualDetalleDTO[];
+  incidencias: string[];
+  fechaGeneracion: string;
+};

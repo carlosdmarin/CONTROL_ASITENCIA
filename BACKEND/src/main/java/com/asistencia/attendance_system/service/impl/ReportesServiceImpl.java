@@ -3,6 +3,9 @@ package com.asistencia.attendance_system.service.impl;
 import com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse;
 import com.asistencia.attendance_system.model.dto.PracticanteResponse;
 import com.asistencia.attendance_system.model.dto.ReporteDiarioResponse;
+import com.asistencia.attendance_system.model.dto.ReporteMensualDetalleDTO;
+import com.asistencia.attendance_system.model.dto.ReporteMensualResumenDTO;
+import com.asistencia.attendance_system.model.dto.ReporteMensualResponse;
 import com.asistencia.attendance_system.model.dto.ReporteSemanalDetalleDTO;
 import com.asistencia.attendance_system.model.dto.ReporteSemanalResponse;
 import com.asistencia.attendance_system.model.dto.ReporteSemanalResumenDTO;
@@ -10,6 +13,7 @@ import com.asistencia.attendance_system.model.entity.BloqueHorario;
 import com.asistencia.attendance_system.model.enums.DiaSemana;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
+import com.asistencia.attendance_system.service.CalculadoraEstadoAsistencia;
 import com.asistencia.attendance_system.service.HorarioService;
 import com.asistencia.attendance_system.service.PracticanteService;
 import com.asistencia.attendance_system.service.ReportesService;
@@ -24,7 +28,9 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
@@ -43,6 +49,7 @@ public class ReportesServiceImpl implements ReportesService {
     private final PracticanteService practicanteService;
     private final AsistenciaService asistenciaService;
     private final HorarioService horarioService;
+    private final CalculadoraEstadoAsistencia calculadoraEstado;
 
     @Override
     public ReporteDiarioResponse generarDiario(Long practicanteId, LocalDate fecha) {
@@ -60,13 +67,7 @@ public class ReportesServiceImpl implements ReportesService {
         LocalTime horaFin = bloqueOpt.map(BloqueHorario::getHoraFin).orElse(null);
         String diaSemana = toDiaSemana(fecha);
 
-        BigDecimal horasEsperadas = BigDecimal.ZERO;
-        if (!esDescanso && horaInicio != null && horaFin != null) {
-            long minutosEsperados = HorarioUtils.calcularMinutosTrabajados(horaInicio, horaFin);
-            if (minutosEsperados >= 0) {
-                horasEsperadas = BigDecimal.valueOf(minutosEsperados / 60.0);
-            }
-        }
+        BigDecimal horasEsperadas = calcularHorasEsperadas(bloqueOpt.orElse(null));
 
         // Asistencia (usa lógica existente, respeta DESCANSO/SIN_MARCAR/JUSTIFICADO y no crea AUSENTE futuro)
         AsistenciaDiariaResponse asistencia;
@@ -161,15 +162,17 @@ public class ReportesServiceImpl implements ReportesService {
             LocalTime horaInicio = bloqueOpt.map(BloqueHorario::getHoraInicio).orElse(null);
             LocalTime horaFin = bloqueOpt.map(BloqueHorario::getHoraFin).orElse(null);
 
-            BigDecimal horasEsperadas = BigDecimal.ZERO;
-            if (!esDescanso && horaInicio != null && horaFin != null) {
-                long mins = HorarioUtils.calcularMinutosTrabajados(horaInicio, horaFin);
-                if (mins >= 0) {
-                    horasEsperadas = BigDecimal.valueOf(mins / 60.0);
+            BigDecimal horasEsperadas = calcularHorasEsperadas(bloqueOpt.orElse(null));
+            if (!esDescanso) {
+                if (horasEsperadas.compareTo(BigDecimal.ZERO) > 0) {
                     horasProgramadasTotal = horasProgramadasTotal.add(horasEsperadas);
                     diasProgramados++;
                 } else {
-                    esDescanso = true;
+                    // Horas inválidas (minutos <0) → tratar como descanso
+                    if (bloqueOpt.isPresent() && horasEsperadas.compareTo(BigDecimal.ZERO) == 0) {
+                        long minsCheck = HorarioUtils.calcularMinutosTrabajados(horaInicio, horaFin);
+                        if (minsCheck < 0) esDescanso = true;
+                    }
                 }
             }
 
@@ -341,6 +344,238 @@ public class ReportesServiceImpl implements ReportesService {
                 .incidencias(incidencias)
                 .fechaGeneracion(LocalDateTime.now(ZONA_LIMA))
                 .build();
+    }
+
+    @Override
+    public ReporteMensualResponse generarMensual(Long practicanteId, LocalDate fechaReferencia) {
+        log.info("Generando reporte mensual practicanteId={} fechaReferencia={}", practicanteId, fechaReferencia);
+        PracticanteResponse practicante = practicanteRepository.findById(practicanteId)
+                .map(p -> practicanteService.obtenerPorId(practicanteId))
+                .orElseThrow(() -> new RuntimeException("Practicante no encontrado con ID: " + practicanteId));
+
+        YearMonth ym = YearMonth.from(fechaReferencia);
+        int daysInMonth = ym.lengthOfMonth();
+        LocalDate primero = ym.atDay(1);
+        LocalDate ultimo = ym.atEndOfMonth();
+
+        String mesNombre = ym.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "ES"));
+        mesNombre = mesNombre.substring(0, 1).toUpperCase() + mesNombre.substring(1);
+        String mesLabel = mesNombre + " " + ym.getYear();
+
+        LocalDate hoy = ZonedDateTime.now(ZONA_LIMA).toLocalDate();
+        LocalTime ahora = ZonedDateTime.now(ZONA_LIMA).toLocalTime();
+
+        List<ReporteMensualDetalleDTO> detalle = new ArrayList<>();
+        BigDecimal horasProgramadasEvaluable = BigDecimal.ZERO;
+        BigDecimal horasTrabajadasEvaluable = BigDecimal.ZERO;
+
+        int diasProgramados = 0;
+        int diasTrabajados = 0;
+        int diasPresentes = 0;
+        int tardanzas = 0;
+        int ausencias = 0;
+        int justificaciones = 0;
+        int descansosTotal = 0;
+
+        List<String> incidencias = new ArrayList<>();
+
+        for (int d = 1; d <= daysInMonth; d++) {
+            LocalDate fecha = ym.atDay(d);
+            String diaSemana = toDiaSemana(fecha);
+            Optional<BloqueHorario> bloqueOpt = horarioService.obtenerBloqueDelDia(practicanteId, fecha);
+            boolean esDescanso = bloqueOpt.isEmpty();
+            LocalTime horaInicio = bloqueOpt.map(BloqueHorario::getHoraInicio).orElse(null);
+            LocalTime horaFin = bloqueOpt.map(BloqueHorario::getHoraFin).orElse(null);
+
+            BigDecimal horasEsperadas = calcularHorasEsperadas(bloqueOpt.orElse(null));
+            if (esDescanso && horasEsperadas.compareTo(BigDecimal.ZERO) > 0) {
+                // caso bloque inválido tratado como descanso ya en helper (0)
+                esDescanso = true;
+            }
+            if (!esDescanso && horasEsperadas.compareTo(BigDecimal.ZERO) == 0) {
+                long minsCheck = (horaInicio != null && horaFin != null) ? HorarioUtils.calcularMinutosTrabajados(horaInicio, horaFin) : -1;
+                if (minsCheck < 0) esDescanso = true;
+            }
+
+            if (esDescanso) {
+                descansosTotal++;
+                AsistenciaDiariaResponse asistenciaDescanso = new AsistenciaDiariaResponse();
+                asistenciaDescanso.setIdPracticante(practicanteId);
+                asistenciaDescanso.setNombreCompleto(practicante.getNombreCompleto());
+                asistenciaDescanso.setFecha(fecha);
+                asistenciaDescanso.setEstadoDia("DESCANSO");
+                asistenciaDescanso.setHorasTrabajadas(BigDecimal.ZERO);
+                asistenciaDescanso.setMinutosTardanza(0);
+                asistenciaDescanso.setEntradaEsperada(null);
+                asistenciaDescanso.setSalidaEsperada(null);
+                asistenciaDescanso.setEntradaReal(null);
+                asistenciaDescanso.setSalidaReal(null);
+                asistenciaDescanso.setJustificado(false);
+                asistenciaDescanso.setSituacion("NINGUNA");
+
+                ReporteMensualDetalleDTO det = ReporteMensualDetalleDTO.builder()
+                        .fecha(fecha)
+                        .diaSemana(diaSemana)
+                        .horaInicio(null)
+                        .horaFin(null)
+                        .esDescanso(true)
+                        .horasEsperadas(BigDecimal.ZERO)
+                        .asistencia(asistenciaDescanso)
+                        .estado("DESCANSO")
+                        .situacion("NINGUNA")
+                        .horasTrabajadas(BigDecimal.ZERO)
+                        .situacionesDetalle(null)
+                        .build();
+                detalle.add(det);
+                continue;
+            }
+
+            // Laborable
+            AsistenciaDiariaResponse asistencia;
+            try {
+                asistencia = asistenciaService.obtenerAsistenciaDiaria(practicanteId, fecha);
+            } catch (RuntimeException e) {
+                asistencia = null;
+                try {
+                    var lista = asistenciaService.obtenerAsistenciasDelDia(fecha);
+                    asistencia = lista.stream().filter(a -> a.getIdPracticante().equals(practicanteId)).findFirst().orElse(null);
+                } catch (Exception ex) {
+                    log.warn("No se pudo obtener asistencia virtual mensual para {}: {}", fecha, ex.getMessage());
+                }
+                if (asistencia == null) {
+                    asistencia = new AsistenciaDiariaResponse();
+                    asistencia.setIdPracticante(practicanteId);
+                    asistencia.setNombreCompleto(practicante.getNombreCompleto());
+                    asistencia.setFecha(fecha);
+                    asistencia.setEstadoDia("SIN_MARCAR");
+                    asistencia.setHorasTrabajadas(BigDecimal.ZERO);
+                    asistencia.setMinutosTardanza(0);
+                    asistencia.setEntradaEsperada(horaInicio);
+                    asistencia.setSalidaEsperada(horaFin);
+                    asistencia.setJustificado(false);
+                    asistencia.setSituacion("NINGUNA");
+                }
+            }
+
+            String estadoNorm = asistencia.getEstadoDia() != null ? asistencia.getEstadoDia().toUpperCase() : "SIN_MARCAR";
+            if ("TARDE".equals(estadoNorm)) estadoNorm = "TARDANZA";
+            if ("FALTA".equals(estadoNorm)) estadoNorm = "AUSENTE";
+
+            BigDecimal ht = asistencia.getHorasTrabajadas() != null ? asistencia.getHorasTrabajadas() : BigDecimal.ZERO;
+
+            // Detalle siempre se agrega
+            ReporteMensualDetalleDTO det = ReporteMensualDetalleDTO.builder()
+                    .fecha(fecha)
+                    .diaSemana(diaSemana)
+                    .horaInicio(horaInicio)
+                    .horaFin(horaFin)
+                    .esDescanso(false)
+                    .horasEsperadas(horasEsperadas)
+                    .asistencia(asistencia)
+                    .estado(estadoNorm)
+                    .situacion(asistencia.getSituacion() != null ? asistencia.getSituacion() : "NINGUNA")
+                    .horasTrabajadas(ht)
+                    .situacionesDetalle(asistencia.getSituacionesDetalle())
+                    .build();
+            detalle.add(det);
+
+            // C2: determinar si es futuro/no evaluable usando fuente de verdad jornadaTerminada
+            boolean isFuture = fecha.isAfter(hoy) || (fecha.isEqual(hoy) && bloqueOpt.isPresent() && !calculadoraEstado.jornadaTerminada(bloqueOpt.get(), fecha, hoy, ahora));
+            if (isFuture) {
+                continue;
+            }
+
+            // Evaluable: acumular métricas
+            diasProgramados++;
+            horasProgramadasEvaluable = horasProgramadasEvaluable.add(horasEsperadas);
+            horasTrabajadasEvaluable = horasTrabajadasEvaluable.add(ht);
+
+            boolean tieneTrabajo = ht.compareTo(BigDecimal.ZERO) > 0 || "PRESENTE".equals(estadoNorm) || "TARDANZA".equals(estadoNorm);
+            if (tieneTrabajo) diasTrabajados++;
+            if ("PRESENTE".equals(estadoNorm)) diasPresentes++;
+            if ("TARDANZA".equals(estadoNorm)) tardanzas++;
+            if ("AUSENTE".equals(estadoNorm)) ausencias++;
+            boolean esJust = Boolean.TRUE.equals(asistencia.getJustificado()) || "JUSTIFICADO".equals(asistencia.getEstadoDia());
+            if (esJust) justificaciones++;
+
+            // Incidencias solo evaluables y no futuras
+            if ("TARDANZA".equals(estadoNorm)) {
+                int mins = asistencia.getMinutosTardanza() != null ? asistencia.getMinutosTardanza() : 0;
+                incidencias.add(diaSemana + " " + fecha + ": TARDANZA (" + mins + " min)");
+            }
+            if ("AUSENTE".equals(estadoNorm) && !esJust) {
+                incidencias.add(diaSemana + " " + fecha + ": AUSENCIA");
+            }
+            if (esJust) {
+                String sit = asistencia.getSituacion() != null ? asistencia.getSituacion() : "JUSTIFICADO";
+                incidencias.add(diaSemana + " " + fecha + ": JUSTIFICADO (" + sit + ")");
+            }
+            if (asistencia.getEntradaReal() == null && asistencia.getSalidaReal() != null) {
+                incidencias.add(diaSemana + " " + fecha + ": MARCACIÓN INCOMPLETA (solo salida)");
+            }
+            if (asistencia.getEntradaReal() != null && asistencia.getSalidaReal() == null && !"DESCANSO".equals(estadoNorm) && !"AUSENTE".equals(estadoNorm) && !"SIN_MARCAR".equals(estadoNorm)) {
+                if (ht.compareTo(BigDecimal.ZERO) == 0) {
+                    incidencias.add(diaSemana + " " + fecha + ": JORNADA INCOMPLETA (sin salida)");
+                }
+            }
+        }
+
+        BigDecimal horasFaltantes = BigDecimal.ZERO;
+        BigDecimal horasAdicionales = BigDecimal.ZERO;
+        String estadoBalance = "CUMPLIDA";
+        if (horasProgramadasEvaluable.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal diff = horasTrabajadasEvaluable.subtract(horasProgramadasEvaluable);
+            if (diff.compareTo(BigDecimal.ZERO) < 0) {
+                horasFaltantes = diff.abs().setScale(2, RoundingMode.HALF_UP);
+                estadoBalance = "FALTANTES";
+            } else if (diff.compareTo(BigDecimal.ZERO) > 0) {
+                horasAdicionales = diff.setScale(2, RoundingMode.HALF_UP);
+                estadoBalance = "ADICIONALES";
+            }
+        }
+
+        BigDecimal porcentaje = BigDecimal.ZERO;
+        if (horasProgramadasEvaluable.compareTo(BigDecimal.ZERO) > 0) {
+            porcentaje = horasTrabajadasEvaluable.multiply(BigDecimal.valueOf(100))
+                    .divide(horasProgramadasEvaluable, 2, RoundingMode.HALF_UP);
+            if (porcentaje.compareTo(BigDecimal.valueOf(100)) > 0) porcentaje = BigDecimal.valueOf(100);
+        }
+
+        ReporteMensualResumenDTO resumen = ReporteMensualResumenDTO.builder()
+                .diasProgramados(diasProgramados)
+                .diasTrabajados(diasTrabajados)
+                .diasPresentes(diasPresentes)
+                .tardanzas(tardanzas)
+                .ausencias(ausencias)
+                .justificaciones(justificaciones)
+                .descansos(descansosTotal)
+                .horasProgramadas(horasProgramadasEvaluable.setScale(2, RoundingMode.HALF_UP))
+                .horasTrabajadas(horasTrabajadasEvaluable.setScale(2, RoundingMode.HALF_UP))
+                .horasFaltantes(horasFaltantes)
+                .horasAdicionales(horasAdicionales)
+                .porcentajeCumplimiento(porcentaje)
+                .estadoBalance(estadoBalance)
+                .build();
+
+        return ReporteMensualResponse.builder()
+                .practicante(practicante)
+                .mesInicio(primero)
+                .mesFin(ultimo)
+                .mesLabel(mesLabel)
+                .anio(ym.getYear())
+                .mes(ym.getMonthValue())
+                .resumen(resumen)
+                .detalleDiario(detalle)
+                .incidencias(incidencias)
+                .fechaGeneracion(LocalDateTime.now(ZONA_LIMA))
+                .build();
+    }
+
+    private BigDecimal calcularHorasEsperadas(BloqueHorario bloque) {
+        if (bloque == null || bloque.getHoraInicio() == null || bloque.getHoraFin() == null) return BigDecimal.ZERO;
+        long mins = HorarioUtils.calcularMinutosTrabajados(bloque.getHoraInicio(), bloque.getHoraFin());
+        if (mins < 0) return BigDecimal.ZERO;
+        return BigDecimal.valueOf(mins).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
     }
 
     private String formatSpanishFecha(LocalDate fecha) {

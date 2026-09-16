@@ -1,6 +1,7 @@
 package com.asistencia.attendance_system.controller;
 
 import com.asistencia.attendance_system.model.dto.ReporteDiarioResponse;
+import com.asistencia.attendance_system.model.dto.ReporteMensualResponse;
 import com.asistencia.attendance_system.model.dto.ReporteSemanalResponse;
 import com.asistencia.attendance_system.service.ReportesService;
 import lombok.RequiredArgsConstructor;
@@ -47,5 +48,20 @@ public class ReportesController {
             @PathVariable Long practicanteId,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         return getReporteSemanal(practicanteId, fecha);
+    }
+
+    @GetMapping("/mensual")
+    public ResponseEntity<ReporteMensualResponse> getReporteMensual(
+            @RequestParam Long practicanteId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        ReporteMensualResponse reporte = reportesService.generarMensual(practicanteId, fecha);
+        return ResponseEntity.ok(reporte);
+    }
+
+    @GetMapping("/mensual/practicante/{practicanteId}/mes/{fecha}")
+    public ResponseEntity<ReporteMensualResponse> getReporteMensualPorRuta(
+            @PathVariable Long practicanteId,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        return getReporteMensual(practicanteId, fecha);
     }
 }

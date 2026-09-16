@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NotebookText, CheckCircle2, ArrowLeft, ArrowRight, FileCheck, FileDown, FileSpreadsheet, Loader2 } from "lucide-react";
 import { Practicante } from "@/types/practicante";
-import { ReporteDiarioResponse, ReporteSemanalResponse } from "@/types/reporte";
+import { ReporteDiarioResponse, ReporteSemanalResponse, ReporteMensualResponse } from "@/types/reporte";
 import { reportesApi } from "@/lib/api/reportes";
 import { startOfWeek, endOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
@@ -26,10 +26,13 @@ import { ReporteStepPeriodo } from "./ReporteStepPeriodo";
 import { ReporteStepConfirmacion } from "./ReporteStepConfirmacion";
 import { ReporteDiarioView } from "./ReporteDiarioView";
 import { ReporteSemanalView } from "./ReporteSemanalView";
+import { ReporteMensualView } from "./ReporteMensualView";
 import { descargarPdfDiario } from "@/lib/reportes/pdf/diarioPdf";
 import { descargarExcelDiario } from "@/lib/reportes/excel/diarioExcel";
 import { descargarPdfSemanal } from "@/lib/reportes/pdf/semanalPdf";
 import { descargarExcelSemanal } from "@/lib/reportes/excel/semanalExcel";
+import { descargarPdfMensual } from "@/lib/reportes/pdf/mensualPdf";
+import { descargarExcelMensual } from "@/lib/reportes/excel/mensualExcel";
 
 type TipoReporte = "DIARIO" | "SEMANAL" | "MENSUAL";
 
@@ -79,6 +82,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
   );
   const [reporte, setReporte] = useState<ReporteDiarioResponse | null>(null);
   const [reporteSemanal, setReporteSemanal] = useState<ReporteSemanalResponse | null>(null);
+  const [reporteMensual, setReporteMensual] = useState<ReporteMensualResponse | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isDownloadingExcel, setIsDownloadingExcel] = useState(false);
@@ -104,6 +108,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
         setMesFecha(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
         setReporte(null);
         setReporteSemanal(null);
+        setReporteMensual(null);
         setIsGenerating(false);
       }, 150);
     }
@@ -115,6 +120,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
       setTipoReporte(null);
       setReporte(null);
       setReporteSemanal(null);
+      setReporteMensual(null);
     }
   }, [open, practicante?.idPracticante]);
 
@@ -133,9 +139,10 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
   };
 
   const handleAtras = () => {
-    if (reporte || reporteSemanal) {
+    if (reporte || reporteSemanal || reporteMensual) {
       setReporte(null);
       setReporteSemanal(null);
+      setReporteMensual(null);
       return;
     }
     if (pasoActual > 1) setPasoActual((p) => (p - 1) as 1 | 2 | 3);
@@ -155,12 +162,6 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
 
   const handleGenerar = async () => {
     if (!practicante || !tipoReporte) return;
-    if (tipoReporte === "MENSUAL") {
-      toast.info(`Reporte mensual próximamente`, {
-        description: "Por ahora solo está disponible el reporte diario y semanal.",
-      });
-      return;
-    }
     try {
       setIsGenerating(true);
       if (tipoReporte === "DIARIO") {
@@ -175,6 +176,12 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
         const res = await reportesApi.getReporteSemanal(practicante.idPracticante, fechaISO);
         setReporteSemanal(res);
         toast.success("Reporte semanal generado correctamente");
+      } else if (tipoReporte === "MENSUAL") {
+        if (!mesFecha) { toast.error("Selecciona un mes"); return; }
+        const fechaISO = formatFechaISO(mesFecha);
+        const res = await reportesApi.getReporteMensual(practicante.idPracticante, fechaISO);
+        setReporteMensual(res);
+        toast.success("Reporte mensual generado correctamente");
       }
     } catch (e: any) {
       const msg = e?.message || "No se pudo generar el reporte";
@@ -190,6 +197,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
       setIsDownloadingPdf(true);
       if (reporte) await descargarPdfDiario(reporte);
       else if (reporteSemanal) await descargarPdfSemanal(reporteSemanal);
+      else if (reporteMensual) await descargarPdfMensual(reporteMensual);
       toast.success("PDF descargado");
     } catch (e: any) {
       toast.error("Error al generar PDF");
@@ -204,6 +212,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
       setIsDownloadingExcel(true);
       if (reporte) await descargarExcelDiario(reporte);
       else if (reporteSemanal) await descargarExcelSemanal(reporteSemanal);
+      else if (reporteMensual) await descargarExcelMensual(reporteMensual);
       toast.success("Excel descargado");
     } catch (e: any) {
       toast.error("Error al generar Excel");
@@ -222,7 +231,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
   ];
 
   // Si hay reporte, mostrar vista previa ampliada
-  const isPreview = !!reporte || !!reporteSemanal;
+  const isPreview = !!reporte || !!reporteSemanal || !!reporteMensual;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -311,10 +320,11 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {isPreview && (reporte || reporteSemanal) ? (
+          {isPreview && (reporte || reporteSemanal || reporteMensual) ? (
             <div className="space-y-4">
               {reporte && <ReporteDiarioView reporte={reporte} />}
               {reporteSemanal && <ReporteSemanalView reporte={reporteSemanal} />}
+              {reporteMensual && <ReporteMensualView reporte={reporteMensual} />}
               <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
                 <Button
                   onClick={handleDescargarPdf}
@@ -359,7 +369,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
         <DialogFooter className="p-4 h-22 border-t pl-9  pr-10 bg-muted/20 shrink-0 flex-row justify-between sm:justify-between gap-2">
           <div>
             {isPreview ? (
-              <Button variant="outline" onClick={() => { setReporte(null); setReporteSemanal(null); }} className="rounded-xl gap-1.5">
+              <Button variant="outline" onClick={() => { setReporte(null); setReporteSemanal(null); setReporteMensual(null); }} className="rounded-xl gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
                 Volver
               </Button>
