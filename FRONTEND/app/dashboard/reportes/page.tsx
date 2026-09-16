@@ -76,7 +76,7 @@ export default function ReportesPage() {
     <div className="space-y-6">
       <ReportesHeader />
 
-      <div className="relative w-full max-w-[380px]">
+      <div className="relative w-full max-w-95">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
           placeholder="Buscar por nombre, DNI, sede o área..."

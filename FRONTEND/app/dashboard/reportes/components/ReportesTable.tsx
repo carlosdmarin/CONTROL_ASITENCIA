@@ -240,7 +240,7 @@ export function ReportesPracticantesTable({
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider w-10 text-center">
                   #
                 </TableHead>
-                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider min-w-[200px]">
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider min-w-50">
                   Practicante
                 </TableHead>
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
@@ -317,7 +317,7 @@ export function ReportesPracticantesTable({
                               {getInitials(practicante.nombreCompleto)}
                             </AvatarFallback>
                           </Avatar>
-                          <p className="text-sm font-medium text-slate-900 truncate max-w-[160px]">
+                          <p className="text-sm font-medium text-slate-900 truncate max-w-40">
                             {practicante.nombreCompleto}
                           </p>
                         </div>
