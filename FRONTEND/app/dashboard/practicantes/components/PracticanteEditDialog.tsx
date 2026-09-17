@@ -238,13 +238,15 @@ export function PracticanteEditDialog({
         const [sedesData, cargosData, areasData, tiposData] = await Promise.all([
           sedeApi.getAll().catch(() => MOCK_SEDES),
           cargosApi.getAll().catch(() => MOCK_CARGOS),
-          areasApi.getAll().catch(() => MOCK_AREAS),
+          // REGLA 2: Solo áreas activas para editar (filtrar inactivas)
+          areasApi.getActivos().catch(() => MOCK_AREAS.filter((a) => a.activo)),
           tiposInstitutoApi.getAll().catch(() => MOCK_TIPOS_INSTITUTO),
         ]);
 
         setSedes(sedesData.length > 0 ? sedesData : MOCK_SEDES);
         setCargos(cargosData.length > 0 ? cargosData : MOCK_CARGOS);
-        setAreas(areasData.length > 0 ? areasData : MOCK_AREAS);
+        // Mantener solo activas; si el practicante actual tiene área inactiva, se añadirá luego en el segundo useEffect
+        setAreas(areasData.length > 0 ? areasData : MOCK_AREAS.filter((a) => a.activo));
         setTiposInstituto(tiposData.length > 0 ? tiposData : MOCK_TIPOS_INSTITUTO);
       } catch (error) {
         console.error("Error al cargar selects:", error);
@@ -303,18 +305,35 @@ export function PracticanteEditDialog({
     }
 
     const cargoEncontrado = buscarCargo(practicante.cargo);
-    const areaEncontrada = buscarArea(practicante.nombreArea || practicante.area || practicante.puesto);
+    let areaEncontrada = buscarArea(practicante.nombreArea || practicante.area || practicante.puesto);
+    // REGLA 2: Si el área actual del practicante está INACTIVA (no en lista de activas), mantenerla visible para reasignar
+    // Intentar buscar por idArea explícito si el practicante lo trae
+    if (!areaEncontrada && (practicante as any).idArea) {
+      const idAreaDirecto = (practicante as any).idArea;
+      // Buscar en lista completa vía API si no está en activas
+      areaEncontrada = areas.find((p) => p.idArea === idAreaDirecto) || null;
+      if (!areaEncontrada) {
+        // Intentar recuperar área inactiva para mostrarla como opción readonly
+        // No bloqueamos el flujo; se mantiene id original y se añadirá al selector
+        areasApi.getById(idAreaDirecto).then((areaReal) => {
+          if (areaReal && !areas.some((a) => a.idArea === areaReal.idArea)) {
+            setAreas((prev) => [...prev, areaReal]);
+          }
+        }).catch(() => {});
+      }
+    }
     const tipoEncontrado = buscarTipoInstituto(practicante.tipoInstituto);
 
     const idSedeFinal = sedeEncontrada?.idSede || (sedes.length > 0 ? sedes[0].idSede : 0);
     const idCargoFinal = cargoEncontrado?.idCargo || (cargos.length > 0 ? cargos[0].idCargo : 0);
-    const idAreaFinal = areaEncontrada?.idArea || (areas.length > 0 ? areas[0].idArea : 0);
+    // Si el área actual es inactiva y no se encontró entre activas, usar el id original para no perderlo
+    const idAreaFinal = areaEncontrada?.idArea ?? ((practicante as any).idArea || (areas.length > 0 ? areas[0].idArea : 0));
     const idTipoFinal = tipoEncontrado?.idTipoInstituto || (tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 0);
 
     console.log("🔍 Búsqueda de IDs:", {
       sede: { buscado: practicante.sede, encontrado: sedeEncontrada?.nombre, id: idSedeFinal },
       cargo: { buscado: practicante.cargo, encontrado: cargoEncontrado?.nombre, id: idCargoFinal },
-      area: { buscado: practicante.nombreArea || practicante.area || practicante.puesto, encontrado: areaEncontrada?.nombreArea, id: idAreaFinal },
+      area: { buscado: practicante.nombreArea || practicante.area || practicante.puesto, encontrado: areaEncontrada?.nombreArea, id: idAreaFinal, inactiva: areaEncontrada ? !areaEncontrada.activo : "desconocida" },
       tipo: { buscado: practicante.tipoInstituto, encontrado: tipoEncontrado?.nombre, id: idTipoFinal },
     });
 
@@ -781,11 +800,22 @@ export function PracticanteEditDialog({
                 <option value="0">Seleccionar área</option>
                 {areas.map((area) => (
                   <option key={area.idArea} value={area.idArea}>
-                    {area.nombreArea}
+                    {area.nombreArea} {area.activo ? "" : " (INACTIVA)"}
                   </option>
                 ))}
               </select>
             </div>
+            {(() => {
+              const areaSel = areas.find((a) => a.idArea === formData.idArea);
+              if (areaSel && !areaSel.activo) {
+                return (
+                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                    <AlertTriangle className="h-3 w-3" /> Área actual INACTIVA — debe reasignar a una activa
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           {/* Cargo */}

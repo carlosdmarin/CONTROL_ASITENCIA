@@ -4,6 +4,7 @@ import com.asistencia.attendance_system.model.dto.AsistenciaDiariaResponse;
 import com.asistencia.attendance_system.model.dto.MarcacionRequest;
 import com.asistencia.attendance_system.model.dto.MarcacionResponse;
 import com.asistencia.attendance_system.model.dto.ResumenAsistenciaDTO;
+import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.enums.Agencia;
 import com.asistencia.attendance_system.service.AsistenciaService;
 import jakarta.validation.Valid;
@@ -32,14 +33,18 @@ public class AsistenciaController {
         try {
             MarcacionResponse response = asistenciaService.registrarMarcacion(request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (BusinessException be) {
+            throw be;
         } catch (RuntimeException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", e.getMessage());
             errorResponse.put("error", true);
-            String mensaje = e.getMessage().toLowerCase();
+            String mensaje = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
             if (mensaje.contains("no activo") || mensaje.contains("inactivo")) {
                 errorResponse.put("tipo", "INACTIVO");
+            } else if (mensaje.contains("área") && mensaje.contains("inactiva")) {
+                errorResponse.put("tipo", "AREA_INACTIVA");
             } else if (mensaje.contains("descanso") || mensaje.contains("día de descanso")) {
                 errorResponse.put("tipo", "DESCANSO");
             } else if (mensaje.contains("jornada de ingreso ya terminó") || mensaje.contains("jornada ya terminó")) {

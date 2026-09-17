@@ -390,7 +390,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
                 Cerrar
               </Button>
             ) : pasoActual < 3 ? (
-              <Button
+              <Button 
                 onClick={handleContinuar}
                 disabled={(pasoActual === 1 && !canContinuarPaso1) || (pasoActual === 2 && !canContinuarPaso2)}
                 className="rounded-xl bg-blue-700 hover:bg-blue-800 text-white gap-1.5 disabled:opacity-50"

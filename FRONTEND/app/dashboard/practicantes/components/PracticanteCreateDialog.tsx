@@ -290,7 +290,8 @@ export function PracticanteCreateDialog({
           await Promise.all([
             sedeApi.getAll().catch(() => MOCK_SEDES),
             cargosApi.getAll().catch(() => MOCK_CARGOS),
-            areasApi.getAll().catch(() => MOCK_AREAS),
+            // REGLA 2: Solo áreas activas para crear
+            areasApi.getActivos().catch(() => MOCK_AREAS.filter((a) => a.activo)),
             tiposInstitutoApi.getAll().catch(() => MOCK_TIPOS_INSTITUTO),
           ]);
 

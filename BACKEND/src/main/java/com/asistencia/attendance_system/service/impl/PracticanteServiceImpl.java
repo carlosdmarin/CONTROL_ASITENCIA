@@ -3,6 +3,7 @@ package com.asistencia.attendance_system.service.impl;
 import com.asistencia.attendance_system.model.dto.BloqueHorarioRequest;
 import com.asistencia.attendance_system.model.dto.PracticanteRequest;
 import com.asistencia.attendance_system.model.dto.PracticanteResponse;
+import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.entity.*;
 import com.asistencia.attendance_system.model.enums.DiaSemana;
 import com.asistencia.attendance_system.model.enums.Situacion;
@@ -11,6 +12,7 @@ import com.asistencia.attendance_system.repository.*;
 import com.asistencia.attendance_system.service.PracticanteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,13 @@ public class PracticanteServiceImpl implements PracticanteService {
 
         Puesto puesto = puestoRepository.findById(request.getIdPuesto())
                 .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + request.getIdPuesto()));
+
+        // REGLA 2: No asignar área inactiva
+        if (puesto.getActivo() == null || !puesto.getActivo()) {
+            throw new BusinessException(
+                    "El área seleccionada '" + puesto.getNombrePuesto() + "' está inactiva y no puede asignarse a un practicante.",
+                    HttpStatus.BAD_REQUEST);
+        }
 
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
                 .orElseThrow(() -> new RuntimeException("Tipo de instituto no encontrado con ID: " + request.getIdTipoInstituto()));
@@ -93,6 +102,13 @@ public class PracticanteServiceImpl implements PracticanteService {
 
         Puesto puesto = puestoRepository.findById(request.getIdPuesto())
                 .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + request.getIdPuesto()));
+
+        // REGLA 2: No asignar área inactiva (también al editar)
+        if (puesto.getActivo() == null || !puesto.getActivo()) {
+            throw new BusinessException(
+                    "El área seleccionada '" + puesto.getNombrePuesto() + "' está inactiva y no puede asignarse a un practicante.",
+                    HttpStatus.BAD_REQUEST);
+        }
 
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
                 .orElseThrow(() -> new RuntimeException("Tipo de instituto no encontrado con ID: " + request.getIdTipoInstituto()));

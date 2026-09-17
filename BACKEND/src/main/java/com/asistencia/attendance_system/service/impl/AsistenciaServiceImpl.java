@@ -10,8 +10,11 @@ import com.asistencia.attendance_system.model.entity.BloqueHorario;
 import com.asistencia.attendance_system.model.entity.Justificacion;
 import com.asistencia.attendance_system.model.entity.Marcacion;
 import com.asistencia.attendance_system.model.entity.Practicante;
+import com.asistencia.attendance_system.excepcion.BusinessException;
+import com.asistencia.attendance_system.model.entity.Puesto;
 import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.enums.Agencia;
+import org.springframework.http.HttpStatus;
 import com.asistencia.attendance_system.model.enums.EstadoDia;
 import com.asistencia.attendance_system.model.enums.EstadoJustificacion;
 import com.asistencia.attendance_system.model.enums.SituacionAsistencia;
@@ -116,6 +119,15 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         // Validación INACTIVO: no permitir marcación a practicantes desactivados
         if (practicante.getSituacion() == com.asistencia.attendance_system.model.enums.Situacion.INACTIVO) {
             throw new RuntimeException("Practicante no activo: Este practicante se encuentra actualmente inactivo y no puede registrar asistencia.");
+        }
+
+        // REGLA 3: Validar que el área asociada esté ACTIVA
+        Puesto area = practicante.getPuesto();
+        if (area == null || area.getActivo() == null || !area.getActivo()) {
+            String nombreArea = area != null ? area.getNombrePuesto() : "desconocida";
+            throw new BusinessException(
+                    "No puede registrar asistencia porque el área asociada '" + nombreArea + "' está inactiva.",
+                    HttpStatus.FORBIDDEN);
         }
 
         // Usar zona America/Lima

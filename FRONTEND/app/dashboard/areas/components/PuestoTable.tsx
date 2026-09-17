@@ -32,6 +32,8 @@ import {
   ChevronRight,
   MoreHorizontal,
   MoreHorizontal as Ellipsis,
+  Power,
+  CheckCircle2,
 } from "lucide-react";
 import { Area } from "@/types/area";
 import { Puesto } from "@/types/puestos";
@@ -290,11 +292,12 @@ export default function PuestoTable({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className={`h-7 w-7 ${puesto.activo ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}`}
                             onClick={() => onDelete(puesto)}
+                            title={puesto.activo ? "Desactivar área" : "Activar área"}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            <span className="sr-only">Eliminar</span>
+                            {puesto.activo ? <Power className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                            <span className="sr-only">{puesto.activo ? "Desactivar" : "Activar"}</span>
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger>

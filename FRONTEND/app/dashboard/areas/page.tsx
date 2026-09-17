@@ -97,15 +97,42 @@ export default function PuestosPage() {
   };
 
   const eliminarPuesto = async (id: number) => {
+    const area = areas.find((a) => a.idArea === id) || areaSeleccionada;
+    if (!area) return;
     try {
-      await areasApi.eliminar(id);
-      setAreas((prev) => prev.filter((p) => p.idArea !== id));
-      setDialogEliminarAbierto(false);
-      toast.success("Área eliminada");
-    } catch {
-      setAreas((prev) => prev.filter((p) => p.idArea !== id));
-      setDialogEliminarAbierto(false);
-      toast.success("Área eliminada (mock)");
+      if (area.activo) {
+        // REGLA 1: Desactivar con validación backend
+        const actualizada = await areasApi.desactivar(id);
+        setAreas((prev) => prev.map((p) => (p.idArea === actualizada.idArea ? actualizada : p)));
+        setDialogEliminarAbierto(false);
+        toast.success(`Área "${area.nombreArea}" desactivada`);
+      } else {
+        const actualizada = await areasApi.activar(id);
+        setAreas((prev) => prev.map((p) => (p.idArea === actualizada.idArea ? actualizada : p)));
+        setDialogEliminarAbierto(false);
+        toast.success(`Área "${area.nombreArea}" activada`);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al cambiar estado del área";
+      // No hacer mock delete si el backend rechazó por regla de negocio (409)
+      if (msg.includes("practicante") && (msg.includes("activo") || msg.includes("asociado"))) {
+        toast.error(msg);
+        // Mantener dialog abierto para que usuario vea el error, o cerrar pero no eliminar
+        return;
+      }
+      // Fallback mock solo sin conexión
+      if (msg.includes("Sin conexión") || msg.includes("mock") || msg.includes("Network")) {
+        if (area.activo) {
+          setAreas((prev) => prev.map((p) => (p.idArea === id ? { ...p, activo: false } : p)));
+          toast.success(`Área "${area.nombreArea}" desactivada (mock)`);
+        } else {
+          setAreas((prev) => prev.map((p) => (p.idArea === id ? { ...p, activo: true } : p)));
+          toast.success(`Área "${area.nombreArea}" activada (mock)`);
+        }
+        setDialogEliminarAbierto(false);
+      } else {
+        toast.error(msg);
+      }
     }
   };
 

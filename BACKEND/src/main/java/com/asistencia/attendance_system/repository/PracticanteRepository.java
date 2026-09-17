@@ -1,5 +1,6 @@
 package com.asistencia.attendance_system.repository;
 
+import com.asistencia.attendance_system.model.entity.Puesto;
 import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.entity.Practicante;
 import com.asistencia.attendance_system.model.enums.Situacion;
@@ -25,6 +26,13 @@ public interface PracticanteRepository extends JpaRepository<Practicante, Long> 
 
     // ====== NUEVO MÉTODO ======
     long countBySituacion(Situacion situacion);
+
+    // ====== VALIDACIÓN ÁREAS ======
+    long countByPuestoAndSituacion(Puesto puesto, Situacion situacion);
+
+    boolean existsByPuesto(Puesto puesto);
+
+    long countByPuesto(Puesto puesto);
 
     @Query("SELECT p FROM Practicante p WHERE LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR LOWER(p.apellido) LIKE LOWER(CONCAT('%', :termino, '%'))")
     List<Practicante> buscarPorNombreOApellido(@Param("termino") String termino);

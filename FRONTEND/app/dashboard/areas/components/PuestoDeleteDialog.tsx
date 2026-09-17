@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash, OctagonAlert } from "lucide-react";
+import { Trash, OctagonAlert, Power, CheckCircle } from "lucide-react";
 import { Area } from "@/types/area";
 import { Puesto } from "@/types/puestos";
 
@@ -27,6 +27,9 @@ function getIdCompat(p: Area | Puesto): number {
 function getNombreCompat(p: Area | Puesto): string {
   return (p as Area).nombreArea ?? (p as Puesto).nombrePuesto ?? "";
 }
+function getActivoCompat(p: Area | Puesto): boolean {
+  return (p as Area).activo ?? (p as Puesto).activo ?? true;
+}
 
 export default function PuestoDeleteDialog({
   open,
@@ -40,32 +43,53 @@ export default function PuestoDeleteDialog({
     }
   };
 
+  const isActivo = puesto ? getActivoCompat(puesto) : true;
+  const accion = isActivo ? "desactivar" : "activar";
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader className="pb-4">
           <AlertDialogTitle>
-            <div className="mx-auto mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 sm:mx-0">
-              <OctagonAlert className="h-5 w-5 text-destructive" />
+            <div className={`mx-auto mb-4 flex h-9 w-9 items-center justify-center rounded-full sm:mx-0 ${isActivo ? "bg-amber-100" : "bg-green-100"}`}>
+              {isActivo ? <Power className="h-5 w-5 text-amber-600" /> : <CheckCircle className="h-5 w-5 text-green-600" />}
             </div>
-            ¿Estás completamente seguro?
+            {isActivo ? "¿Desactivar área?" : "¿Activar área?"}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-[15px]">
-            Esta acción eliminará el área{" "}
-            <strong className="text-foreground font-semibold">
-              {puesto ? getNombreCompat(puesto) : ""}
-            </strong>
-            . Este proceso es irreversible.
+            {isActivo ? (
+              <>
+                Esta acción <strong className="text-foreground font-semibold">desactivará</strong> el área{" "}
+                <strong className="text-foreground font-semibold">
+                  {puesto ? getNombreCompat(puesto) : ""}
+                </strong>
+                . Los practicantes de un área inactiva no podrán registrar asistencia. Si tiene practicantes activos, la operación será rechazada.
+              </>
+            ) : (
+              <>
+                Esta acción <strong className="text-foreground font-semibold">activará</strong> el área{" "}
+                <strong className="text-foreground font-semibold">
+                  {puesto ? getNombreCompat(puesto) : ""}
+                </strong>
+                . Volverá a estar disponible para asignar practicantes y registrar asistencia.
+              </>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="border-t pt-4">
           <AlertDialogCancel onClick={() => onOpenChange(false)}>
             Cancelar
           </AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={handleDelete}>
-            <Trash className="h-4 w-4 mr-1" />
-            Sí, eliminar
-          </AlertDialogAction>
+          {isActivo ? (
+            <AlertDialogAction variant="destructive" onClick={handleDelete} className="bg-amber-600 hover:bg-amber-700">
+              <Power className="h-4 w-4 mr-1" />
+              Sí, desactivar
+            </AlertDialogAction>
+          ) : (
+            <AlertDialogAction onClick={handleDelete} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Sí, activar
+            </AlertDialogAction>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

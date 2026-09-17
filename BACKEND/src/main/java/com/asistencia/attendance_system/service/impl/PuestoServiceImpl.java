@@ -1,9 +1,13 @@
 package com.asistencia.attendance_system.service.impl;
 
+import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.entity.Puesto;
+import com.asistencia.attendance_system.model.enums.Situacion;
+import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.repository.PuestoRepository;
 import com.asistencia.attendance_system.service.PuestoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +21,7 @@ import java.util.Optional;
 public class PuestoServiceImpl implements PuestoService {
 
     private final PuestoRepository puestoRepository;
+    private final PracticanteRepository practicanteRepository;
 
     @Override
     public List<Puesto> findAll() {
@@ -62,6 +67,15 @@ public class PuestoServiceImpl implements PuestoService {
             puestoExistente.setDescripcion(nuevaDesc);
         }
         if (puestoActualizado.getActivo() != null) {
+            // Si intenta desactivar vía PUT, validar regla 1
+            if (Boolean.TRUE.equals(puestoExistente.getActivo()) && Boolean.FALSE.equals(puestoActualizado.getActivo())) {
+                long activos = practicanteRepository.countByPuestoAndSituacion(puestoExistente, Situacion.ACTIVO);
+                if (activos > 0) {
+                    throw new BusinessException(
+                            "El área no puede desactivarse porque tiene " + activos + " practicante(s) activo(s) asociado(s). Desactive primero los practicantes.",
+                            HttpStatus.CONFLICT);
+                }
+            }
             puestoExistente.setActivo(puestoActualizado.getActivo());
         }
 
@@ -70,8 +84,14 @@ public class PuestoServiceImpl implements PuestoService {
 
     @Override
     public void delete(Long id) {
-        if (!puestoRepository.existsById(id)) {
-            throw new RuntimeException("Puesto no encontrado con ID: " + id);
+        Puesto puesto = puestoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + id));
+        // REGLA 4: No eliminar físicamente si tiene practicantes asociados (histórico)
+        long totalAsociados = practicanteRepository.countByPuesto(puesto);
+        if (totalAsociados > 0) {
+            throw new BusinessException(
+                    "El área no puede eliminarse porque tiene " + totalAsociados + " practicante(s) asociado(s). Desactive el área en su lugar (baja lógica).",
+                    HttpStatus.CONFLICT);
         }
         puestoRepository.deleteById(id);
     }
@@ -88,6 +108,13 @@ public class PuestoServiceImpl implements PuestoService {
     public Puesto desactivar(Long id) {
         Puesto puesto = puestoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + id));
+        // REGLA 1: No desactivar si tiene practicantes ACTIVO
+        long activos = practicanteRepository.countByPuestoAndSituacion(puesto, Situacion.ACTIVO);
+        if (activos > 0) {
+            throw new BusinessException(
+                    "El área no puede desactivarse porque tiene " + activos + " practicante(s) activo(s) asociado(s). Desactive primero los practicantes.",
+                    HttpStatus.CONFLICT);
+        }
         puesto.setActivo(false);
         return puestoRepository.save(puesto);
     }

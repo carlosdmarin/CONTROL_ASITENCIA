@@ -1,5 +1,6 @@
 package com.asistencia.attendance_system.controller;
 
+import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.dto.AreaRequest;
 import com.asistencia.attendance_system.model.dto.AreaResponse;
 import com.asistencia.attendance_system.model.entity.Puesto;
@@ -102,6 +103,8 @@ public class PuestoController {
         try {
             puestoService.delete(id);
             return ResponseEntity.noContent().build();
+        } catch (BusinessException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -113,6 +116,8 @@ public class PuestoController {
         try {
             Puesto p = puestoService.activar(id);
             return ResponseEntity.ok(toResponse(p));
+        } catch (BusinessException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -124,6 +129,8 @@ public class PuestoController {
         try {
             Puesto p = puestoService.desactivar(id);
             return ResponseEntity.ok(toResponse(p));
+        } catch (BusinessException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
