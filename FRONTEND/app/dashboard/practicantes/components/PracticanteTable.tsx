@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronLeft,
   ChevronRight,
+  BriefcaseBusiness,
   MoreHorizontal as Ellipsis,
 } from "lucide-react";
 import {
@@ -34,7 +35,8 @@ import {
   User,
   PowerOff,
   RotateCcw,
-  MapPin,
+  MapPinned,
+  UserRound,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -78,7 +80,8 @@ const AVATAR_COLORS = [
 function getAvatarColor(id: number, nombre: string) {
   const str = `${id}-${nombre}`;
   let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < str.length; i++)
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
@@ -290,11 +293,21 @@ export function PracticanteTable({
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider w-10 text-center">
                   #
                 </TableHead>
-                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider min-w-[200px]">Practicante</TableHead>
-                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">DNI</TableHead>
-                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Sede</TableHead>
-                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Área</TableHead>
-                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Cargo</TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider min-w-[200px]">
+                  Practicante
+                </TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
+                  DNI
+                </TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
+                  Sede
+                </TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
+                  Área
+                </TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
+                  Cargo
+                </TableHead>
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">
                   Horas
                 </TableHead>
@@ -351,7 +364,12 @@ export function PracticanteTable({
                       <TableCell>
                         <div className="flex items-center gap-2.5">
                           <Avatar className="h-8 w-8 text-xs font-medium border">
-                            <AvatarFallback className={getAvatarColor(practicante.idPracticante, practicante.nombreCompleto)}>
+                            <AvatarFallback
+                              className={getAvatarColor(
+                                practicante.idPracticante,
+                                practicante.nombreCompleto,
+                              )}
+                            >
                               {getInitials(practicante.nombreCompleto)}
                             </AvatarFallback>
                           </Avatar>
@@ -365,17 +383,22 @@ export function PracticanteTable({
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center gap-1 text-xs text-slate-600">
-                          <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                          <MapPinned className="h-3 w-3 text-blue-400 shrink-0" />
                           {practicante.sede || practicante.agencia || "—"}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs text-slate-600">
-                          {practicante.nombreArea || practicante.area || practicante.puesto || "—"}
+                        <span className="inline-flex -h6 items-center rounded-full bg-blue-50 border  border-blue-200 px-2 py-0.5 text-xs text-blue-600">
+                          <BriefcaseBusiness className="h-5 w-5 text-blue-400 shrink-0 pr-2 " />
+                          {practicante.nombreArea ||
+                            practicante.area ||
+                            practicante.puesto ||
+                            "—"}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-white border-slate-200 text-slate-700 text-xs font-medium">
+                        <Badge className="bg-indigo-100  h-6 text-indigo-600 border-indigo-200 text-xs font-medium hover:bg-indigo-200">
+                          <UserRound className="h-10 w-10 text-blue-400 shrink-0 " />
                           {practicante.cargo}
                         </Badge>
                       </TableCell>
@@ -383,9 +406,23 @@ export function PracticanteTable({
                         {practicante.horasSemanalesRequeridas}h
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge className={`${getStatusColor(practicante.situacion)} rounded-full px-2 py-0.5 text-xs`}>
-                          {practicante.situacion}
-                        </Badge>
+                        {practicante.situacion === "ACTIVO" ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-50 border-emerald-100 h-6 text-emerald-700 rounded-full px-2.5 py-0.5 text-xs font-medium inline-flex items-center gap-1.5"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Activo
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="bg-red-100 border-red-200 h-6 text-red-600 rounded-full px-2.5 py-0.5 text-xs font-medium inline-flex items-center gap-1.5"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                            Inactivo
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -393,38 +430,40 @@ export function PracticanteTable({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7  bg-slate-100 border-accent- text-orange-600 hover:text-orange-800 hover:bg-slate-100"
+                              className="group h-9 w-9 bg-slate-50 border-gray-200 text-orange-600 hover:text-orange-600 hover:bg-orange-50"
                               onClick={() => onShowQR(practicante)}
+                              title="Ver QR"
+                              aria-label="Ver QR"
                             >
-                              <QrCode className="h-3.5 w-3.5" />
+                              <QrCode className="h-4 w-4 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
                             </Button>
                           )}
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-blue-500 hover:text-blue-900 hover:bg-blue-100"
+                            className="group h-9 w-9 text-blue-500 bg-slate-50 border-gray-200 hover:text-blue-500 hover:bg-blue-50"
                             onClick={() => onEdit(practicante)}
                             title="Editar"
                             aria-label="Editar"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className="h-3.5 w-3.5 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
                           </Button>
                           {practicante.situacion === "ACTIVO" ? (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              className="group h-9 w-9 text-amber-600 bg-slate-50 border-gray-200 hover:text-amber-600 hover:bg-amber-50"
                               onClick={() => onDelete(practicante)}
                               title="Desactivar"
                               aria-label="Desactivar"
                             >
-                              <PowerOff className="h-3.5 w-3.5" />
+                              <PowerOff className="h-3.5 w-3.5 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
                             </Button>
                           ) : (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              className="h-9 w-9 text-emerald-600 hover:text-emerald-700  bg-slate-50 border-gray-200 hover:bg-emerald-50"
                               onClick={() => onDelete(practicante)}
                               title="Activar"
                               aria-label="Activar"
@@ -434,15 +473,22 @@ export function PracticanteTable({
                           )}
                           <DropdownMenu>
                             <DropdownMenuTrigger>
-                              <div className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 cursor-pointer text-slate-500" aria-label="Más acciones">
+                              <div
+                                className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-50 border-gray-200  hover:bg-slate-200 cursor-pointer text-slate-500"
+                                aria-label="Más acciones"
+                              >
                                 <MoreHorizontal className="h-3.5 w-3.5" />
                               </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuGroup>
-                                <DropdownMenuLabel>Más acciones</DropdownMenuLabel>
+                                <DropdownMenuLabel>
+                                  Más acciones
+                                </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => onShowDetail?.(practicante)}>
+                                <DropdownMenuItem
+                                  onClick={() => onShowDetail?.(practicante)}
+                                >
                                   <User className="h-4 w-4 mr-2" /> Ver detalles
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>Historial</DropdownMenuItem>

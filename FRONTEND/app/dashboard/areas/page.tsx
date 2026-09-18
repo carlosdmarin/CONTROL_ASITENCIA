@@ -168,7 +168,7 @@ export default function PuestosPage() {
             setAreaSeleccionada(p as Area);
             setDialogEliminarAbierto(true);
           }}
-          getStatusColor={getStatusColor}  // ← AGREGAR ESTA LÍNEA
+          getStatusColor={getStatusColor} 
           busqueda={busqueda}
           loading={loading}
         />

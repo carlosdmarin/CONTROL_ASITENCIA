@@ -34,6 +34,8 @@ import {
   MoreHorizontal as Ellipsis,
   Power,
   CheckCircle2,
+  Users,
+  UsersRound,
 } from "lucide-react";
 import { Area } from "@/types/area";
 import { Puesto } from "@/types/puestos";
@@ -44,10 +46,22 @@ function getIdAreaCompat(a: AreaCompat): number {
   return (a as Area).idArea ?? (a as Puesto).idPuesto ?? 0;
 }
 function getNombreAreaCompat(a: AreaCompat): string {
-  return (a as Area).nombreArea ?? (a as Puesto).nombrePuesto ?? (a as any).area ?? "";
+  return (
+    (a as Area).nombreArea ??
+    (a as Puesto).nombrePuesto ??
+    (a as any).area ??
+    ""
+  );
 }
 function getDescripcionCompat(a: AreaCompat): string | undefined {
-  return (a as Area).descripcion ?? (a as Puesto).descripcion ?? (a as any).area;
+  return (
+    (a as Area).descripcion ?? (a as Puesto).descripcion ?? (a as any).area
+  );
+}
+function getCantidadCompat(a: AreaCompat): number {
+  return (
+    (a as Area).cantidadPracticantes ?? (a as any).cantidadPracticantes ?? 0
+  );
 }
 
 interface PuestoTableProps {
@@ -83,7 +97,7 @@ function getPageRange(current: number, total: number): (number | "...")[] {
   return pages;
 }
 
-// Skeletons para filas de la tabla — 5 columnas espejo
+// Skeletons para filas de la tabla — 6 columnas espejo
 const TableSkeleton = () => (
   <>
     {Array.from({ length: 5 }).map((_, index) => (
@@ -96,6 +110,9 @@ const TableSkeleton = () => (
         </TableCell>
         <TableCell className="hidden md:table-cell">
           <Skeleton className="h-4 w-40" />
+        </TableCell>
+        <TableCell className="text-center">
+          <Skeleton className="h-6 w-10 mx-auto rounded-full" />
         </TableCell>
         <TableCell className="text-center">
           <Skeleton className="h-6 w-20 mx-auto rounded-full" />
@@ -145,7 +162,8 @@ export default function PuestoTable({
     return (
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 border-t border-gray-100">
         <p className="text-sm text-gray-500 order-2 sm:order-1">
-          {startIndex + 1}–{Math.min(endIndex, totalItems)} de {totalItems} áreas
+          {startIndex + 1}–{Math.min(endIndex, totalItems)} de {totalItems}{" "}
+          áreas
         </p>
         <div className="flex items-center gap-1 order-1 sm:order-2 self-end sm:self-auto">
           <Button
@@ -174,7 +192,9 @@ export default function PuestoTable({
                 onClick={() => goToPage(page)}
                 aria-current={currentPage === page ? "page" : undefined}
                 className={`h-8 w-8 p-0 text-sm ${
-                  currentPage === page ? "bg-blue-600 hover:bg-blue-700 text-white" : ""
+                  currentPage === page
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : ""
                 }`}
               >
                 {page}
@@ -198,7 +218,7 @@ export default function PuestoTable({
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Layers className="h-4 w-4" />
@@ -229,6 +249,9 @@ export default function PuestoTable({
                   Descripción
                 </TableHead>
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">
+                  N.º practicantes
+                </TableHead>
+                <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">
                   Estado
                 </TableHead>
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-right">
@@ -241,19 +264,27 @@ export default function PuestoTable({
                 <TableSkeleton />
               ) : currentItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-48 text-center">
+                  <TableCell colSpan={6} className="h-48 text-center">
                     <div className="flex flex-col items-center justify-center">
                       {busqueda ? (
                         <>
                           <Search className="h-10 w-10 text-gray-500 mb-3" />
-                          <p className="text-sm font-medium text-gray-400">No se encontraron áreas</p>
-                          <p className="text-xs text-gray-500 mt-1">Intenta con otro término de búsqueda</p>
+                          <p className="text-sm font-medium text-gray-400">
+                            No se encontraron áreas
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Intenta con otro término de búsqueda
+                          </p>
                         </>
                       ) : (
                         <>
                           <Building2 className="h-10 w-10 text-gray-500 mb-3" />
-                          <p className="text-sm font-medium text-gray-400">No hay áreas registradas</p>
-                          <p className="text-xs text-gray-500 mt-1">Comienza creando tu primera área</p>
+                          <p className="text-sm font-medium text-gray-400">
+                            No hay áreas registradas
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Comienza creando tu primera área
+                          </p>
                         </>
                       )}
                     </div>
@@ -263,7 +294,10 @@ export default function PuestoTable({
                 currentItems.map((puesto, index) => {
                   const globalIndex = startIndex + index + 1;
                   return (
-                    <TableRow key={getIdAreaCompat(puesto)} className="hover:bg-slate-50 h-11 transition-colors duration-150">
+                    <TableRow
+                      key={getIdAreaCompat(puesto)}
+                      className="hover:bg-slate-50 h-11 transition-colors duration-150"
+                    >
                       <TableCell className="text-center text-xs text-slate-500">
                         {globalIndex}
                       </TableCell>
@@ -274,43 +308,83 @@ export default function PuestoTable({
                         {getDescripcionCompat(puesto) || "Sin descripción"}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge className={`${getStatusColor(puesto.activo)} rounded-full px-2 py-0.5 text-xs`}>
-                          {puesto.activo ? "ACTIVO" : "INACTIVO"}
+                        <Badge
+                          variant="secondary"
+                          className="rounded-full h-7 w-15 px-2.5 py-0.5 text-[13px] font-medium bg-blue-100 text-blue-700 border-blue-200"
+                        >
+                          <UsersRound className="h-10 w-10"></UsersRound>
+                          {getCantidadCompat(puesto)}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {puesto.activo ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-50 h-6 border-emerald-100 text-emerald-700 rounded-full px-2.5 py-0.5 text-xs font-medium inline-flex items-center gap-1.5"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Activo
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="bg-red-100 h-6 border-red-200 text-red-600 rounded-full px-2.5 py-0.5 text-xs font-medium inline-flex items-center gap-1.5"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                            Inactivo
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                            className="group h-9 w-9 text-blue-500 border-gray-200 hover:text-blue-500 hover:bg-blue-50"
                             onClick={() => onEdit(puesto)}
+                            title="Editar"
+                            aria-label="Editar"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className="h-3.5 w-3.5 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
                             <span className="sr-only">Editar</span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-7 w-7 ${puesto.activo ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}`}
+                            className={`group h-9 w-9 ${puesto.activo ? "text-amber-600 hover:text-amber-700 border-gray-200 hover:bg-amber-50" : "text-green-600 hover:text-green-700  border-gray-200 hover:bg-green-50"}`}
                             onClick={() => onDelete(puesto)}
-                            title={puesto.activo ? "Desactivar área" : "Activar área"}
+                            title={
+                              puesto.activo ? "Desactivar área" : "Activar área"
+                            }
+                            aria-label={
+                              puesto.activo ? "Desactivar área" : "Activar área"
+                            }
                           >
-                            {puesto.activo ? <Power className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                            <span className="sr-only">{puesto.activo ? "Desactivar" : "Activar"}</span>
+                            {puesto.activo ? (
+                              <Power className="h-3.5 w-3.5 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
+                            ) : (
+                              <CheckCircle2 className="h-3.5 w-3.5 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
+                            )}
+                            <span className="sr-only">
+                              {puesto.activo ? "Desactivar" : "Activar"}
+                            </span>
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger>
-                              <div className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer text-gray-600">
+                              <div className="flex h-9 w-9 items-center justify-center border-gray-100 rounded-md hover:bg-gray-100 cursor-pointer text-gray-600">
                                 <MoreHorizontal className="h-3.5 w-3.5" />
                                 <span className="sr-only">Más acciones</span>
                               </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuGroup>
-                                <DropdownMenuLabel>Más acciones</DropdownMenuLabel>
+                                <DropdownMenuLabel>
+                                  Más acciones
+                                </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem>Ver detalles</DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Ver detalles
+                                </DropdownMenuItem>
                                 <DropdownMenuItem>Historial</DropdownMenuItem>
                                 <DropdownMenuItem>Reportes</DropdownMenuItem>
                               </DropdownMenuGroup>

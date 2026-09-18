@@ -14,4 +14,7 @@ public interface PuestoService {
     Puesto activar(Long id);
     Puesto desactivar(Long id);
     boolean existsById(Long id);
+
+    // Contador agrupado ACTIVO para tabla Áreas (1 query)
+    java.util.Map<Long, Long> countActivosGrouped();
 }

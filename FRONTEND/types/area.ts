@@ -5,6 +5,7 @@ export type Area = {
   descripcion?: string;
   activo: boolean;
   fechaCreacion?: string;
+  cantidadPracticantes?: number;
 };
 
 export type NuevaArea = {

@@ -123,4 +123,17 @@ public class PuestoServiceImpl implements PuestoService {
     public boolean existsById(Long id) {
         return puestoRepository.existsById(id);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, Long> countActivosGrouped() {
+        List<Object[]> rows = practicanteRepository.countByAreaAndSituacion(Situacion.ACTIVO);
+        java.util.Map<Long, Long> map = new java.util.HashMap<>();
+        for (Object[] row : rows) {
+            Long idArea = (Long) row[0];
+            Long cnt = (Long) row[1];
+            map.put(idArea, cnt);
+        }
+        return map;
+    }
 }

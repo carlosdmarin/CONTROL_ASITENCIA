@@ -7,6 +7,7 @@ export type Puesto = {
   descripcion?: string;
   activo: boolean;
   fechaCreacion?: string;
+  cantidadPracticantes?: number;
   // Alias canónicos opcionales para migración
   idArea?: number;
   nombreArea?: string;

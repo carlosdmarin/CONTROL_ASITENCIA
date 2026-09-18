@@ -3,32 +3,12 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { SimpleSidebar } from "@/components/SimpleSidebar";
+import { OlamsaCard } from "@/components/OlamsaCard";
 import { Toaster } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  BarChart3,
-  FileText,
-  Settings,
-  HelpCircle,
-  ClipboardClock,
-  BriefcaseBusiness,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
-
-const menuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { title: "Areas", icon: BriefcaseBusiness, href: "/dashboard/areas" },
-  { title: "Practicantes", icon: Users, href: "/dashboard/practicantes" },
-  { title: "Asistencia", icon: Users, href: "/dashboard/asistencia" },
-  { title: "Reportes", icon: FileText, href: "/dashboard/reportes" },
-  { title: "Configuracion", icon: Settings, href: "/dashboard/configuracion" },
-  { title: "Ayuda", icon: HelpCircle, href: "/dashboard/ayuda" },
-];
+import { LogOut, Sparkles } from "lucide-react";
+import { menuItems } from "@/lib/navigation";
 
 export default function DashboardLayout({
   children,
@@ -41,15 +21,15 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="flex h-dvhh-dvh overflow-hidden bg-slate-50/80 flex-col md:flex-row">
+      <div className="flex h-[100dvh] overflow-hidden bg-slate-50/80 flex-col md:flex-row">
         {/* Header móvil - fijo arriba solo en cel */}
         <header className="md:hidden shrink-0 sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
-              <span className="text-white font-bold text-xs">OA</span>
+              <span className="text-white font-bold text-xs">QR</span>
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-800">PRACITCANTE</h2>
+              <h2 className="text-sm font-bold text-slate-800">PractiQR</h2>
               <p className="text-[9px] text-slate-400 uppercase tracking-wider">Control de asistencias</p>
             </div>
           </div>
@@ -67,7 +47,7 @@ export default function DashboardLayout({
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-800 tracking-tight">
-                   PractiQR
+                    PractiQR
                   </h2>
                   <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
                     Control de asistencias
@@ -114,6 +94,11 @@ export default function DashboardLayout({
               </Link>
             </nav>
 
+            {/* CARD OLAMSA - fijo, sobre el footer */}
+            <div className="shrink-0 px-3 pb-3">
+              <OlamsaCard />
+            </div>
+
             {/* FOOTER - fijo abajo */}
             <div className="shrink-0 p-4 border-t border-slate-200/80">
               <div className="flex items-center gap-2 px-2">
@@ -127,7 +112,7 @@ export default function DashboardLayout({
         </aside>
 
         {/* ====== CONTENIDO PRINCIPAL - ÚNICO CON SCROLL ====== */}
-        <main className="flex-1 h-[100dvh] md:h-[100dvh] overflow-y-auto overflow-x-hidden bg-slate-50/80">
+        <main className="flex-1 h-[100dvh] overflow-y-auto overflow-x-hidden bg-slate-50/80">
           <div className="p-4 md:p-6 min-h-full">
             {children}
           </div>

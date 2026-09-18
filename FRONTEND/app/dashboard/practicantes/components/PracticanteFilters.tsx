@@ -1,8 +1,14 @@
 "use client";
 
-import { Search, MapPin, Filter } from "lucide-react";
+import { Search, MapPin, Filter, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PracticanteFiltersProps {
   busqueda: string;
@@ -23,21 +29,36 @@ export default function PracticanteFilters({
   onFiltroSedeChange,
   sedes,
 }: PracticanteFiltersProps) {
+  const showClear = busqueda.length > 0;
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
-        <div className="relative w-full lg:w-[380px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+      <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center ">
+        <div className="relative w-150">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+
           <Input
             placeholder="Buscar por nombre, documento o sede..."
-            className="pl-9 h-10 bg-white border-slate-200 rounded-xl"
+            className="h-11 w-full pl-9 pr-3 bg-white border-slate-200 rounded-xl placeholder:text-slate-400"
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
           />
+          {showClear && (
+            <button
+              type="button"
+              onClick={() => onBusquedaChange("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <div className="flex gap-2 w-full lg:w-auto items-center">
-          <Select value={filtroSede} onValueChange={(v: any) => onFiltroSedeChange(v)}>
-            <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-slate-200 rounded-xl">
+          <Select
+            value={filtroSede}
+            onValueChange={(v: any) => onFiltroSedeChange(v)}
+          >
+            <SelectTrigger className="w-60!  sm:w-40 h-11! bg-white border-slate-200 rounded-xl">
               <MapPin className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Sede" />
             </SelectTrigger>
@@ -50,8 +71,11 @@ export default function PracticanteFilters({
               ))}
             </SelectContent>
           </Select>
-          <Select value={filtroSituacion} onValueChange={(v: any) => onFiltroSituacionChange(v)}>
-            <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-slate-200 rounded-xl">
+          <Select
+            value={filtroSituacion}
+            onValueChange={(v: any) => onFiltroSituacionChange(v)}
+          >
+            <SelectTrigger className="w-full sm:w-40 h-11! bg-white border-slate-200 rounded-xl">
               <Filter className="h-4 w-4 mr-2 text-slate-400" />
               <SelectValue placeholder="Estado" />
             </SelectTrigger>

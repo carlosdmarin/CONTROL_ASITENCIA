@@ -34,6 +34,15 @@ public interface PracticanteRepository extends JpaRepository<Practicante, Long> 
 
     long countByPuesto(Puesto puesto);
 
+    // ====== CONTADOR PARA TABLA ÁREAS (1 query agregada) ======
+    @Query("""
+            SELECT p.puesto.idPuesto, COUNT(p)
+            FROM Practicante p
+            WHERE p.situacion = :situacion
+            GROUP BY p.puesto.idPuesto
+            """)
+    List<Object[]> countByAreaAndSituacion(@Param("situacion") Situacion situacion);
+
     @Query("SELECT p FROM Practicante p WHERE LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR LOWER(p.apellido) LIKE LOWER(CONCAT('%', :termino, '%'))")
     List<Practicante> buscarPorNombreOApellido(@Param("termino") String termino);
 

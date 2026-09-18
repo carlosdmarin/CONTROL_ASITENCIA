@@ -80,7 +80,7 @@ export default function PuestoDeleteDialog({
             Cancelar
           </AlertDialogCancel>
           {isActivo ? (
-            <AlertDialogAction variant="destructive" onClick={handleDelete} className="bg-amber-600 hover:bg-amber-700">
+            <AlertDialogAction variant="destructive" onClick={handleDelete} className="bg-orange-600 text-white hover:bg-amber-700">
               <Power className="h-4 w-4 mr-1" />
               Sí, desactivar
             </AlertDialogAction>

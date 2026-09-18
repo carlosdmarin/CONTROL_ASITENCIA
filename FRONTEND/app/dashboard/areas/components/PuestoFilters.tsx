@@ -30,19 +30,22 @@ export default function PuestoFilters({
   return (
     <div className="flex flex-col gap-3 mb-5 ">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-[360px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="relative w-150">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+
           <Input
             placeholder="Buscar por nombre o descripción…"
-            className="h-9 pl-9 pr-9 bg-white border-slate-200 placeholder:text-slate-400"
+            className="h-11 w-full pl-9 pr-9 bg-white border-slate-200 placeholder:text-slate-400"
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
             disabled={loading}
           />
+
           {showClear && (
             <button
+              type="button"
               onClick={() => onBusquedaChange("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
               aria-label="Limpiar búsqueda"
             >
               <X className="h-3.5 w-3.5" />
@@ -51,11 +54,13 @@ export default function PuestoFilters({
         </div>
 
         <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-200 w-fit">
-          {([
-            ["todos", "Todos"],
-            ["activos", "Activos"],
-            ["inactivos", "Inactivos"],
-          ] as const).map(([value, label]) => (
+          {(
+            [
+              ["todos", "Todos"],
+              ["activos", "Activos"],
+              ["inactivos", "Inactivos"],
+            ] as const
+          ).map(([value, label]) => (
             <Button
               key={value}
               variant="ghost"

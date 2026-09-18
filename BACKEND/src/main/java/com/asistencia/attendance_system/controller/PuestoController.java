@@ -23,12 +23,17 @@ public class PuestoController {
 
     // ====== Helpers DTO ↔ Entity ======
     private AreaResponse toResponse(Puesto p) {
+        return toResponse(p, null);
+    }
+
+    private AreaResponse toResponse(Puesto p, Long cantidad) {
         AreaResponse r = new AreaResponse();
         r.setIdArea(p.getIdPuesto());
         r.setNombreArea(p.getNombrePuesto());
         r.setDescripcion(p.getDescripcion());
         r.setActivo(p.getActivo());
         r.setFechaCreacion(p.getFechaCreacion());
+        r.setCantidadPracticantes(cantidad != null ? cantidad : 0L);
         return r;
     }
 
@@ -49,8 +54,9 @@ public class PuestoController {
     // ========== OBTENER TODOS ========== (canónico /api/areas, alias /api/puestos)
     @GetMapping
     public ResponseEntity<List<AreaResponse>> getAll() {
+        java.util.Map<Long, Long> counts = puestoService.countActivosGrouped();
         List<AreaResponse> list = puestoService.findAll().stream()
-                .map(this::toResponse)
+                .map(p -> toResponse(p, counts.getOrDefault(p.getIdPuesto(), 0L)))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(list);
     }
@@ -58,8 +64,9 @@ public class PuestoController {
     // ========== OBTENER ACTIVOS ==========
     @GetMapping("/activos")
     public ResponseEntity<List<AreaResponse>> getActivos() {
+        java.util.Map<Long, Long> counts = puestoService.countActivosGrouped();
         List<AreaResponse> list = puestoService.findActivos().stream()
-                .map(this::toResponse)
+                .map(p -> toResponse(p, counts.getOrDefault(p.getIdPuesto(), 0L)))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(list);
     }
@@ -67,8 +74,9 @@ public class PuestoController {
     // ========== OBTENER POR ID ==========
     @GetMapping("/{id}")
     public ResponseEntity<AreaResponse> getById(@PathVariable Long id) {
+        java.util.Map<Long, Long> counts = puestoService.countActivosGrouped();
         return puestoService.findById(id)
-                .map(this::toResponse)
+                .map(p -> toResponse(p, counts.getOrDefault(p.getIdPuesto(), 0L)))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -78,7 +86,7 @@ public class PuestoController {
     public ResponseEntity<AreaResponse> create(@RequestBody AreaRequest request) {
         Puesto entity = toEntity(request);
         Puesto saved = puestoService.save(entity);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(saved, 0L));
     }
 
     // ========== ACTUALIZAR ==========
@@ -91,7 +99,10 @@ public class PuestoController {
             if (request.getDescripcion() != null) existing.setDescripcion(request.getDescripcion());
             if (request.getActivo() != null) existing.setActivo(request.getActivo());
             Puesto updated = puestoService.update(id, existing);
-            return ResponseEntity.ok(toResponse(updated));
+            java.util.Map<Long, Long> counts = puestoService.countActivosGrouped();
+            return ResponseEntity.ok(toResponse(updated, counts.getOrDefault(updated.getIdPuesto(), 0L)));
+        } catch (BusinessException e) {
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -115,7 +126,8 @@ public class PuestoController {
     public ResponseEntity<AreaResponse> activar(@PathVariable Long id) {
         try {
             Puesto p = puestoService.activar(id);
-            return ResponseEntity.ok(toResponse(p));
+            java.util.Map<Long, Long> counts = puestoService.countActivosGrouped();
+            return ResponseEntity.ok(toResponse(p, counts.getOrDefault(p.getIdPuesto(), 0L)));
         } catch (BusinessException e) {
             throw e;
         } catch (RuntimeException e) {
@@ -128,7 +140,8 @@ public class PuestoController {
     public ResponseEntity<AreaResponse> desactivar(@PathVariable Long id) {
         try {
             Puesto p = puestoService.desactivar(id);
-            return ResponseEntity.ok(toResponse(p));
+            java.util.Map<Long, Long> counts = puestoService.countActivosGrouped();
+            return ResponseEntity.ok(toResponse(p, counts.getOrDefault(p.getIdPuesto(), 0L)));
         } catch (BusinessException e) {
             throw e;
         } catch (RuntimeException e) {

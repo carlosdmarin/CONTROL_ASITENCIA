@@ -272,7 +272,7 @@ export function PracticanteQRDialog({
         <div className="flex gap-2">
           <Button
             onClick={downloadCarnet}
-            className="flex-1 gap-2 bg-[#0A2F6B] hover:bg-[#08244f]"
+            className="flex-1 gap-2 h-8 bg-[#0A2F6B] hover:bg-[#08244f]"
             disabled={isDownloading}
           >
             <Download className="h-4 w-4" />

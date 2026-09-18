@@ -10,30 +10,9 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  BarChart3,
-  FileText,
-  Settings,
-  HelpCircle,
-  ClipboardClock,
-  BriefcaseBusiness,
-  Menu,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
-
-const menuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { title: "Areas", icon: BriefcaseBusiness, href: "/dashboard/areas" },
-  { title: "Practicantes", icon: Users, href: "/dashboard/practicantes" },
-  { title: "Asistencia", icon: Users, href: "/dashboard/asistencia" },
-  { title: "Reportes", icon: FileText, href: "/dashboard/reportes" },
-  { title: "Configuracion", icon: Settings, href: "/dashboard/configuracion" },
-  { title: "Ayuda", icon: HelpCircle, href: "/dashboard/ayuda" },
-];
+import { Menu, LogOut, Sparkles } from "lucide-react";
+import { menuItems } from "@/lib/navigation";
+import { OlamsaCard } from "@/components/OlamsaCard";
 
 export function SimpleSidebar() {
   const [open, setOpen] = useState(false);
@@ -54,11 +33,11 @@ export function SimpleSidebar() {
           {/* Logo */}
           <div className="flex items-center gap-3 px-4 py-4">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/20">
-              <span className="text-white font-bold text-sm">OA</span>
+              <span className="text-white font-bold text-sm">QR</span>
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800 tracking-tight">
-                ONE Attendance
+                PractiQR
               </h2>
               <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
                 Control de asistencias
@@ -104,6 +83,11 @@ export function SimpleSidebar() {
               </Button>
             </Link>
           </nav>
+
+          {/* Card OLAMSA compacto - sobre el footer, no scrollea con nav en desktop pero sí en drawer corto */}
+          <div className="shrink-0 p-3 border-t border-slate-200/80">
+            <OlamsaCard compact />
+          </div>
 
           <div className="p-3 border-t border-slate-200/80">
             <div className="flex items-center gap-2 px-2">

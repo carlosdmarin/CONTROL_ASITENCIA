@@ -33,6 +33,9 @@ public class AreaResponse {
 
     private LocalDateTime fechaCreacion;
 
+    // Contador practicantes ACTIVO (informativo, no rompe contrato)
+    private Long cantidadPracticantes;
+
     // ====== Compatibilidad legacy: exponer también idPuesto/nombrePuesto/area ======
     @JsonProperty("idPuesto")
     public Long getIdPuestoCompat() { return idArea; }
