@@ -96,7 +96,9 @@ export function OlamsaCard({
   if (!hasImages) {
     return (
       <div className="w-full h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-900 to-teal-800 p-4 flex flex-col justify-end border border-white/10">
-        <p className="text-[11px] font-bold tracking-widest text-white">OLAMSA</p>
+        <p className="text-[11px] font-bold tracking-widest text-white">
+          OLAMSA
+        </p>
         <p className="text-[10px] text-white/70">Ucayali, Perú</p>
         <p className="text-[11px] font-medium text-white leading-snug mt-2">
           Somos una gran familia sostenible
@@ -202,7 +204,13 @@ export function OlamsaCard({
               <span
                 key={i}
                 className={`h-1 rounded-full transition-all duration-300 ${
-                  i === current && !fading ? "w-4 bg-white" : i === next && fading ? "w-4 bg-white" : i === current ? "w-1.5 bg-white/40" : "w-1.5 bg-white/40"
+                  i === current && !fading
+                    ? "w-4 bg-white"
+                    : i === next && fading
+                      ? "w-4 bg-white"
+                      : i === current
+                        ? "w-1.5 bg-white/40"
+                        : "w-1.5 bg-white/40"
                 }`}
                 aria-hidden="true"
               />
