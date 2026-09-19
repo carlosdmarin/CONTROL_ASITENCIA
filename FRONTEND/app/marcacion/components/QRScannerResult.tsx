@@ -43,7 +43,7 @@ type PracticanteReal = {
   nombreCompleto: string;
   documento: string;
   sede: string;
-  puesto: string;
+  area: string;
   cargo: string;
   situacion: string;
 } | null;
@@ -135,60 +135,15 @@ export default function QRScannerResult({
           idPracticante: data.idPracticante,
           nombreCompleto: data.nombreCompleto,
           documento: data.documento,
-          sede: (data as any).sede || (data as any).agencia || "—",
-          puesto: data.puesto,
+          sede: (data as any).sede || "—",
+          area: (data as any).area || (data as any).nombreArea || "—",
           cargo: data.cargo,
           situacion: data.situacion,
         });
       } catch (e: any) {
         if (!mounted) return;
-        // Fallback a mock para pruebas
-        const mock: Record<string, PracticanteReal> = {
-          "60563764": {
-            idPracticante: 1,
-            nombreCompleto: "Carlos Ramirez Torres",
-            documento: "60563764",
-            sede: "OFICINA PUCALLPA",
-            puesto: "Tecnología",
-            cargo: "PRACTICANTE PRE PROFESIONAL",
-            situacion: "ACTIVO",
-          },
-          "70000001": {
-            idPracticante: 1,
-            nombreCompleto: "Carlos Ramirez Torres",
-            documento: "70000001",
-            sede: "OFICINA PUCALLPA",
-            puesto: "Tecnología de la Información",
-            cargo: "PRACTICANTE PRE PROFESIONAL",
-            situacion: "ACTIVO",
-          },
-          "70000002": {
-            idPracticante: 2,
-            nombreCompleto: "Daniela Flores Mendoza",
-            documento: "70000002",
-            sede: "OFICINA PUCALLPA",
-            puesto: "Recursos Humanos",
-            cargo: "PRACTICANTE PRE PROFESIONAL",
-            situacion: "ACTIVO",
-          },
-          "70000003": {
-            idPracticante: 3,
-            nombreCompleto: "Miguel Sanchez Lopez",
-            documento: "70000003",
-            sede: "PLANTA NESHUYA",
-            puesto: "Mantenimiento",
-            cargo: "PRACTICANTE PRE PROFESIONAL",
-            situacion: "ACTIVO",
-          },
-        };
-        const mockData = mock[codigo];
-        if (mockData) {
-          setPracticante(mockData);
-          setError(null);
-        } else {
-          setError(`No se encontró practicante con documento ${codigo}`);
-          setPracticante(null);
-        }
+        setError(`No se encontró practicante con documento ${codigo}`);
+        setPracticante(null);
       } finally {
         if (mounted) setLoading(false);
       }

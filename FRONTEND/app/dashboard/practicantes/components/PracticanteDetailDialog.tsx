@@ -149,12 +149,12 @@ export function PracticanteDetailDialog({
   const laboralItems = [
     {
       label: "Sede",
-      value: practicante.sede || practicante.agencia || "—",
+      value: practicante.sede || "—",
       icon: Building2,
     },
     {
       label: "Área",
-      value: practicante.nombreArea || practicante.area || practicante.puesto || "—",
+      value: practicante.nombreArea || practicante.area || "—",
       icon: Layers,
     },
     {

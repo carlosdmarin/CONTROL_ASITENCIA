@@ -1,7 +1,5 @@
 // types/practicante.ts - Sincronizado con nueva BD (sin codigoTrabajador, Sede en lugar de Agencia)
 import { Area } from './area';
-import { Puesto } from './puestos';
-export type { Puesto } from './puestos';
 export type { Area } from './area';
 
 // ====== BLOQUE HORARIO ======
@@ -61,12 +59,8 @@ export type Practicante = {
   nombreCompleto: string;
   documento: string;
   sede: string;
-  // Legacy (deprecated): puesto = nombreArea, area = nombreArea (antes area era descripcion)
-  /** @deprecated usar nombreArea */
-  puesto: string;
-  /** @deprecated usar nombreArea */
   area: string;
-  // Canónico nuevo
+  // Canónico
   idArea?: number;
   nombreArea?: string;
   descripcionArea?: string;
@@ -82,13 +76,11 @@ export type Practicante = {
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
   fechaDesactivacion?: string | null;
-  // Compatibilidad: backend aún puede devolver agencia/codigoTrabajador
-  agencia?: string;
-  codigoTrabajador?: string;
+  usuario?: string;
+  fechaRegistro?: string;
+  fechaActualizacion?: string | null;
   // Relaciones completas
   sedeObj?: Sede;
-  agenciaObj?: Sede;
-  puestoObj?: Puesto;
   areaObj?: Area;
   tipoInstitutoObj?: TipoInstituto;
   cargoObj?: Cargo;
@@ -109,11 +101,6 @@ export type NuevoPracticante = {
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
   horario?: BloqueHorarioRequest[];  // ← NUEVO
-  // Alias compatibilidad (deprecated)
-  /** @deprecated usar idArea */
-  idPuesto?: number;
-  idAgencia?: number;
-  codigoTrabajador?: string;
 };
 
 // Tipo para actualización (usa IDs reales seleccionados, no hardcode)

@@ -59,14 +59,14 @@ export default function PracticantesPage() {
 
   // ====== SEDES DISPONIBLES ======
   const sedesDisponibles = Array.from(
-    new Set(practicantes.map((p) => p.sede || p.agencia).filter(Boolean) as string[]),
+    new Set(practicantes.map((p) => p.sede).filter(Boolean) as string[]),
   ).sort();
 
   // ====== FILTRAR ======
   const practicantesFiltrados = practicantes.filter((p) => {
     const matchSituacion = filtroSituacion === "TODOS" || p.situacion === filtroSituacion;
-    const sede = p.sede || p.agencia || "";
-    const nombreArea = p.nombreArea || p.area || p.puesto || "";
+    const sede = p.sede || "";
+    const nombreArea = p.nombreArea || p.area  || "";
     const matchSede = filtroSede === "todas" || sede === filtroSede;
     const matchBusqueda =
       !busqueda ||

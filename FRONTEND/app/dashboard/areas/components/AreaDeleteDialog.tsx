@@ -12,38 +12,38 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash, OctagonAlert, Power, CheckCircle } from "lucide-react";
 import { Area } from "@/types/area";
-import { Puesto } from "@/types/puestos";
 
-interface PuestoDeleteDialogProps {
+
+interface AreaDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  puesto: Area | Puesto | null;
+  area: Area | null;
   onDelete: (id: number) => void;
 }
 
-function getIdCompat(p: Area | Puesto): number {
-  return (p as Area).idArea ?? (p as Puesto).idPuesto ?? 0;
+function getIdCompat(p: Area): number {
+  return p.idArea;
 }
-function getNombreCompat(p: Area | Puesto): string {
-  return (p as Area).nombreArea ?? (p as Puesto).nombrePuesto ?? "";
+function getNombreCompat(p: Area): string {
+  return p.nombreArea;
 }
-function getActivoCompat(p: Area | Puesto): boolean {
-  return (p as Area).activo ?? (p as Puesto).activo ?? true;
+function getActivoCompat(p: Area): boolean {
+  return (p as Area).activo ?? (p as Area).activo ?? true;
 }
 
-export default function PuestoDeleteDialog({
+export default function AreaDeleteDialog({
   open,
   onOpenChange,
-  puesto,
+  area,
   onDelete,
-}: PuestoDeleteDialogProps) {
+}: AreaDeleteDialogProps) {
   const handleDelete = () => {
-    if (puesto) {
-      onDelete(getIdCompat(puesto));
+    if (area) {
+      onDelete(getIdCompat(area));
     }
   };
 
-  const isActivo = puesto ? getActivoCompat(puesto) : true;
+  const isActivo = area ? getActivoCompat(area) : true;
   const accion = isActivo ? "desactivar" : "activar";
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -60,7 +60,7 @@ export default function PuestoDeleteDialog({
               <>
                 Esta acción <strong className="text-foreground font-semibold">desactivará</strong> el área{" "}
                 <strong className="text-foreground font-semibold">
-                  {puesto ? getNombreCompat(puesto) : ""}
+                  {area ? getNombreCompat(area) : ""}
                 </strong>
                 . Los practicantes de un área inactiva no podrán registrar asistencia. Si tiene practicantes activos, la operación será rechazada.
               </>
@@ -68,7 +68,7 @@ export default function PuestoDeleteDialog({
               <>
                 Esta acción <strong className="text-foreground font-semibold">activará</strong> el área{" "}
                 <strong className="text-foreground font-semibold">
-                  {puesto ? getNombreCompat(puesto) : ""}
+                  {area ? getNombreCompat(area) : ""}
                 </strong>
                 . Volverá a estar disponible para asignar practicantes y registrar asistencia.
               </>

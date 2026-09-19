@@ -898,7 +898,7 @@ export default function DashboardPage() {
                     (p) => p.idPracticante === a.idPracticante,
                   );
                   const area =
-                    practicanteInfo?.nombreArea || practicanteInfo?.area || practicanteInfo?.puesto || "—";
+                    practicanteInfo?.nombreArea || practicanteInfo?.area || "—";
                   let badgeClass =
                     "bg-slate-100 text-slate-700 border-slate-200";
                   let Icon = MinusCircle;

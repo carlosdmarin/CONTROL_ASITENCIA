@@ -40,8 +40,8 @@ function getInitials(nombre: string) {
 function estadoColor(estado?: string | null) {
   const n = (estado || "").toUpperCase();
   if (n === "PRESENTE") return "bg-green-50 text-green-700 border-green-200";
-  if (n === "TARDANZA" || n === "TARDE") return "bg-amber-50 text-amber-700 border-amber-200";
-  if (n === "AUSENTE" || n === "FALTA") return "bg-red-50 text-red-700 border-red-200";
+  if (n === "TARDANZA") return "bg-amber-50 text-amber-700 border-amber-200";
+  if (n === "AUSENTE") return "bg-red-50 text-red-700 border-red-200";
   if (n === "DESCANSO") return "bg-slate-100 text-slate-700 border-slate-200";
   if (n === "JUSTIFICADO") return "bg-blue-50 text-blue-700 border-blue-200";
   if (n === "SIN_MARCAR") return "bg-slate-50 text-slate-500 border-slate-200";

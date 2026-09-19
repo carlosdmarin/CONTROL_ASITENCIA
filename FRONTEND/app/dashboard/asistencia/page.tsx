@@ -40,10 +40,8 @@ function mapEstado(
       return "SIN_MARCAR";
     case "PRESENTE":
       return "PRESENTE";
-    case "TARDE":
     case "TARDANZA":
       return "TARDANZA";
-    case "FALTA":
     case "AUSENTE":
       return "AUSENTE";
     case "DESCANSO":
@@ -157,7 +155,7 @@ export default function AsistenciaPage() {
   const sedeMap = useMemo(() => {
     const m = new Map<number, string>();
     practicantesAll.forEach((p) => {
-      const sede = p.sede || p.agencia || p.sedeObj?.nombre || "";
+      const sede = p.sede || p.sedeObj?.nombre || "";
       if (p.idPracticante) m.set(p.idPracticante, sede);
     });
     return m;
@@ -170,7 +168,7 @@ export default function AsistenciaPage() {
       if (sede) s.add(sede);
     });
     practicantesAll.forEach((p) => {
-      const sede = p.sede || p.agencia || "";
+      const sede = p.sede || "";
       if (sede) s.add(sede);
     });
     return Array.from(s).sort();
@@ -179,8 +177,8 @@ export default function AsistenciaPage() {
   const asistenciasUI = useMemo(() => {
     return asistencias.map((a) => {
       const practInfo = practicantesMap.get(a.idPracticante);
-      const sede = sedeMap.get(a.idPracticante) || practInfo?.sede || practInfo?.agencia || "";
-      const area = practInfo?.nombreArea || practInfo?.area || practInfo?.puesto || "";
+      const sede = sedeMap.get(a.idPracticante) || practInfo?.sede || "";
+      const area = practInfo?.nombreArea || practInfo?.area || "";
       const documento = practInfo?.documento || "";
       return {
         id: a.idAsistencia || a.idPracticante,

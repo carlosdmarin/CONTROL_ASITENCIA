@@ -107,11 +107,11 @@ export async function generarPdfMensual(reporte: ReporteMensualResponse): Promis
   doc.setFillColor(SLATE_50[0],SLATE_50[1],SLATE_50[2]); doc.rect(margin,y,pageWidth-2*margin,6,"F"); doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(SLATE_500[0],SLATE_500[1],SLATE_500[2]); doc.text("DATOS DEL PRACTICANTE",margin+2,y+4); y+=8;
   const colW=(pageWidth-2*margin)/3;
   const tableStyles={ styles:{font:"helvetica",fontSize:7,cellPadding:2,lineColor:SLATE_200 as unknown as string,textColor:[15,23,42] as [number,number,number]}, headStyles:{fillColor:SLATE_50 as unknown as string,textColor:SLATE_500 as unknown as string,fontStyle:"bold" as const,fontSize:6}, bodyStyles:{fontSize:7}, columnStyles:{0:{cellWidth:colW},1:{cellWidth:colW},2:{cellWidth:colW}}, margin:{left:margin,right:margin}, theme:"grid" as const };
-  autoTable(doc,{...tableStyles,startY:y,head:[["Practicante","DNI","Sede"]],body:[[p.nombreCompleto||"—",p.documento||"—",p.sede||"—"]]});
+  autoTable(doc,{...tableStyles,startY:y,head:[["Practicante","DNI","Sede"]],body:[[p.nombreCompleto|| "—",p.documento|| "—",p.sede|| "—"]]});
   y=(doc as any).lastAutoTable.finalY+0.5;
-  autoTable(doc,{...tableStyles,startY:y,head:[["Área","Cargo","Instituto"]],body:[[p.nombreArea||(p as any).area||"—",p.cargo||"—",(p as any).tipoInstituto||"—"]]});
+  autoTable(doc,{...tableStyles,startY:y,head:[["Área","Cargo","Instituto"]],body:[[p.nombreArea||(p as any).area|| "—",p.cargo|| "—",(p as any).tipoInstituto|| "—"]]});
   y=(doc as any).lastAutoTable.finalY+0.5;
-  autoTable(doc,{...tableStyles,startY:y,head:[["Estado","Periodo prácticas",""]],body:[[p.situacion||"—",`${p.fechaInicioPracticas||"—"} ${p.fechaFinPracticas?"— "+p.fechaFinPracticas:""}`, ""]]});
+  autoTable(doc,{...tableStyles,startY:y,head:[["Estado","Periodo prácticas",""]],body:[[p.situacion|| "—",`${p.fechaInicioPracticas|| "—"} ${p.fechaFinPracticas?"— "+p.fechaFinPracticas:""}`, ""]]});
   y=(doc as any).lastAutoTable.finalY+4;
 
   // Periodo

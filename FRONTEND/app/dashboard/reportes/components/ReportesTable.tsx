@@ -328,15 +328,13 @@ export function ReportesPracticantesTable({
                       <TableCell>
                         <span className="inline-flex items-center gap-1 text-xs text-slate-600">
                           <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                          {practicante.sede || practicante.agencia || "—"}
+                          {practicante.sede || "—"}
                         </span>
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs text-slate-600">
                           {practicante.nombreArea ||
-                            practicante.area ||
-                            practicante.puesto ||
-                            "—"}
+                            practicante.area || "—"}
                         </span>
                       </TableCell>
                       <TableCell>

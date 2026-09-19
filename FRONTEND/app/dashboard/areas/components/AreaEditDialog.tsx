@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Area } from "@/types/area";
-import { Puesto } from "@/types/puestos";
+
 import {
   Dialog,
   DialogContent,
@@ -18,37 +18,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface PuestoEditDialogProps {
+interface AreaEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  puesto: Area | Puesto | null;
-  onSave: (puesto: Area) => void;
+  area: Area | null;
+  onSave: (area: Area) => void;
 }
 
-function toAreaCompat(p: Area | Puesto): Area {
-  const a = p as Area;
-  if (a.nombreArea !== undefined) return a as Area;
-  const legacy = p as Puesto;
-  return {
-    idArea: legacy.idArea ?? legacy.idPuesto ?? 0,
-    nombreArea: legacy.nombreArea ?? legacy.nombrePuesto ?? (legacy as any).area ?? "",
-    descripcion: legacy.descripcion ?? (legacy as any).area,
-    activo: legacy.activo,
-    fechaCreacion: legacy.fechaCreacion,
-  };
-}
-
-export default function PuestoEditDialog({
+export default function AreaEditDialog({
   open,
   onOpenChange,
-  puesto,
+  area,
   onSave,
-}: PuestoEditDialogProps) {
+}: AreaEditDialogProps) {
   const [formData, setFormData] = useState<Area | null>(null);
 
   useEffect(() => {
-    setFormData(puesto ? toAreaCompat(puesto) : null);
-  }, [puesto]);
+    setFormData(area ? area : null);
+  }, [area]);
 
   if (!formData) return null;
 

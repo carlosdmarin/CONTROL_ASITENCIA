@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 type EstadoFiltro = "todos" | "activos" | "inactivos";
 
-interface PuestoFiltersProps {
+interface AreaFiltersProps {
   busqueda: string;
   onBusquedaChange: (value: string) => void;
   estado: EstadoFiltro;
@@ -16,7 +16,7 @@ interface PuestoFiltersProps {
   loading?: boolean;
 }
 
-export default function PuestoFilters({
+export default function AreaFilters({
   busqueda,
   onBusquedaChange,
   estado,
@@ -24,7 +24,7 @@ export default function PuestoFilters({
   totalFiltrados,
   total,
   loading = false,
-}: PuestoFiltersProps) {
+}: AreaFiltersProps) {
   const showClear = busqueda.length > 0;
 
   return (

@@ -83,15 +83,8 @@ export const practicantesApi = {
   // CREAR PRACTICANTE (CON HORARIO)
   // ============================================
   create: async (data: NuevoPracticante): Promise<Practicante> => {
-    const payload: Record<string, unknown> = { ...data } as Record<string, unknown>;
-    // Compatibilidad con backend - mapear idArea <-> idPuesto
-    if (payload.idArea && !payload.idPuesto) payload.idPuesto = payload.idArea;
-    if (payload.idPuesto && !payload.idArea) payload.idArea = payload.idPuesto;
-    if (payload.idSede && !payload.idAgencia) payload.idAgencia = payload.idSede;
-    if (payload.idAgencia && !payload.idSede) payload.idSede = payload.idAgencia;
-    delete (payload as Record<string, unknown>).codigoTrabajador;
     try {
-      const response = await api.post('/practicantes', payload);
+      const response = await api.post('/practicantes', data);
       return response.data;
     } catch (error) {
       throw new Error(handleApiError(error));
@@ -102,14 +95,8 @@ export const practicantesApi = {
   // ACTUALIZAR PRACTICANTE
   // ============================================
   update: async (id: number, data: Partial<NuevoPracticante>): Promise<Practicante> => {
-    const payload: Record<string, unknown> = { ...data } as Record<string, unknown>;
-    if (payload.idArea && !payload.idPuesto) payload.idPuesto = payload.idArea;
-    if (payload.idPuesto && !payload.idArea) payload.idArea = payload.idPuesto;
-    if (payload.idSede && !payload.idAgencia) payload.idAgencia = payload.idSede;
-    if (payload.idAgencia && !payload.idSede) payload.idSede = payload.idAgencia;
-    delete (payload as Record<string, unknown>).codigoTrabajador;
     try {
-      const response = await api.put(`/practicantes/${id}`, payload);
+      const response = await api.put(`/practicantes/${id}`, data);
       return response.data;
     } catch (error) {
       throw new Error(handleApiError(error));

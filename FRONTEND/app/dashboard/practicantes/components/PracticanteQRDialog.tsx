@@ -208,9 +208,7 @@ export function PracticanteQRDialog({
                 <div className="mt-2">
                   <p className="text-xs font-semibold text-[#E64A19]">SEDE</p>
                   <p className="text-sm font-semibold text-[#0A2F6B]">
-                    {practicante.sede ||
-                      (practicante as any).agencia ||
-                      "No asignada"}
+                    {practicante.sede || "No asignada"}
                   </p>
                 </div>
               </div>

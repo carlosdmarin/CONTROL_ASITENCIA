@@ -52,8 +52,8 @@ export default function ReportesPage() {
     if (!busqueda) return practicantes;
     const term = busqueda.toLowerCase();
     return practicantes.filter((p) => {
-      const nombreArea = p.nombreArea || p.area || p.puesto || "";
-      const sede = p.sede || p.agencia || "";
+      const nombreArea = p.nombreArea || p.area  || "";
+      const sede = p.sede || "";
       return (
         p.nombreCompleto?.toLowerCase().includes(term) ||
         p.documento?.includes(busqueda) ||

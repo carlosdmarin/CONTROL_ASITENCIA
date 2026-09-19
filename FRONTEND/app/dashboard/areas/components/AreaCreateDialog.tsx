@@ -16,17 +16,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface PuestoCreateDialogProps {
+interface AreaCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (nuevaArea: NuevaArea) => void;
 }
 
-export default function PuestoCreateDialog({
+export default function AreaCreateDialog({
   open,
   onOpenChange,
   onSave,
-}: PuestoCreateDialogProps) {
+}: AreaCreateDialogProps) {
   const [formData, setFormData] = useState({
     nombreArea: "",
     descripcion: "",

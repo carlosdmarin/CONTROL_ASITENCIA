@@ -38,36 +38,11 @@ import {
   UsersRound,
 } from "lucide-react";
 import { Area } from "@/types/area";
-import { Puesto } from "@/types/puestos";
 
-type AreaCompat = Area | Puesto;
-
-function getIdAreaCompat(a: AreaCompat): number {
-  return (a as Area).idArea ?? (a as Puesto).idPuesto ?? 0;
-}
-function getNombreAreaCompat(a: AreaCompat): string {
-  return (
-    (a as Area).nombreArea ??
-    (a as Puesto).nombrePuesto ??
-    (a as any).area ??
-    ""
-  );
-}
-function getDescripcionCompat(a: AreaCompat): string | undefined {
-  return (
-    (a as Area).descripcion ?? (a as Puesto).descripcion ?? (a as any).area
-  );
-}
-function getCantidadCompat(a: AreaCompat): number {
-  return (
-    (a as Area).cantidadPracticantes ?? (a as any).cantidadPracticantes ?? 0
-  );
-}
-
-interface PuestoTableProps {
-  puestos: AreaCompat[];
-  onEdit: (puesto: AreaCompat) => void;
-  onDelete: (puesto: AreaCompat) => void;
+interface AreaTableProps {
+  areas: Area[];
+  onEdit: (area: Area) => void;
+  onDelete: (area: Area) => void;
   getStatusColor: (activo: boolean) => string;
   busqueda: string;
   loading?: boolean;
@@ -125,23 +100,23 @@ const TableSkeleton = () => (
   </>
 );
 
-export default function PuestoTable({
-  puestos,
+export default function AreaTable({
+  areas,
   onEdit,
   onDelete,
   getStatusColor,
   busqueda,
   loading = false,
-}: PuestoTableProps) {
+}: AreaTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const totalItems = puestos.length;
+  const totalItems = areas.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentItems = puestos.slice(startIndex, endIndex);
+  const currentItems = areas.slice(startIndex, endIndex);
 
   const goToPage = (page: number) => {
     if (page < 1 || page > totalPages) return;
@@ -150,7 +125,7 @@ export default function PuestoTable({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [puestos, busqueda]);
+  }, [areas, busqueda]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -291,21 +266,21 @@ export default function PuestoTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                currentItems.map((puesto, index) => {
+                currentItems.map((area, index) => {
                   const globalIndex = startIndex + index + 1;
                   return (
                     <TableRow
-                      key={getIdAreaCompat(puesto)}
+                      key={area.idArea}
                       className="hover:bg-slate-50 h-11 transition-colors duration-150"
                     >
                       <TableCell className="text-center text-xs text-slate-500">
                         {globalIndex}
                       </TableCell>
                       <TableCell className="text-sm font-medium text-slate-900 truncate max-w-[180px]">
-                        {getNombreAreaCompat(puesto)}
+                        {area.nombreArea}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-xs text-slate-600 max-w-[320px] truncate">
-                        {getDescripcionCompat(puesto) || "Sin descripción"}
+                        {area.descripcion || "Sin descripción"}
                       </TableCell>
                       <TableCell className="text-center">
                         <Badge
@@ -313,11 +288,11 @@ export default function PuestoTable({
                           className="rounded-full h-7 w-15 px-2.5 py-0.5 text-[13px] font-medium bg-blue-100 text-blue-700 border-blue-200"
                         >
                           <UsersRound className="h-10 w-10"></UsersRound>
-                          {getCantidadCompat(puesto)}
+                          {area.cantidadPracticantes ?? 0}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        {puesto.activo ? (
+                        {area.activo ? (
                           <Badge
                             variant="outline"
                             className="bg-emerald-50 h-6 border-emerald-100 text-emerald-700 rounded-full px-2.5 py-0.5 text-xs font-medium inline-flex items-center gap-1.5"
@@ -341,7 +316,7 @@ export default function PuestoTable({
                             variant="ghost"
                             size="icon"
                             className="group h-9 w-9 text-blue-500 border-gray-200 hover:text-blue-500 hover:bg-blue-50"
-                            onClick={() => onEdit(puesto)}
+                            onClick={() => onEdit(area)}
                             title="Editar"
                             aria-label="Editar"
                           >
@@ -351,22 +326,22 @@ export default function PuestoTable({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`group h-9 w-9 ${puesto.activo ? "text-amber-600 hover:text-amber-700 border-gray-200 hover:bg-amber-50" : "text-green-600 hover:text-green-700  border-gray-200 hover:bg-green-50"}`}
-                            onClick={() => onDelete(puesto)}
+                            className={`group h-9 w-9 ${area.activo ? "text-amber-600 hover:text-amber-700 border-gray-200 hover:bg-amber-50" : "text-green-600 hover:text-green-700  border-gray-200 hover:bg-green-50"}`}
+                            onClick={() => onDelete(area)}
                             title={
-                              puesto.activo ? "Desactivar área" : "Activar área"
+                              area.activo ? "Desactivar área" : "Activar área"
                             }
                             aria-label={
-                              puesto.activo ? "Desactivar área" : "Activar área"
+                              area.activo ? "Desactivar área" : "Activar área"
                             }
                           >
-                            {puesto.activo ? (
+                            {area.activo ? (
                               <Power className="h-3.5 w-3.5 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
                             ) : (
                               <CheckCircle2 className="h-3.5 w-3.5 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
                             )}
                             <span className="sr-only">
-                              {puesto.activo ? "Desactivar" : "Activar"}
+                              {area.activo ? "Desactivar" : "Activar"}
                             </span>
                           </Button>
                           <DropdownMenu>

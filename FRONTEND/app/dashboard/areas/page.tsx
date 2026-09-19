@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import PuestoHeader from "./components/PuestoHeader";
-import PuestoFilters from "./components/PuestoFilters";
-import PuestoTable from "./components/PuestoTable";
-import PuestoCreateDialog from "./components/PuestoCreateDialog";
-import PuestoEditDialog from "./components/PuestoEditDialog";
-import PuestoDeleteDialog from "./components/PuestoDeleteDialog";
+import AreaHeader from "./components/AreaHeader";
+import AreaFilters from "./components/AreaFilters";
+import AreaTable from "./components/AreaTable";
+import AreaCreateDialog from "./components/AreaCreateDialog";
+import AreaEditDialog from "./components/AreaEditDialog";
+import AreaDeleteDialog from "./components/AreaDeleteDialog";
 import { areasApi } from "@/lib/api/areas";
 import { Area, NuevaArea } from "@/types/area";
-import { MOCK_AREAS } from "@/lib/mocks/areas";
 
 type EstadoFiltro = "todos" | "activos" | "inactivos";
 
@@ -31,11 +30,11 @@ export default function PuestosPage() {
     try {
       setLoading(true);
       const data = await areasApi.getAll();
-      setAreas(data.length ? data : MOCK_AREAS);
+      setAreas(data);
     } catch (error: unknown) {
       console.error("Error:", error);
-      setAreas(MOCK_AREAS);
-      toast.error("Sin conexión al backend — mostrando datos de ejemplo");
+      setAreas([]);
+      toast.error("Error al cargar áreas");
     } finally {
       setLoading(false);
     }
@@ -45,16 +44,16 @@ export default function PuestosPage() {
     cargarPuestos();
   }, []);
 
-  const totalActivos = useMemo(() => areas.filter((p) => p.activo).length, [areas]);
+  const totalActivos = useMemo(() => areas.filter((a) => a.activo).length, [areas]);
 
-  const puestosFiltrados = useMemo(() => {
-    return areas.filter((p) => {
+  const areasFiltradas = useMemo(() => {
+    return areas.filter((a) => {
       const matchBusqueda =
         !busqueda ||
-        p.nombreArea.toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) ?? false);
+        a.nombreArea.toLowerCase().includes(busqueda.toLowerCase()) ||
+        (a.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) ?? false);
       const matchEstado =
-        estado === "todos" || (estado === "activos" ? p.activo : !p.activo);
+        estado === "todos" || (estado === "activos" ? a.activo : !a.activo);
       return matchBusqueda && matchEstado;
     });
   }, [areas, busqueda, estado]);
@@ -72,14 +71,9 @@ export default function PuestosPage() {
       setAreas((prev) => [creado, ...prev]);
       setModalCrearAbierto(false);
       toast.success(`Área "${nuevaArea.nombreArea}" creada`);
-    } catch {
-      const mockNuevo: Area = {
-        idArea: Math.max(...areas.map((p) => p.idArea), 0) + 1,
-        ...nuevaArea,
-      };
-      setAreas((prev) => [mockNuevo, ...prev]);
-      setModalCrearAbierto(false);
-      toast.success(`Área "${nuevaArea.nombreArea}" creada (mock)`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al crear área";
+      toast.error(msg);
     }
   };
 
@@ -89,10 +83,9 @@ export default function PuestosPage() {
       setAreas((prev) => prev.map((p) => (p.idArea === actualizado.idArea ? actualizado : p)));
       setDialogEditarAbierto(false);
       toast.success(`Área "${areaEditada.nombreArea}" actualizada`);
-    } catch {
-      setAreas((prev) => prev.map((p) => (p.idArea === areaEditada.idArea ? areaEditada : p)));
-      setDialogEditarAbierto(false);
-      toast.success(`Área actualizada (mock)`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al actualizar área";
+      toast.error(msg);
     }
   };
 
@@ -114,31 +107,13 @@ export default function PuestosPage() {
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Error al cambiar estado del área";
-      // No hacer mock delete si el backend rechazó por regla de negocio (409)
-      if (msg.includes("practicante") && (msg.includes("activo") || msg.includes("asociado"))) {
-        toast.error(msg);
-        // Mantener dialog abierto para que usuario vea el error, o cerrar pero no eliminar
-        return;
-      }
-      // Fallback mock solo sin conexión
-      if (msg.includes("Sin conexión") || msg.includes("mock") || msg.includes("Network")) {
-        if (area.activo) {
-          setAreas((prev) => prev.map((p) => (p.idArea === id ? { ...p, activo: false } : p)));
-          toast.success(`Área "${area.nombreArea}" desactivada (mock)`);
-        } else {
-          setAreas((prev) => prev.map((p) => (p.idArea === id ? { ...p, activo: true } : p)));
-          toast.success(`Área "${area.nombreArea}" activada (mock)`);
-        }
-        setDialogEliminarAbierto(false);
-      } else {
-        toast.error(msg);
-      }
+      toast.error(msg);
     }
   };
 
   return (
     <div className="space-y-6">
-      <PuestoHeader
+      <AreaHeader
         total={areas.length}
         totalActivos={totalActivos}
         onOpenCreate={() => setModalCrearAbierto(true)}
@@ -147,19 +122,19 @@ export default function PuestosPage() {
 
       <div className="rounded-xl ">
         <div className="p-4 sm:p-1 border-b border-slate-100">
-          <PuestoFilters
+          <AreaFilters
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             estado={estado}
             onEstadoChange={setEstado}
-            totalFiltrados={puestosFiltrados.length}
+            totalFiltrados={areasFiltradas.length}
             total={areas.length}
             loading={loading}
           />
         </div>
 
-        <PuestoTable
-          puestos={puestosFiltrados}
+        <AreaTable
+          areas={areasFiltradas}
           onEdit={(p) => {
             setAreaSeleccionada(p as Area);
             setDialogEditarAbierto(true);
@@ -174,23 +149,23 @@ export default function PuestosPage() {
         />
       </div>
 
-      <PuestoCreateDialog
+      <AreaCreateDialog
         open={modalCrearAbierto}
         onOpenChange={setModalCrearAbierto}
         onSave={agregarPuesto}
       />
 
-      <PuestoEditDialog
+      <AreaEditDialog
         open={dialogEditarAbierto}
         onOpenChange={setDialogEditarAbierto}
-        puesto={areaSeleccionada}
+        area={areaSeleccionada}
         onSave={editarPuesto}
       />
 
-      <PuestoDeleteDialog
+      <AreaDeleteDialog
         open={dialogEliminarAbierto}
         onOpenChange={setDialogEliminarAbierto}
-        puesto={areaSeleccionada}
+        area={areaSeleccionada}
         onDelete={eliminarPuesto}
       />
     </div>

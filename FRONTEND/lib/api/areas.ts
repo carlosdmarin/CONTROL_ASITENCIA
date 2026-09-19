@@ -3,46 +3,18 @@ import { Area, NuevaArea, ActualizarArea } from '@/types/area';
 
 export const areasApi = {
   getAll: async (): Promise<Area[]> => {
-    try {
-      const response = await api.get('/areas');
-      return response.data;
-    } catch {
-      try {
-        const response = await api.get('/puestos');
-        // Map legacy Puesto shape to Area if needed
-        return (response.data as any[]).map(mapLegacyToArea);
-      } catch (error) {
-        throw new Error(handleApiError(error));
-      }
-    }
+    const response = await api.get('/areas');
+    return (response.data as Area[]).map(mapLegacyToArea);
   },
 
   getActivos: async (): Promise<Area[]> => {
-    try {
-      const response = await api.get('/areas/activos');
-      return response.data;
-    } catch {
-      try {
-        const response = await api.get('/puestos/activos');
-        return (response.data as any[]).map(mapLegacyToArea);
-      } catch (error) {
-        throw new Error(handleApiError(error));
-      }
-    }
+    const response = await api.get('/areas/activos');
+    return (response.data as Area[]).map(mapLegacyToArea);
   },
 
   getById: async (id: number): Promise<Area> => {
-    try {
-      const response = await api.get(`/areas/${id}`);
-      return mapLegacyToArea(response.data);
-    } catch {
-      try {
-        const response = await api.get(`/puestos/${id}`);
-        return mapLegacyToArea(response.data);
-      } catch (error) {
-        throw new Error(handleApiError(error));
-      }
-    }
+    const response = await api.get(`/areas/${id}`);
+    return mapLegacyToArea(response.data);
   },
 
   create: async (area: NuevaArea): Promise<Area> => {
@@ -64,43 +36,17 @@ export const areasApi = {
   },
 
   eliminar: async (id: number): Promise<void> => {
-    try {
-      await api.delete(`/areas/${id}`);
-    } catch {
-      try {
-        await api.delete(`/puestos/${id}`);
-      } catch (error) {
-        throw new Error(handleApiError(error));
-      }
-    }
+    await api.delete(`/areas/${id}`);
   },
 
   activar: async (id: number): Promise<Area> => {
-    try {
-      const response = await api.patch(`/areas/${id}/activar`);
-      return mapLegacyToArea(response.data);
-    } catch {
-      try {
-        const response = await api.patch(`/puestos/${id}/activar`);
-        return mapLegacyToArea(response.data);
-      } catch (error) {
-        throw new Error(handleApiError(error));
-      }
-    }
+    const response = await api.patch(`/areas/${id}/activar`);
+    return mapLegacyToArea(response.data);
   },
 
   desactivar: async (id: number): Promise<Area> => {
-    try {
-      const response = await api.patch(`/areas/${id}/desactivar`);
-      return mapLegacyToArea(response.data);
-    } catch {
-      try {
-        const response = await api.patch(`/puestos/${id}/desactivar`);
-        return mapLegacyToArea(response.data);
-      } catch (error) {
-        throw new Error(handleApiError(error));
-      }
-    }
+    const response = await api.patch(`/areas/${id}/desactivar`);
+    return mapLegacyToArea(response.data);
   },
 };
 

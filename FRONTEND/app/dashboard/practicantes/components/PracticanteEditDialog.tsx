@@ -49,7 +49,7 @@ import {
   ActualizarPracticante,
   BloqueHorarioRequest,
 } from "@/types/practicante";
-import { sedeApi } from "@/lib/api/agencias";
+import { sedeApi } from "@/lib/api/sedes";
 import { cargosApi } from "@/lib/api/cargos";
 import { areasApi } from "@/lib/api/areas";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
@@ -58,6 +58,7 @@ import {
   calcularMinutosTrabajados,
   formatHorasMinutos,
 } from "@/lib/utils/horas";
+import { toast } from "sonner";
 
 interface PracticanteEditDialogProps {
   open: boolean;
@@ -106,28 +107,7 @@ const HORARIO_DEFAULT: HorarioSemanal = {
   SABADO: { activo: false, entrada: "07:30", salida: "13:00" },
 };
 
-const MOCK_SEDES: Sede[] = [
-  { idSede: 1, nombre: "OFICINA PUCALLPA", descripcion: "Oficina principal", activo: true },
-  { idSede: 2, nombre: "PLANTA NESHUYA", descripcion: "Planta de producción", activo: true },
-  { idSede: 3, nombre: "PLANTA CAMPOVERDE", descripcion: "Planta de producción", activo: true },
-];
 
-const MOCK_CARGOS: Cargo[] = [
-  { idCargo: 1, nombre: "PRACTICANTE PROFESIONAL", descripcion: "Nivel profesional", horasSemanales: 48, activo: true },
-  { idCargo: 2, nombre: "PRACTICANTE PRE PROFESIONAL", descripcion: "Nivel pre-profesional", horasSemanales: 30, activo: true },
-];
-
-const MOCK_AREAS: Area[] = [
-  { idArea: 1, nombreArea: "Logística y servicios", descripcion: "Gestión de insumos y despachos", activo: true },
-  { idArea: 2, nombreArea: "Mantenimiento", descripcion: "Control de maquinaria y equipos", activo: true },
-  { idArea: 3, nombreArea: "Recursos Humanos", descripcion: "Control administrativo y financiero", activo: true },
-  { idArea: 4, nombreArea: "Tecnología de la Información", descripcion: "Soporte y desarrollo de sistemas", activo: true },
-];
-
-const MOCK_TIPOS_INSTITUTO: TipoInstituto[] = [
-  { idTipoInstituto: 1, nombre: "SENATI", descripcion: "Servicio Nacional de Adiestramiento", activo: true },
-  { idTipoInstituto: 2, nombre: "UNIVERSIDAD", descripcion: "Estudios universitarios", activo: true },
-];
 
 // ====== FUNCIÓN PARA NORMALIZAR TEXTO ======
 const normalizar = (texto: string) => {
@@ -151,10 +131,10 @@ export function PracticanteEditDialog({
   const [loadingHorario, setLoadingHorario] = useState(false);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  const [sedes, setSedes] = useState<Sede[]>(MOCK_SEDES);
-  const [cargos, setCargos] = useState<Cargo[]>(MOCK_CARGOS);
-  const [areas, setAreas] = useState<Area[]>(MOCK_AREAS);
-  const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>(MOCK_TIPOS_INSTITUTO);
+  const [sedes, setSedes] = useState<Sede[]>([]);
+  const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>([]);
   const [loadingSelects, setLoadingSelects] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -236,18 +216,30 @@ export function PracticanteEditDialog({
       try {
         setLoadingSelects(true);
         const [sedesData, cargosData, areasData, tiposData] = await Promise.all([
-          sedeApi.getAll().catch(() => MOCK_SEDES),
-          cargosApi.getAll().catch(() => MOCK_CARGOS),
+          sedeApi.getAll().catch(() => {
+            toast.error("Error al cargar sedes");
+            return [] as Sede[];
+          }),
+          cargosApi.getAll().catch(() => {
+            toast.error("Error al cargar cargos");
+            return [] as Cargo[];
+          }),
           // REGLA 2: Solo áreas activas para editar (filtrar inactivas)
-          areasApi.getActivos().catch(() => MOCK_AREAS.filter((a) => a.activo)),
-          tiposInstitutoApi.getAll().catch(() => MOCK_TIPOS_INSTITUTO),
+          areasApi.getActivos().catch(() => {
+            toast.error("Error al cargar áreas");
+            return [] as Area[];
+          }),
+          tiposInstitutoApi.getAll().catch(() => {
+            toast.error("Error al cargar tipos de instituto");
+            return [] as TipoInstituto[];
+          }),
         ]);
 
-        setSedes(sedesData.length > 0 ? sedesData : MOCK_SEDES);
-        setCargos(cargosData.length > 0 ? cargosData : MOCK_CARGOS);
+        setSedes(sedesData);
+        setCargos(cargosData);
         // Mantener solo activas; si el practicante actual tiene área inactiva, se añadirá luego en el segundo useEffect
-        setAreas(areasData.length > 0 ? areasData : MOCK_AREAS.filter((a) => a.activo));
-        setTiposInstituto(tiposData.length > 0 ? tiposData : MOCK_TIPOS_INSTITUTO);
+        setAreas(areasData);
+        setTiposInstituto(tiposData);
       } catch (error) {
         console.error("Error al cargar selects:", error);
       } finally {
@@ -300,12 +292,9 @@ export function PracticanteEditDialog({
     };
 
     let sedeEncontrada = buscarSede(practicante.sede);
-    if (!sedeEncontrada && practicante.agencia) {
-      sedeEncontrada = buscarSede(practicante.agencia);
-    }
 
     const cargoEncontrado = buscarCargo(practicante.cargo);
-    let areaEncontrada = buscarArea(practicante.nombreArea || practicante.area || practicante.puesto);
+    let areaEncontrada = buscarArea(practicante.nombreArea || practicante.area);
     // REGLA 2: Si el área actual del practicante está INACTIVA (no en lista de activas), mantenerla visible para reasignar
     // Intentar buscar por idArea explícito si el practicante lo trae
     if (!areaEncontrada && (practicante as any).idArea) {
@@ -333,7 +322,7 @@ export function PracticanteEditDialog({
     console.log("🔍 Búsqueda de IDs:", {
       sede: { buscado: practicante.sede, encontrado: sedeEncontrada?.nombre, id: idSedeFinal },
       cargo: { buscado: practicante.cargo, encontrado: cargoEncontrado?.nombre, id: idCargoFinal },
-      area: { buscado: practicante.nombreArea || practicante.area || practicante.puesto, encontrado: areaEncontrada?.nombreArea, id: idAreaFinal, inactiva: areaEncontrada ? !areaEncontrada.activo : "desconocida" },
+      area: { buscado: practicante.nombreArea || practicante.area, encontrado: areaEncontrada?.nombreArea, id: idAreaFinal, inactiva: areaEncontrada ? !areaEncontrada.activo : "desconocida" },
       tipo: { buscado: practicante.tipoInstituto, encontrado: tipoEncontrado?.nombre, id: idTipoFinal },
     });
 
@@ -1305,13 +1294,13 @@ export function PracticanteEditDialog({
 
     // 2. Si no, usar el practicante original como fallback
     if (sedeFinal === "—" && practicante) {
-      sedeFinal = practicante.sede || practicante.agencia || "—";
+      sedeFinal = practicante.sede || "—";
     }
     if (cargoFinal === "—" && practicante) {
       cargoFinal = practicante.cargo || "—";
     }
     if (areaFinal === "—" && practicante) {
-      areaFinal = practicante.nombreArea || practicante.area || practicante.puesto || "—";
+      areaFinal = practicante.nombreArea || practicante.area || "—";
     }
     if (tipoFinal === "—" && practicante) {
       tipoFinal = practicante.tipoInstituto || "—";
@@ -1332,9 +1321,9 @@ export function PracticanteEditDialog({
     }
     if (areaFinal === "—" && practicante?.area) {
       const encontrado = areas.find(
-        (p) => normalizar(p.nombreArea) === normalizar(practicante.nombreArea || practicante.area || practicante.puesto)
+        (p) => normalizar(p.nombreArea) === normalizar(practicante.nombreArea || practicante.area)
       );
-      areaFinal = encontrado?.nombreArea || practicante.nombreArea || practicante.area || practicante.puesto || "—";
+      areaFinal = encontrado?.nombreArea || practicante.nombreArea || practicante.area || "—";
     }
     if (tipoFinal === "—" && practicante?.tipoInstituto) {
       const encontrado = tiposInstituto.find(

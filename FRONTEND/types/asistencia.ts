@@ -4,7 +4,7 @@ export type AsistenciaDiaria = {
   entrada: string | null;
   salida: string | null;
   horas: string | null;
-  estado: 'SIN_MARCAR' | 'PRESENTE' | 'TARDE' | 'TARDANZA' | 'FALTA' | 'AUSENTE' | 'DESCANSO' | 'JUSTIFICADO';
+  estado: 'SIN_MARCAR' | 'PRESENTE' | 'TARDANZA' | 'AUSENTE' | 'DESCANSO' | 'JUSTIFICADO';
   situacion?: string | null;
 };
 
@@ -14,7 +14,7 @@ export type AsistenciaDiariaResponse = {
   idPracticante: number;
   nombreCompleto: string;
   fecha: string;
-  estadoDia: 'SIN_MARCAR' | 'PRESENTE' | 'TARDANZA' | 'TARDE' | 'AUSENTE' | 'FALTA' | 'DESCANSO' | 'JUSTIFICADO';
+  estadoDia: 'SIN_MARCAR' | 'PRESENTE' | 'TARDANZA' | 'AUSENTE' | 'DESCANSO' | 'JUSTIFICADO';
   horasTrabajadas: number;
   minutosTardanza: number;
   entradaReal: string | null;
@@ -50,9 +50,6 @@ export type ResumenAsistenciaDTO = {
   diasJustificado: number;
   porcentajeCumplimiento: number;
   estadoSemanal: string;
-  // alias compatibilidad con backend
-  agencia?: string;
-  codigoTrabajador?: string;
 };
 
 export type ResumenAsistencia = {
@@ -63,10 +60,7 @@ export type ResumenAsistencia = {
   descansos: number; // ← NUEVO
 };
 
-// Normalización centralizada: legacy TARDE→TARDANZA, FALTA→AUSENTE. Usar en todo el frontend.
 export function normalizeEstadoDia(estado: string): string {
-  if (estado === "TARDE") return "TARDANZA";
-  if (estado === "FALTA") return "AUSENTE";
   if (estado === "JUSTIFICADO") return "AUSENTE"; // legacy JUSTIFICADO → AUSENTE para columna Estado
   return estado;
 }

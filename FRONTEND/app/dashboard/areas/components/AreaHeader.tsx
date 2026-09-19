@@ -3,14 +3,14 @@
 import { BriefcaseBusiness, Plus ,UserPlus,Users,Briefcase} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface PuestoHeaderProps {
+interface AreaHeaderProps {
   total: number;
   totalActivos: number;
   onOpenCreate: () => void;
   loading?: boolean;
 }
 
-export default function PuestoHeader({ total, totalActivos, onOpenCreate, loading = false }: PuestoHeaderProps) {
+export default function AreaHeader({ total, totalActivos, onOpenCreate, loading = false }: AreaHeaderProps) {
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       {/* ====== IZQUIERDA: Título ====== */}
