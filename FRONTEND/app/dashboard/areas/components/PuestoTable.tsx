@@ -157,7 +157,7 @@ export default function PuestoTable({
   }, [totalPages, currentPage]);
 
   const renderPagination = () => {
-    if (totalPages <= 1) return null;
+    if (totalItems === 0) return null;
     const pageRange = getPageRange(currentPage, totalPages);
     return (
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 border-t border-gray-100">

@@ -617,7 +617,7 @@ export function PracticanteEditDialog({
   // ====== RENDER STEP 1: DATOS DEL PRACTICANTE ======
   const renderStep1 = () => {
     return (
-      <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Documento */}
           <div className="grid gap-1.5">
@@ -1097,9 +1097,9 @@ export function PracticanteEditDialog({
     }
 
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
         <div
-          className={`rounded-xl border p-5 ${config.bg} ${config.border} transition-all duration-300`}
+          className={`rounded-xl border p-3 sm:p-5 ${config.bg} ${config.border} transition-all duration-300 shrink-0`}
         >
           <div className="flex items-start justify-between">
             <div>
@@ -1175,16 +1175,13 @@ export function PracticanteEditDialog({
           </div>
         </div>
 
-        <div className="space-y-4 flex-1 overflow-y-auto pr-1">
-          <p className="text-sm text-gray-500">
+        <div className="flex flex-col gap-3 flex-1 min-h-0 overflow-hidden">
+          <p className="text-sm text-gray-500 shrink-0">
             Activa los días y ajusta entrada/salida. La duración por día se
             calcula al instante.
           </p>
 
-          <div
-            className="space-y-4 overflow-y-auto pr-1"
-            style={{ maxHeight: "calc(55vh - 200px)" }}
-          >
+          <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto min-h-0 pr-1">
             {DIAS_SEMANA.map((dia) => {
               const diaData = horario[dia.key as keyof HorarioSemanal];
               const minutosDia = minutosDelDia(diaData);
@@ -1197,66 +1194,77 @@ export function PracticanteEditDialog({
                   key={dia.key}
                   className={`border ${tieneError ? "border-red-200 bg-red-50/30" : ""}`}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2 min-w-25">
-                        <Switch
-                          checked={diaData.activo}
-                          onCheckedChange={(checked) =>
-                            handleHorarioChange(dia.key, "activo", checked)
-                          }
-                          className="data-[state=checked]:bg-blue-600"
-                        />
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto sm:min-w-[140px]">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={diaData.activo}
+                            onCheckedChange={(checked) =>
+                              handleHorarioChange(dia.key, "activo", checked)
+                            }
+                            className="data-[state=checked]:bg-blue-600"
+                          />
+                          <span
+                            className={`text-sm font-medium ${diaData.activo ? "text-gray-900" : "text-gray-400"}`}
+                          >
+                            {dia.label}
+                          </span>
+                        </div>
                         <span
-                          className={`text-sm font-medium ${diaData.activo ? "text-gray-900" : "text-gray-400"}`}
+                          className={`sm:hidden text-xs font-medium px-2.5 py-1 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : diaData.activo ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-slate-50 text-slate-400 border-slate-200"}`}
                         >
-                          {dia.label}
+                          {diaData.activo ? (tieneError ? "Inválido" : duracionFmt) : "—"}
                         </span>
                       </div>
 
                       {diaData.activo ? (
-                        <div className="flex items-center gap-2 flex-1 min-w-65 flex-wrap">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-gray-400" />
-                            <Input
-                              type="time"
-                              value={diaData.entrada}
-                              onChange={(e) =>
-                                handleHorarioChange(
-                                  dia.key,
-                                  "entrada",
-                                  e.target.value,
-                                )
-                              }
-                              className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
-                            />
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2 flex-1 w-full">
+                          <div className="flex flex-col gap-1.5 flex-1">
+                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">Entrada</span>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-slate-400 hidden sm:block shrink-0" />
+                              <Input
+                                type="time"
+                                value={diaData.entrada}
+                                onChange={(e) =>
+                                  handleHorarioChange(
+                                    dia.key,
+                                    "entrada",
+                                    e.target.value,
+                                  )
+                                }
+                                className={`w-full sm:w-28 h-10 sm:h-9 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                              />
+                            </div>
                           </div>
-                          <span className="text-xs text-gray-400">—</span>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-gray-400" />
-                            <Input
-                              type="time"
-                              value={diaData.salida}
-                              onChange={(e) =>
-                                handleHorarioChange(
-                                  dia.key,
-                                  "salida",
-                                  e.target.value,
-                                )
-                              }
-                              className={`w-28 h-8 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
-                            />
+                          <span className="hidden sm:block text-xs text-slate-400">—</span>
+                          <div className="flex flex-col gap-1.5 flex-1">
+                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">Salida</span>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-slate-400 hidden sm:block shrink-0" />
+                              <Input
+                                type="time"
+                                value={diaData.salida}
+                                onChange={(e) =>
+                                  handleHorarioChange(
+                                    dia.key,
+                                    "salida",
+                                    e.target.value,
+                                  )
+                                }
+                                className={`w-full sm:w-28 h-10 sm:h-9 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                              />
+                            </div>
                           </div>
                           <span
-                            className={`ml-1 text-xs font-medium px-2 py-0.5 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : "bg-slate-100 text-slate-700 border-slate-200"}`}
+                            className={`hidden sm:inline-flex ml-1 text-xs font-medium px-2.5 py-1 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : "bg-slate-100 text-slate-700 border-slate-200"}`}
                           >
                             {tieneError ? "Inválido" : duracionFmt}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400 italic">
-                          Descanso
-                        </span>
+                        <span className="hidden sm:inline text-sm text-gray-400 italic">Descanso</span>
                       )}
                     </div>
                     {tieneError && (
@@ -1348,10 +1356,10 @@ export function PracticanteEditDialog({
     });
 
     return (
-      <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1">
+        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-3">
           <p className="text-sm text-blue-700 flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4" />
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
             Revisa los datos antes de guardar los cambios
           </p>
         </div>
@@ -1361,13 +1369,13 @@ export function PracticanteEditDialog({
             <User className="h-4 w-4" />
             Datos personales
           </h4>
-          <div className="grid grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3 sm:p-3">
             <span className="text-gray-500">Nombre:</span>
-            <span className="font-medium">{formData.nombre}</span>
+            <span className="font-medium break-words">{formData.nombre}</span>
             <span className="text-gray-500">Apellido:</span>
-            <span className="font-medium">{formData.apellido}</span>
+            <span className="font-medium break-words">{formData.apellido}</span>
             <span className="text-gray-500">Documento:</span>
-            <span className="font-medium">{formData.documento}</span>
+            <span className="font-medium break-words">{formData.documento}</span>
           </div>
         </div>
 
@@ -1376,15 +1384,15 @@ export function PracticanteEditDialog({
             <BriefcaseBusiness className="h-4 w-4" />
             Información laboral
           </h4>
-          <div className="grid grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3 sm:p-3">
             <span className="text-gray-500">Sede:</span>
-            <span className="font-medium">{sedeFinal}</span>
+            <span className="font-medium break-words">{sedeFinal}</span>
             <span className="text-gray-500">Área:</span>
-            <span className="font-medium">{areaFinal}</span>
+            <span className="font-medium break-words">{areaFinal}</span>
             <span className="text-gray-500">Cargo:</span>
-            <span className="font-medium">{cargoFinal}</span>
+            <span className="font-medium break-words">{cargoFinal}</span>
             <span className="text-gray-500">Centro de Estudios:</span>
-            <span className="font-medium">{tipoFinal}</span>
+            <span className="font-medium break-words">{tipoFinal}</span>
             <span className="text-gray-500">Inicio:</span>
             <span className="font-medium">{formData.fechaInicioPracticas}</span>
             {formData.fechaFinPracticas && (
@@ -1495,13 +1503,13 @@ export function PracticanteEditDialog({
   // ====== MAIN RENDER ======
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl! w-full! max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 shrink-0">
-          <div className="flex items-center gap-2">
-            <Pencil className="h-6 w-6 text-blue-700" />
-            <DialogTitle className="text-xl">Editar practicante</DialogTitle>
+      <DialogContent className="w-[calc(100vw-24px)] sm:w-full max-w-4xl! max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-2 shrink-0 pr-10 sm:pr-6">
+          <div className="flex items-center gap-2 sm:gap-2">
+            <Pencil className="h-5 w-5 sm:h-6 sm:w-6 text-blue-700 shrink-0" />
+            <DialogTitle className="text-lg sm:text-xl leading-tight">Editar practicante</DialogTitle>
           </div>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm pr-2">
             Modifica los datos del practicante en{" "}
             {currentStep === 1
               ? "3 pasos"
@@ -1512,16 +1520,16 @@ export function PracticanteEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 p-5 overflow-hidden px-6">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-3 sm:px-6 py-3 sm:py-5">
           {renderStepIndicator()}
-          <div className="mt-4">
-            {currentStep === 1 && renderStep1()}
+          <div className="mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+            {currentStep === 1 && <div className="flex-1 overflow-y-auto pr-1">{renderStep1()}</div>}
             {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
+            {currentStep === 3 && <div className="flex-1 overflow-y-auto pr-1">{renderStep3()}</div>}
           </div>
         </div>
 
-        <div className="p-6 pt-2 shrink-0">{renderFooter()}</div>
+        <div className="p-3 sm:p-6 pt-2 sm:pt-2 shrink-0 border-t bg-white">{renderFooter()}</div>
       </DialogContent>
     </Dialog>
   );

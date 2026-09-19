@@ -895,9 +895,9 @@ export default function AsistenciaTable({
                       </div>
                     </div>
                   </div>
-                  <Separator orientation="vertical" />
+                  <Separator orientation="vertical" className="hidden sm:block" />
                   {/* Lado derecho: datos en grid de 3 columnas */}
-                  <div className="grid grid-cols-3 gap-6 flex-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 flex-1">
                     <div className="gap-10">
                       <div className="flex items-center gap-1.5 text-xs mb-3 font-semibold text-slate-500 uppercase">
                         <CalendarDays className="h-3.5 w-3.5 text-blue-600" />

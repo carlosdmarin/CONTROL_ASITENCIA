@@ -32,8 +32,8 @@ export default function PracticanteFilters({
   const showClear = busqueda.length > 0;
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center ">
-        <div className="relative w-150">
+      <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+        <div className="relative w-full max-w-xl mx-auto lg:mx-0 lg:w-[420px] xl:w-[480px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
 
           <Input
@@ -58,8 +58,8 @@ export default function PracticanteFilters({
             value={filtroSede}
             onValueChange={(v: any) => onFiltroSedeChange(v)}
           >
-            <SelectTrigger className="w-60!  sm:w-40 h-11! bg-white border-slate-200 rounded-xl">
-              <MapPin className="h-4 w-4 mr-2 text-slate-400" />
+            <SelectTrigger className="flex-1 sm:flex-none sm:w-40 h-11! sm:h-11 bg-white border-slate-200 rounded-xl min-w-0">
+              <MapPin className="h-9 w-4 mr-1.5 sm:mr-2 text-slate-400 shrink-0" />
               <SelectValue placeholder="Sede" />
             </SelectTrigger>
             <SelectContent>
@@ -75,8 +75,8 @@ export default function PracticanteFilters({
             value={filtroSituacion}
             onValueChange={(v: any) => onFiltroSituacionChange(v)}
           >
-            <SelectTrigger className="w-full sm:w-40 h-11! bg-white border-slate-200 rounded-xl">
-              <Filter className="h-4 w-4 mr-2 text-slate-400" />
+            <SelectTrigger className="flex-1 sm:flex-none sm:w-40 h-11! sm:h-11 bg-white border-slate-200 rounded-xl min-w-0">
+              <Filter className="h-4 w-4 mr-1.5 sm:mr-2 text-slate-400 shrink-0" />
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
