@@ -31,19 +31,19 @@ public class Practicante {
     private String documento;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_sede", nullable = false)
+    @JoinColumn(name = "id_sede", referencedColumnName = "IdSede", nullable = false)
     private Sede sede;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_area", nullable = false)
+    @JoinColumn(name = "id_area", referencedColumnName = "id_area", nullable = false)
     private Puesto puesto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_centro_estudios", nullable = false)
+    @JoinColumn(name = "id_centro_estudios", referencedColumnName = "id_centro_estudios", nullable = false)
     private TipoInstituto tipoInstituto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cargo", nullable = false)
+    @JoinColumn(name = "id_cargo", referencedColumnName = "id_cargo", nullable = false)
     private Cargo cargo;
 
     @Enumerated(EnumType.STRING)
@@ -64,6 +64,12 @@ public class Practicante {
 
     @Column(name = "fecha_fin_practicas")
     private LocalDate fechaFinPracticas;
+
+    @Column(name = "usuario", nullable = false, unique = true, length = 50)
+    private String usuario;
+
+    @Column(name = "contrasena", nullable = false, length = 255)
+    private String contrasena;
 
     @Column(name = "fecha_registro", nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;

@@ -24,7 +24,7 @@ public class PracticanteResponse {
     private Long idArea;
     private String nombreArea;
     private String descripcionArea;
-    private Long idSede;
+    private Integer idSede;
     private Long idCargo;
     private Long idTipoInstituto;
     private String tipoInstituto;

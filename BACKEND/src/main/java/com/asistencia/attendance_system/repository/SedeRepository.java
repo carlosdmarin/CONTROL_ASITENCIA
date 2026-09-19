@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SedeRepository extends JpaRepository<Sede, Long> {
+public interface SedeRepository extends JpaRepository<Sede, Integer> {
     Optional<Sede> findByNombre(String nombre);
     List<Sede> findByActivoTrue();
 }

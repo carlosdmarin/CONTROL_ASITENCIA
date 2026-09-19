@@ -1,9 +1,10 @@
 package com.asistencia.attendance_system.controller;
 
 import com.asistencia.attendance_system.model.dto.BloqueHorarioRequest;
+import com.asistencia.attendance_system.model.dto.BloqueHorarioResponseDTO;
 import com.asistencia.attendance_system.model.dto.PracticanteRequest;
 import com.asistencia.attendance_system.model.dto.PracticanteResponse;
-import com.asistencia.attendance_system.model.entity.BloqueHorario;
+import com.asistencia.attendance_system.service.HorarioService;
 import com.asistencia.attendance_system.service.PracticanteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import java.util.List;
 public class PracticanteController {
 
     private final PracticanteService practicanteService;
+    private final HorarioService horarioService;
 
     // ========== TEST ==========
     @GetMapping("/test")
@@ -94,7 +96,7 @@ public class PracticanteController {
     }
 
     @GetMapping({"/contar/sede/{id}", "/contar/agencia/{id}"})
-    public ResponseEntity<Long> contarPorSede(@PathVariable Long id) {
+    public ResponseEntity<Long> contarPorSede(@PathVariable Integer id) {
         return ResponseEntity.ok(practicanteService.contarPorSede(id));
     }
 
@@ -113,8 +115,8 @@ public class PracticanteController {
     // ========== ENDPOINTS PARA HORARIO ==========
 
     @GetMapping("/{id}/horario")
-    public ResponseEntity<List<BloqueHorario>> getHorario(@PathVariable Long id) {
-        List<BloqueHorario> horario = practicanteService.obtenerHorario(id);
+    public ResponseEntity<List<BloqueHorarioResponseDTO>> getHorario(@PathVariable Long id) {
+        List<BloqueHorarioResponseDTO> horario = horarioService.obtenerHorarioPorPracticante(id);
         return ResponseEntity.ok(horario);
     }
 

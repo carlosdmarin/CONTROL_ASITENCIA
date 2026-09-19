@@ -77,6 +77,10 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setTelefono(request.getTelefono());
         practicante.setFechaInicioPracticas(request.getFechaInicioPracticas());
         practicante.setFechaFinPracticas(request.getFechaFinPracticas());
+        // FASE 5: one_db.Practicante requiere usuario/contrasena NOT NULL UNIQUE
+        // Si no vienen en el request, se derivan del documento (compatible con flujo actual)
+        practicante.setUsuario(request.getDocumento());
+        practicante.setContrasena(request.getDocumento());
 
         // 2. Guardar el practicante para obtener su ID
         Practicante saved = practicanteRepository.save(practicante);
@@ -128,6 +132,14 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setTelefono(request.getTelefono());
         practicante.setFechaInicioPracticas(request.getFechaInicioPracticas());
         practicante.setFechaFinPracticas(request.getFechaFinPracticas());
+        // FASE 5: mantener usuario/contrasena alineados a one_db (NOT NULL)
+        // Si el usuario aún no existe o debe seguir al documento
+        if (practicante.getUsuario() == null || practicante.getUsuario().isBlank()) {
+            practicante.setUsuario(request.getDocumento());
+        }
+        if (practicante.getContrasena() == null || practicante.getContrasena().isBlank()) {
+            practicante.setContrasena(request.getDocumento());
+        }
 
         Practicante updated = practicanteRepository.save(practicante);
         log.info("Practicante actualizado: {}", updated.getDocumento());
@@ -205,7 +217,7 @@ public class PracticanteServiceImpl implements PracticanteService {
     }
 
     @Override
-    public Long contarPorSede(Long idSede) {
+    public Long contarPorSede(Integer idSede) {
         Sede sede = sedeRepository.findById(idSede)
                 .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + idSede));
         return practicanteRepository.countActivosBySede(sede);

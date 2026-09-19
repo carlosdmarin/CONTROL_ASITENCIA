@@ -11,7 +11,7 @@ public class PracticanteRequest {
     private String apellido;
     private String documento;
     @JsonAlias({"idAgencia"})
-    private Long idSede;
+    private Integer idSede;
     @JsonAlias({"idArea", "id_area"})
     private Long idPuesto;
     // Canónico nuevo: idArea (alias de idPuesto para migración)

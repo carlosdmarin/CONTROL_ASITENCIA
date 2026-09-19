@@ -36,10 +36,10 @@ public interface PracticanteService {
 
     Long contarActivos();
 
-    Long contarPorSede(Long idSede);
+    Long contarPorSede(Integer idSede);
 
     // Compatibilidad temporal: antiguo endpoint /contar/agencia
-    default Long contarPorAgencia(Long idAgencia) {
+    default Long contarPorAgencia(Integer idAgencia) {
         return contarPorSede(idAgencia);
     }
 

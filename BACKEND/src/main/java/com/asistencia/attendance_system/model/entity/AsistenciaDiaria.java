@@ -28,7 +28,7 @@ public class AsistenciaDiaria {
     private Long idAsistencia;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_practicante", nullable = false)
+    @JoinColumn(name = "id_practicante", referencedColumnName = "id_practicante", nullable = false)
     private Practicante practicante;
 
     @Column(name = "fecha", nullable = false)
@@ -38,7 +38,7 @@ public class AsistenciaDiaria {
     @Column(name = "estado_dia", nullable = false, length = 20, columnDefinition = "VARCHAR(20)")
     private EstadoDia estadoDia;
 
-    @Column(name = "horas_trabajadas", columnDefinition = "DECIMAL(5,2)")
+    @Column(name = "horas_trabajadas", precision = 5, scale = 2)
     private BigDecimal horasTrabajadas = BigDecimal.ZERO;
 
     @Column(name = "minutos_tardanza")

@@ -36,15 +36,15 @@ public interface AsistenciaDiariaRepository extends JpaRepository<AsistenciaDiar
     @Query("SELECT SUM(a.horasTrabajadas) FROM AsistenciaDiaria a WHERE a.practicante.idPracticante = :idPracticante AND FUNCTION('YEAR', a.fecha) = :anio AND FUNCTION('MONTH', a.fecha) = :mes")
     Double sumHorasTrabajadasEnMes(@Param("idPracticante") Long idPracticante, @Param("anio") Integer anio, @Param("mes") Integer mes);
 
-    @Query("SELECT COUNT(a) FROM AsistenciaDiaria a WHERE a.practicante.idPracticante = :idPracticante AND a.estadoDia = 'FALTA' AND FUNCTION('YEAR', a.fecha) = :anio AND FUNCTION('MONTH', a.fecha) = :mes")
+    @Query("SELECT COUNT(a) FROM AsistenciaDiaria a WHERE a.practicante.idPracticante = :idPracticante AND a.estadoDia = 'AUSENTE' AND FUNCTION('YEAR', a.fecha) = :anio AND FUNCTION('MONTH', a.fecha) = :mes")
     Long countFaltasEnMes(@Param("idPracticante") Long idPracticante, @Param("anio") Integer anio, @Param("mes") Integer mes);
 
-    @Query("SELECT COUNT(a) FROM AsistenciaDiaria a WHERE a.practicante.idPracticante = :idPracticante AND a.estadoDia = 'TARDE' AND FUNCTION('YEAR', a.fecha) = :anio AND FUNCTION('MONTH', a.fecha) = :mes")
+    @Query("SELECT COUNT(a) FROM AsistenciaDiaria a WHERE a.practicante.idPracticante = :idPracticante AND a.estadoDia = 'TARDANZA' AND FUNCTION('YEAR', a.fecha) = :anio AND FUNCTION('MONTH', a.fecha) = :mes")
     Long countTardanzasEnMes(@Param("idPracticante") Long idPracticante, @Param("anio") Integer anio, @Param("mes") Integer mes);
 
     // ========== QUERYS CON SQL NATIVO ==========
 
-    @Query(value = "SELECT p.id_agencia, COUNT(*) as total, SUM(CASE WHEN ad.estado_dia = 'PRESENTE' THEN 1 ELSE 0 END) as presentes, SUM(CASE WHEN ad.estado_dia = 'FALTA' THEN 1 ELSE 0 END) as faltas FROM Asistencia_Diaria ad INNER JOIN Practicante p ON ad.id_practicante = p.id_practicante WHERE YEAR(ad.fecha) = :anio AND MONTH(ad.fecha) = :mes GROUP BY p.id_agencia", nativeQuery = true)
+    @Query(value = "SELECT p.id_sede, COUNT(*) as total, SUM(CASE WHEN ad.estado_dia = 'PRESENTE' THEN 1 ELSE 0 END) as presentes, SUM(CASE WHEN ad.estado_dia = 'AUSENTE' THEN 1 ELSE 0 END) as faltas FROM Asistencia_Diaria ad INNER JOIN Practicante p ON ad.id_practicante = p.id_practicante WHERE YEAR(ad.fecha) = :anio AND MONTH(ad.fecha) = :mes GROUP BY p.id_sede", nativeQuery = true)
     List<Object[]> getResumenAsistenciasPorSede(@Param("anio") Integer anio, @Param("mes") Integer mes);
 
     // Alias compatibilidad

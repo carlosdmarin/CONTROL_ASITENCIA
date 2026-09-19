@@ -23,7 +23,7 @@ public class BloqueHorario {
     private Long idBloque;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_practicante", nullable = false)
+    @JoinColumn(name = "id_practicante", referencedColumnName = "id_practicante", nullable = false)
     private Practicante practicante;
 
     @Enumerated(EnumType.STRING)

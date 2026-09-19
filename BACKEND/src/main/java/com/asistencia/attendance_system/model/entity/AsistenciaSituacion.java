@@ -26,7 +26,7 @@ public class AsistenciaSituacion {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_asistencia", nullable = false)
+    @JoinColumn(name = "id_asistencia", referencedColumnName = "id_asistencia", nullable = false)
     private AsistenciaDiaria asistencia;
 
     @Enumerated(EnumType.STRING)

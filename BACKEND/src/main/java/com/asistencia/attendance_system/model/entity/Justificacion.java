@@ -23,7 +23,7 @@ public class Justificacion {
     private Long idJustificacion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_practicante", nullable = false)
+    @JoinColumn(name = "id_practicante", referencedColumnName = "id_practicante", nullable = false)
     private Practicante practicante;
 
     @Column(name = "fecha_inicio", nullable = false)

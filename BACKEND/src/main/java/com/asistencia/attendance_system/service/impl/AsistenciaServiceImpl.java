@@ -172,9 +172,11 @@ public class AsistenciaServiceImpl implements AsistenciaService {
             }
         }
 
-        // Si pide SALIDA sin haber marcado ENTRADA, permitir pero advertir (RH podrá corregir manual)
+        // FASE 6.1: SALIDA sin ENTRADA no permitida en flujo normal
         if (tipo == TipoMarcacion.SALIDA && !yaMarcoEntradaHoy(practicante.getIdPracticante())) {
-            log.warn("Marcando SALIDA sin ENTRADA previa para {}", practicante.getDocumento());
+            throw new BusinessException(
+                    "SALIDA_SIN_ENTRADA: No se puede registrar SALIDA sin ENTRADA previa para esta jornada.",
+                    HttpStatus.BAD_REQUEST);
         }
 
         Marcacion marcacion = new Marcacion();

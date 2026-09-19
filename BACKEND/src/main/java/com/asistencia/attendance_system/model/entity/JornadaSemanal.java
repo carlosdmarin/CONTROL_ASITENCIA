@@ -22,19 +22,19 @@ public class JornadaSemanal {
     private Long idJornada;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_practicante", nullable = false)
+    @JoinColumn(name = "id_practicante", referencedColumnName = "id_practicante", nullable = false)
     private Practicante practicante;
 
     @Column(name = "semana_inicio", nullable = false)
     private LocalDate semanaInicio;  // ✅ Campo correcto
 
-    @Column(name = "horas_requeridas", nullable = false, columnDefinition = "DECIMAL(5,2)")
+    @Column(name = "horas_requeridas", nullable = false, precision = 5, scale = 2)
     private BigDecimal horasRequeridas;
 
-    @Column(name = "horas_cumplidas", columnDefinition = "DECIMAL(5,2)")
+    @Column(name = "horas_cumplidas", precision = 5, scale = 2)
     private BigDecimal horasCumplidas = BigDecimal.ZERO;
 
-    @Column(name = "horas_pendientes", columnDefinition = "DECIMAL(5,2)")
+    @Column(name = "horas_pendientes", precision = 5, scale = 2)
     private BigDecimal horasPendientes = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
