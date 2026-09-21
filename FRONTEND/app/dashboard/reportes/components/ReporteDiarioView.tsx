@@ -96,7 +96,7 @@ export function ReporteDiarioView({ reporte }: { reporte: ReporteDiarioResponse 
               <div className="p-3 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-[10px] text-slate-500">Área</span>
-                  <span className="text-xs font-medium text-slate-900">{p.nombreArea || p.area || "—"}</span>
+                  <span className="text-xs font-medium text-slate-900">{p.nombreOficina || p.oficina || p.nombreOficina || p.oficina || p.nombreOficina || p.oficina || "—"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[10px] text-slate-500">Cargo</span>

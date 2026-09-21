@@ -46,7 +46,7 @@ export function ReporteStepConfirmacion({ practicante, tipo, periodoLabel }: Pro
             <div className="min-w-0">
               <p className="text-sm font-medium text-slate-900 truncate">{practicante.nombreCompleto}</p>
               <p className="text-xs text-slate-500 truncate">
-                DNI {practicante.documento} · {practicante.nombreArea || practicante.area || "Sin área"}
+                DNI {practicante.documento} · {practicante.nombreOficina || practicante.oficina || "Sin área"}
               </p>
             </div>
             <Badge variant="outline" className="ml-auto text-xs">

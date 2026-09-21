@@ -35,8 +35,8 @@ public class Practicante {
     private Sede sede;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_area", referencedColumnName = "id_area", nullable = false)
-    private Puesto puesto;
+    @JoinColumn(name = "id_oficina", referencedColumnName = "IdOficina", nullable = false)
+    private Oficina oficina;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_centro_estudios", referencedColumnName = "id_centro_estudios", nullable = false)

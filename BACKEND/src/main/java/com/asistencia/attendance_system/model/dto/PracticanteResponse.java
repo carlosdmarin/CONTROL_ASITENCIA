@@ -17,13 +17,9 @@ public class PracticanteResponse {
     private String documento;
     @JsonAlias({"agencia", "sede"})
     private String sede;
-    // Legacy: puesto = nombreArea, area = nombreArea (corregido) + descripcionArea separada
-    private String puesto;
-    private String area;
-    // Contrato canónico nuevo
-    private Long idArea;
-    private String nombreArea;
-    private String descripcionArea;
+    private String oficina;
+    private Integer idOficina;
+    private String nombreOficina;
     private Integer idSede;
     private Long idCargo;
     private Long idTipoInstituto;
@@ -40,10 +36,4 @@ public class PracticanteResponse {
     // Compatibilidad: frontend antiguo espera "agencia"
     public String getAgencia() { return sede; }
     public void setAgencia(String agencia) { this.sede = agencia; }
-
-    // Compat legacy para idPuesto / nombrePuesto
-    @com.fasterxml.jackson.annotation.JsonProperty("idPuesto")
-    public Long getIdPuestoCompat() { return idArea; }
-    @com.fasterxml.jackson.annotation.JsonProperty("nombrePuesto")
-    public String getNombrePuestoCompat() { return nombreArea; }
 }

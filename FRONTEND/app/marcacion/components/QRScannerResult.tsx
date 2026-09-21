@@ -136,7 +136,7 @@ export default function QRScannerResult({
           nombreCompleto: data.nombreCompleto,
           documento: data.documento,
           sede: (data as any).sede || "—",
-          area: (data as any).area || (data as any).nombreArea || "—",
+          area: (data as any).area || (data as any).nombreOficina || "—",
           cargo: data.cargo,
           situacion: data.situacion,
         });

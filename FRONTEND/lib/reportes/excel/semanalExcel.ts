@@ -194,7 +194,7 @@ export async function generarExcelSemanal(reporte: ReporteSemanalResponse): Prom
     r++;
   };
   addFieldRow9("Practicante", p.nombreCompleto || "—", "DNI", p.documento || "—", "Sede", p.sede || "—");
-  addFieldRow9("Área", p.nombreArea || (p as any).area || "—", "Cargo", p.cargo || "—", "Instituto", (p as any).tipoInstituto || "—");
+  addFieldRow9("Oficina", p.nombreOficina || (p as any).oficina || "—", "Cargo", p.cargo || "—", "Instituto", (p as any).tipoInstituto || "—");
   addFieldRow9("Estado", p.situacion || "—", "Periodo prácticas", `${p.fechaInicioPracticas || "—"}${p.fechaFinPracticas ? " — " + p.fechaFinPracticas : ""}`, "", "");
   ws.getRow(r).height = 6; r++;
 

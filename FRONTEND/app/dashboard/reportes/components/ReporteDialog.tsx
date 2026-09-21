@@ -260,7 +260,7 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
                   <p className="text-xs text-slate-500 truncate">DNI {practicante.documento}</p>
                 </div>
                 <Badge variant="outline" className="ml-auto hidden sm:inline-flex text-xs shrink-0">
-                  {practicante.nombreArea || practicante.area || "Sin área"}
+                  {practicante.nombreOficina || practicante.oficina || "Sin área"}
                 </Badge>
               </div>
             </div>

@@ -98,7 +98,7 @@ export function ReporteSemanalView({ reporte }: { reporte: ReporteSemanalRespons
               <div className="p-3 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-[10px] text-slate-500">Área</span>
-                  <span className="text-xs font-medium text-slate-900">{p.nombreArea || (p as any).area || "—"}</span>
+                  <span className="text-xs font-medium text-slate-900">{p.nombreOficina || (p as any).oficina || "—"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[10px] text-slate-500">Cargo</span>

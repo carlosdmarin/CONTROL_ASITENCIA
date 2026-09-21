@@ -150,7 +150,7 @@ export async function generarPdfSemanal(reporte: ReporteSemanalResponse): Promis
   };
   autoTable(doc, { ...tableStyles, startY: y, head: [["Practicante", "DNI", "Sede"]], body: [[p.nombreCompleto || "—", p.documento || "—", p.sede || "—"]] });
   y = (doc as any).lastAutoTable.finalY + 0.5;
-  autoTable(doc, { ...tableStyles, startY: y, head: [["Área", "Cargo", "Instituto"]], body: [[p.nombreArea || (p as any).area || "—", p.cargo || "—", (p as any).tipoInstituto || "—"]] });
+  autoTable(doc, { ...tableStyles, startY: y, head: [["Oficina", "Cargo", "Instituto"]], body: [[p.nombreOficina || (p as any).oficina || "—", p.cargo || "—", (p as any).tipoInstituto || "—"]] });
   y = (doc as any).lastAutoTable.finalY + 0.5;
   autoTable(doc, { ...tableStyles, startY: y, head: [["Estado", "Periodo prácticas", ""]], body: [[p.situacion || "—", `${p.fechaInicioPracticas || "—"} ${p.fechaFinPracticas ? "— " + p.fechaFinPracticas : ""}`, ""]] });
   y = (doc as any).lastAutoTable.finalY + 4;

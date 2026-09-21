@@ -52,14 +52,14 @@ export default function ReportesPage() {
     if (!busqueda) return practicantes;
     const term = busqueda.toLowerCase();
     return practicantes.filter((p) => {
-      const nombreArea = p.nombreArea || p.area  || "";
+      const nombreOficina = p.nombreOficina || p.oficina  || "";
       const sede = p.sede || "";
       return (
         p.nombreCompleto?.toLowerCase().includes(term) ||
         p.documento?.includes(busqueda) ||
         p.documento?.toLowerCase().includes(term) ||
         sede.toLowerCase().includes(term) ||
-        nombreArea.toLowerCase().includes(term)
+        nombreOficina.toLowerCase().includes(term)
       );
     });
   }, [practicantes, busqueda]);

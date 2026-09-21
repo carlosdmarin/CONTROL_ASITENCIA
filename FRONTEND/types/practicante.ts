@@ -1,6 +1,4 @@
-// types/practicante.ts - Sincronizado con nueva BD (sin codigoTrabajador, Sede en lugar de Agencia)
-import { Area } from './area';
-export type { Area } from './area';
+// types/practicante.ts - Sincronizado con nueva BD (sin codigoTrabajador, Sede en lugar de Agencia, Area eliminado → Oficina)
 
 // ====== BLOQUE HORARIO ======
 export type BloqueHorarioRequest = {
@@ -53,17 +51,24 @@ export type TipoInstituto = {
   fechaCreacion?: string;
 };
 
+// ====== OFICINA (catálogo corporativo) ======
+export type Oficina = {
+  idOficina: number;
+  oficina: string;
+  estado: number;
+  idSede?: number | null;
+  idOficinaSup?: number | null;
+};
+
 // ====== PRACTICANTE ======
 export type Practicante = {
   idPracticante: number;
   nombreCompleto: string;
   documento: string;
   sede: string;
-  area: string;
-  // Canónico
-  idArea?: number;
-  nombreArea?: string;
-  descripcionArea?: string;
+  oficina: string;
+  idOficina: number;
+  nombreOficina: string;
   idSede?: number;
   idCargo?: number;
   idTipoInstituto?: number;
@@ -81,7 +86,7 @@ export type Practicante = {
   fechaActualizacion?: string | null;
   // Relaciones completas
   sedeObj?: Sede;
-  areaObj?: Area;
+  oficinaObj?: Oficina;
   tipoInstitutoObj?: TipoInstituto;
   cargoObj?: Cargo;
   horario?: BloqueHorarioRequest[];
@@ -93,14 +98,14 @@ export type NuevoPracticante = {
   apellido: string;
   documento: string;
   idSede: number;
-  idArea: number;
+  idOficina: number;
   idTipoInstituto: number;
   idCargo: number;
   correoElectronico?: string;
   telefono?: string;
   fechaInicioPracticas: string;
   fechaFinPracticas?: string;
-  horario?: BloqueHorarioRequest[];  // ← NUEVO
+  horario?: BloqueHorarioRequest[];
 };
 
 // Tipo para actualización (usa IDs reales seleccionados, no hardcode)
@@ -109,7 +114,7 @@ export type ActualizarPracticante = {
   apellido: string;
   documento: string;
   idSede: number;
-  idArea: number;
+  idOficina: number;
   idTipoInstituto: number;
   idCargo: number;
   correoElectronico?: string;

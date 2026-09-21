@@ -303,7 +303,7 @@ export function PracticanteTable({
                   Sede
                 </TableHead>
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
-                  Área
+                  Oficina
                 </TableHead>
                 <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">
                   Cargo
@@ -390,8 +390,9 @@ export function PracticanteTable({
                       <TableCell>
                         <span className="inline-flex -h6 items-center rounded-full bg-blue-50 border  border-blue-200 px-2 py-0.5 text-xs text-blue-600">
                           <BriefcaseBusiness className="h-5 w-5 text-blue-400 shrink-0 pr-2 " />
-                          {practicante.nombreArea ||
-                            practicante.area || "—"}
+                          {practicante.nombreOficina ||
+                            practicante.oficina ||
+                            practicante.nombreOficina || practicante.oficina || "—"}
                         </span>
                       </TableCell>
                       <TableCell>

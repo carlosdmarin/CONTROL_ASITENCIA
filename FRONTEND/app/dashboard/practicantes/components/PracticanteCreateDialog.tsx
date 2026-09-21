@@ -46,12 +46,12 @@ import {
   NuevoPracticante,
   Sede,
   Cargo,
-  Area,
+  Oficina,
   TipoInstituto,
 } from "@/types/practicante";
 import { sedeApi } from "@/lib/api/sedes";
+import { oficinasApi } from "@/lib/api/oficinas";
 import { cargosApi } from "@/lib/api/cargos";
-import { areasApi } from "@/lib/api/areas";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
 import {
   calcularMinutosTrabajados,
@@ -120,7 +120,7 @@ export function PracticanteCreateDialog({
   // Datos de selects — sedes solo desde API (sin fallback hardcodeado)
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
-  const [areas, setAreas] = useState<Area[]>([]);
+  const [oficinas, setOficinas] = useState<Oficina[]>([]);
   const [tiposInstituto, setTiposInstituto] =
     useState<TipoInstituto[]>([]);
   const [loadingSelects, setLoadingSelects] = useState(false);
@@ -132,7 +132,7 @@ export function PracticanteCreateDialog({
     documento: "",
     idSede: 1,
     idCargo: 1,
-    idArea: 1,
+    idOficina: 0,
     idTipoInstituto: 1,
     correoElectronico: "",
     telefono: "",
@@ -208,7 +208,7 @@ export function PracticanteCreateDialog({
     const cargarSelects = async () => {
       try {
         setLoadingSelects(true);
-        const [sedesData, cargosData, areasData, tiposData] =
+        const [sedesData, cargosData, tiposData, oficinasData] =
           await Promise.all([
             sedeApi.getAll().catch(() => {
               toast.error("Error al cargar sedes");
@@ -218,21 +218,21 @@ export function PracticanteCreateDialog({
               toast.error("Error al cargar cargos");
               return [] as Cargo[];
             }),
-            // REGLA 2: Solo áreas activas para crear
-            areasApi.getActivos().catch(() => {
-              toast.error("Error al cargar áreas");
-              return [] as Area[];
-            }),
             tiposInstitutoApi.getAll().catch(() => {
               toast.error("Error al cargar tipos de instituto");
               return [] as TipoInstituto[];
+            }),
+            oficinasApi.getActivas().catch(() => {
+              toast.error("Error al cargar oficinas");
+              return [] as Oficina[];
             }),
           ]);
 
         setSedes(sedesData);
         setCargos(cargosData);
-        setAreas(areasData);
+
         setTiposInstituto(tiposData);
+        setOficinas(oficinasData);
 
         if (sedesData.length > 0) {
           setFormData((prev) => ({ ...prev, idSede: sedesData[0].idSede }));
@@ -240,11 +240,8 @@ export function PracticanteCreateDialog({
         if (cargosData.length > 0) {
           setFormData((prev) => ({ ...prev, idCargo: cargosData[0].idCargo }));
         }
-        if (areasData.length > 0) {
-          setFormData((prev) => ({
-            ...prev,
-            idArea: areasData[0].idArea,
-          }));
+        if (oficinasData.length > 0) {
+          setFormData((prev) => ({ ...prev, idOficina: oficinasData[0].idOficina }));
         }
         if (tiposData.length > 0) {
           setFormData((prev) => ({
@@ -388,7 +385,8 @@ export function PracticanteCreateDialog({
       !telefonoError &&
       formData.fechaInicioPracticas !== "" &&
       formData.idSede > 0 &&
-      formData.idArea > 0 &&
+      formData.idOficina > 0 &&
+      formData.idOficina > 0 &&
       formData.idCargo > 0 &&
       formData.idTipoInstituto > 0
     );
@@ -429,7 +427,7 @@ export function PracticanteCreateDialog({
       apellido: formData.apellido,
       documento: formData.documento,
       idSede: formData.idSede,
-      idArea: formData.idArea,
+      idOficina: formData.idOficina,
       idTipoInstituto: formData.idTipoInstituto,
       idCargo: formData.idCargo,
       correoElectronico: formData.correoElectronico || undefined,
@@ -452,7 +450,7 @@ export function PracticanteCreateDialog({
       documento: "",
       idSede: sedes.length > 0 ? sedes[0].idSede : 1,
       idCargo: cargos.length > 0 ? cargos[0].idCargo : 1,
-      idArea: areas.length > 0 ? areas[0].idArea : 1,
+      idOficina: oficinas.length > 0 ? oficinas[0].idOficina : 0,
       idTipoInstituto:
         tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 1,
       correoElectronico: "",
@@ -693,17 +691,17 @@ export function PracticanteCreateDialog({
             </div>
           </div>
 
-          {/* Area / Área */}
+          {/* Oficina */}
           <div className="grid gap-1.5">
-            <Label htmlFor="idArea" className="text-xs font-medium">
-              Área *
+            <Label htmlFor="idOficina" className="text-xs font-medium">
+              Oficina *
             </Label>
             <div className="relative">
-              <BriefcaseBusiness className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
-                id="idArea"
-                name="idArea"
-                value={formData.idArea}
+                id="idOficina"
+                name="idOficina"
+                value={formData.idOficina}
                 onChange={handleChange}
                 className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={loadingSelects}
@@ -711,15 +709,16 @@ export function PracticanteCreateDialog({
                 {loadingSelects ? (
                   <option value="0">Cargando...</option>
                 ) : (
-                  areas.map((area) => (
-                    <option key={area.idArea} value={area.idArea}>
-                      {area.nombreArea}
+                  oficinas.map((oficina) => (
+                    <option key={oficina.idOficina} value={oficina.idOficina}>
+                      {oficina.oficina}
                     </option>
                   ))
                 )}
               </select>
             </div>
           </div>
+
 
           {/* Cargo */}
           <div className="grid gap-1.5">
@@ -1190,8 +1189,8 @@ export function PracticanteCreateDialog({
     const cargoItem = cargos.find(
       (c) => c.idCargo === Number(formData.idCargo),
     );
-    const areaItem = areas.find(
-      (p) => p.idArea === Number(formData.idArea),
+    const oficinaItem = oficinas.find(
+      (o) => o.idOficina === Number(formData.idOficina),
     );
     const tipoItem = tiposInstituto.find(
       (t) => t.idTipoInstituto === Number(formData.idTipoInstituto),
@@ -1200,18 +1199,18 @@ export function PracticanteCreateDialog({
     // Obtener nombres directamente de los items encontrados
     const sedeFinal = sedeItem?.nombre || "—";
     const cargoFinal = cargoItem?.nombre || "—";
-    const areaFinal = areaItem?.nombreArea || "—";
+    const oficinaFinal = oficinaItem?.oficina || "—";
     const tipoFinal = tipoItem?.nombre || "—";
 
     // Debug para ver qué se está mostrando
     console.log("📋 Step 3 - Mostrando:", {
       sede: sedeFinal,
       cargo: cargoFinal,
-      area: areaFinal,
+      oficina: oficinaFinal,
       tipo: tipoFinal,
       idSede: formData.idSede,
       idCargo: formData.idCargo,
-      idArea: formData.idArea,
+      idOficina: formData.idOficina,
       idTipo: formData.idTipoInstituto,
     });
 
@@ -1247,8 +1246,8 @@ export function PracticanteCreateDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3 sm:p-3">
             <span className="text-gray-500">Sede:</span>
             <span className="font-medium break-words">{sedeFinal}</span>
-            <span className="text-gray-500">Área:</span>
-            <span className="font-medium break-words">{areaFinal}</span>
+            <span className="text-gray-500">Oficina:</span>
+            <span className="font-medium break-words">{oficinaFinal}</span>
             <span className="text-gray-500">Cargo:</span>
             <span className="font-medium break-words">{cargoFinal}</span>
             <span className="text-gray-500">Centro de Estudios:</span>

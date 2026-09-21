@@ -178,14 +178,14 @@ export default function AsistenciaPage() {
     return asistencias.map((a) => {
       const practInfo = practicantesMap.get(a.idPracticante);
       const sede = sedeMap.get(a.idPracticante) || practInfo?.sede || "";
-      const area = practInfo?.nombreArea || practInfo?.area || "";
+      const oficina = practInfo?.nombreOficina || practInfo?.oficina || "";
       const documento = practInfo?.documento || "";
       return {
         id: a.idAsistencia || a.idPracticante,
         practicante: a.nombreCompleto,
         documento,
         sede,
-        area,
+        oficina,
         jornada: a.entradaEsperada && a.salidaEsperada ? `${a.entradaEsperada.substring(0, 5)} – ${a.salidaEsperada.substring(0, 5)}` : a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : "—",
         programada: a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : null,
         entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : null,

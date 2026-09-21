@@ -897,8 +897,8 @@ export default function DashboardPage() {
                   const practicanteInfo = practicantes.find(
                     (p) => p.idPracticante === a.idPracticante,
                   );
-                  const area =
-                    practicanteInfo?.nombreArea || practicanteInfo?.area || "—";
+                  const oficina =
+                    practicanteInfo?.nombreOficina || practicanteInfo?.oficina || "—";
                   let badgeClass =
                     "bg-slate-100 text-slate-700 border-slate-200";
                   let Icon = MinusCircle;
@@ -927,7 +927,7 @@ export default function DashboardPage() {
                           {a.nombreCompleto}
                         </p>
                         <p className="text-xs text-slate-500 truncate flex items-center gap-2">
-                          <span>{area}</span>
+                          <span>{oficina}</span>
                           {a.entradaReal ? (
                             <span className="hidden sm:inline-flex items-center gap-1">
                               <Clock className="h-3 w-3" />

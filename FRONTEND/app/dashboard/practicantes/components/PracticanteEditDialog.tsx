@@ -44,14 +44,14 @@ import {
   Practicante,
   Sede,
   Cargo,
-  Area,
+  Oficina,
   TipoInstituto,
   ActualizarPracticante,
   BloqueHorarioRequest,
 } from "@/types/practicante";
 import { sedeApi } from "@/lib/api/sedes";
+import { oficinasApi } from "@/lib/api/oficinas";
 import { cargosApi } from "@/lib/api/cargos";
-import { areasApi } from "@/lib/api/areas";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
 import { practicantesApi } from "@/lib/api/practicantes";
 import {
@@ -133,7 +133,7 @@ export function PracticanteEditDialog({
 
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
-  const [areas, setAreas] = useState<Area[]>([]);
+  const [oficinas, setOficinas] = useState<Oficina[]>([]);
   const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>([]);
   const [loadingSelects, setLoadingSelects] = useState(false);
 
@@ -143,7 +143,7 @@ export function PracticanteEditDialog({
     documento: "",
     idSede: 0,
     idCargo: 0,
-    idArea: 0,
+    idOficina: 0,
     idTipoInstituto: 0,
     correoElectronico: "",
     telefono: "",
@@ -215,7 +215,7 @@ export function PracticanteEditDialog({
     const cargarSelects = async () => {
       try {
         setLoadingSelects(true);
-        const [sedesData, cargosData, areasData, tiposData] = await Promise.all([
+        const [sedesData, cargosData, tiposData, oficinasData] = await Promise.all([
           sedeApi.getAll().catch(() => {
             toast.error("Error al cargar sedes");
             return [] as Sede[];
@@ -224,22 +224,22 @@ export function PracticanteEditDialog({
             toast.error("Error al cargar cargos");
             return [] as Cargo[];
           }),
-          // REGLA 2: Solo áreas activas para editar (filtrar inactivas)
-          areasApi.getActivos().catch(() => {
-            toast.error("Error al cargar áreas");
-            return [] as Area[];
-          }),
           tiposInstitutoApi.getAll().catch(() => {
             toast.error("Error al cargar tipos de instituto");
             return [] as TipoInstituto[];
+          }),
+          oficinasApi.getActivas().catch(() => {
+            toast.error("Error al cargar oficinas");
+            return [] as Oficina[];
           }),
         ]);
 
         setSedes(sedesData);
         setCargos(cargosData);
         // Mantener solo activas; si el practicante actual tiene área inactiva, se añadirá luego en el segundo useEffect
-        setAreas(areasData);
+
         setTiposInstituto(tiposData);
+        setOficinas(oficinasData);
       } catch (error) {
         console.error("Error al cargar selects:", error);
       } finally {
@@ -279,12 +279,6 @@ export function PracticanteEditDialog({
       return cargos.find(c => normalizar(c.nombre) === normalizado);
     };
 
-    const buscarArea = (nombreArea: string) => {
-      if (!nombreArea) return null;
-      const normalizado = normalizar(nombreArea);
-      return areas.find(p => normalizar(p.nombreArea) === normalizado);
-    };
-
     const buscarTipoInstituto = (nombreTipo: string) => {
       if (!nombreTipo) return null;
       const normalizado = normalizar(nombreTipo);
@@ -294,35 +288,18 @@ export function PracticanteEditDialog({
     let sedeEncontrada = buscarSede(practicante.sede);
 
     const cargoEncontrado = buscarCargo(practicante.cargo);
-    let areaEncontrada = buscarArea(practicante.nombreArea || practicante.area);
-    // REGLA 2: Si el área actual del practicante está INACTIVA (no en lista de activas), mantenerla visible para reasignar
-    // Intentar buscar por idArea explícito si el practicante lo trae
-    if (!areaEncontrada && (practicante as any).idArea) {
-      const idAreaDirecto = (practicante as any).idArea;
-      // Buscar en lista completa vía API si no está en activas
-      areaEncontrada = areas.find((p) => p.idArea === idAreaDirecto) || null;
-      if (!areaEncontrada) {
-        // Intentar recuperar área inactiva para mostrarla como opción readonly
-        // No bloqueamos el flujo; se mantiene id original y se añadirá al selector
-        areasApi.getById(idAreaDirecto).then((areaReal) => {
-          if (areaReal && !areas.some((a) => a.idArea === areaReal.idArea)) {
-            setAreas((prev) => [...prev, areaReal]);
-          }
-        }).catch(() => {});
-      }
-    }
     const tipoEncontrado = buscarTipoInstituto(practicante.tipoInstituto);
 
     const idSedeFinal = sedeEncontrada?.idSede || (sedes.length > 0 ? sedes[0].idSede : 0);
     const idCargoFinal = cargoEncontrado?.idCargo || (cargos.length > 0 ? cargos[0].idCargo : 0);
-    // Si el área actual es inactiva y no se encontró entre activas, usar el id original para no perderlo
-    const idAreaFinal = areaEncontrada?.idArea ?? ((practicante as any).idArea || (areas.length > 0 ? areas[0].idArea : 0));
+    const oficinaEncontrada = oficinas.find(o => o.idOficina === (practicante as any).idOficina);
+    const idOficinaFinal = oficinaEncontrada?.idOficina ?? ((practicante as any).idOficina || (oficinas.length > 0 ? oficinas[0].idOficina : 0));
     const idTipoFinal = tipoEncontrado?.idTipoInstituto || (tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 0);
 
     console.log("🔍 Búsqueda de IDs:", {
       sede: { buscado: practicante.sede, encontrado: sedeEncontrada?.nombre, id: idSedeFinal },
       cargo: { buscado: practicante.cargo, encontrado: cargoEncontrado?.nombre, id: idCargoFinal },
-      area: { buscado: practicante.nombreArea || practicante.area, encontrado: areaEncontrada?.nombreArea, id: idAreaFinal, inactiva: areaEncontrada ? !areaEncontrada.activo : "desconocida" },
+      oficina: { buscado: (practicante as any).nombreOficina || (practicante as any).oficina, encontrado: oficinaEncontrada?.oficina, id: idOficinaFinal },
       tipo: { buscado: practicante.tipoInstituto, encontrado: tipoEncontrado?.nombre, id: idTipoFinal },
     });
 
@@ -332,7 +309,7 @@ export function PracticanteEditDialog({
       documento: practicante.documento || "",
       idSede: idSedeFinal,
       idCargo: idCargoFinal,
-      idArea: idAreaFinal,
+      idOficina: idOficinaFinal,
       idTipoInstituto: idTipoFinal,
       correoElectronico: practicante.correoElectronico || "",
       telefono: practicante.telefono || "",
@@ -385,7 +362,7 @@ export function PracticanteEditDialog({
     };
 
     cargarHorario();
-  }, [practicante, open, sedes, cargos, areas, tiposInstituto]);
+  }, [practicante, open, sedes, cargos, oficinas, tiposInstituto]);
 
   // ====== HANDLERS ======
   const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -487,7 +464,7 @@ export function PracticanteEditDialog({
       !telefonoError &&
       formData.fechaInicioPracticas !== "" &&
       formData.idSede > 0 &&
-      formData.idArea > 0 &&
+      formData.idOficina > 0 &&
       formData.idCargo > 0 &&
       formData.idTipoInstituto > 0
     );
@@ -528,7 +505,7 @@ export function PracticanteEditDialog({
       nombreCompleto: nombreCompleto,
       documento: formData.documento,
       idSede: formData.idSede,
-      idArea: formData.idArea,
+      idOficina: formData.idOficina,
       idTipoInstituto: formData.idTipoInstituto,
       idCargo: formData.idCargo,
       correoElectronico: formData.correoElectronico || undefined,
@@ -771,40 +748,29 @@ export function PracticanteEditDialog({
             </div>
           </div>
 
-          {/* Area / Área */}
+          {/* Oficina */}
           <div className="grid gap-1.5">
-            <Label htmlFor="idArea" className="text-xs font-medium">
-              Área *
+            <Label htmlFor="idOficina" className="text-xs font-medium">
+              Oficina *
             </Label>
             <div className="relative">
-              <BriefcaseBusiness className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
-                id="idArea"
-                name="idArea"
-                value={formData.idArea}
+                id="idOficina"
+                name="idOficina"
+                value={formData.idOficina}
                 onChange={handleSelectChange}
                 className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={loadingSelects}
               >
-                <option value="0">Seleccionar área</option>
-                {areas.map((area) => (
-                  <option key={area.idArea} value={area.idArea}>
-                    {area.nombreArea} {area.activo ? "" : " (INACTIVA)"}
+                <option value="0">Seleccionar oficina</option>
+                {oficinas.map((oficina) => (
+                  <option key={oficina.idOficina} value={oficina.idOficina}>
+                    {oficina.oficina}
                   </option>
                 ))}
               </select>
             </div>
-            {(() => {
-              const areaSel = areas.find((a) => a.idArea === formData.idArea);
-              if (areaSel && !areaSel.activo) {
-                return (
-                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
-                    <AlertTriangle className="h-3 w-3" /> Área actual INACTIVA — debe reasignar a una activa
-                  </p>
-                );
-              }
-              return null;
-            })()}
           </div>
 
           {/* Cargo */}
@@ -1279,8 +1245,8 @@ export function PracticanteEditDialog({
     const cargoItem = cargos.find(
       (c) => c.idCargo === Number(formData.idCargo),
     );
-    const areaItem = areas.find(
-      (p) => p.idArea === Number(formData.idArea),
+    const oficinaItemConfirm = oficinas.find(
+      (o) => o.idOficina === Number(formData.idOficina),
     );
     const tipoItem = tiposInstituto.find(
       (t) => t.idTipoInstituto === Number(formData.idTipoInstituto),
@@ -1289,7 +1255,7 @@ export function PracticanteEditDialog({
     // 1. Intentar por ID
     let sedeFinal = sedeItem?.nombre || "—";
     let cargoFinal = cargoItem?.nombre || "—";
-    let areaFinal = areaItem?.nombreArea || "—";
+    let oficinaFinalConfirm = oficinaItemConfirm?.oficina || "—";
     let tipoFinal = tipoItem?.nombre || "—";
 
     // 2. Si no, usar el practicante original como fallback
@@ -1299,8 +1265,8 @@ export function PracticanteEditDialog({
     if (cargoFinal === "—" && practicante) {
       cargoFinal = practicante.cargo || "—";
     }
-    if (areaFinal === "—" && practicante) {
-      areaFinal = practicante.nombreArea || practicante.area || "—";
+    if (oficinaFinalConfirm === "—" && practicante) {
+      oficinaFinalConfirm = (practicante as any).nombreOficina || (practicante as any).oficina || "—";
     }
     if (tipoFinal === "—" && practicante) {
       tipoFinal = practicante.tipoInstituto || "—";
@@ -1319,11 +1285,11 @@ export function PracticanteEditDialog({
       );
       cargoFinal = encontrado?.nombre || practicante.cargo || "—";
     }
-    if (areaFinal === "—" && practicante?.area) {
-      const encontrado = areas.find(
-        (p) => normalizar(p.nombreArea) === normalizar(practicante.nombreArea || practicante.area)
+    if (oficinaFinalConfirm === "—" && practicante) {
+      const encontrado = oficinas.find(
+        (o) => normalizar(o.oficina) === normalizar((practicante as any).nombreOficina || (practicante as any).oficina || "")
       );
-      areaFinal = encontrado?.nombreArea || practicante.nombreArea || practicante.area || "—";
+      oficinaFinalConfirm = encontrado?.oficina || (practicante as any).nombreOficina || (practicante as any).oficina || "—";
     }
     if (tipoFinal === "—" && practicante?.tipoInstituto) {
       const encontrado = tiposInstituto.find(
@@ -1336,11 +1302,11 @@ export function PracticanteEditDialog({
     console.log("📋 Step 3 - Mostrando:", {
       sede: sedeFinal,
       cargo: cargoFinal,
-      area: areaFinal,
+      oficina: oficinaFinalConfirm,
       tipo: tipoFinal,
       idSede: formData.idSede,
       idCargo: formData.idCargo,
-      idArea: formData.idArea,
+      idOficina: formData.idOficina,
       idTipo: formData.idTipoInstituto,
     });
 
@@ -1376,8 +1342,8 @@ export function PracticanteEditDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3 sm:p-3">
             <span className="text-gray-500">Sede:</span>
             <span className="font-medium break-words">{sedeFinal}</span>
-            <span className="text-gray-500">Área:</span>
-            <span className="font-medium break-words">{areaFinal}</span>
+            <span className="text-gray-500">Oficina:</span>
+            <span className="font-medium break-words">{oficinaFinalConfirm}</span>
             <span className="text-gray-500">Cargo:</span>
             <span className="font-medium break-words">{cargoFinal}</span>
             <span className="text-gray-500">Centro de Estudios:</span>

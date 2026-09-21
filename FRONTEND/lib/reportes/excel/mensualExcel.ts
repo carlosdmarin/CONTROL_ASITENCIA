@@ -38,7 +38,7 @@ export async function generarExcelMensual(reporte: ReporteMensualResponse): Prom
   const p=reporte.practicante;
   const addRow9=(l1:string,v1:string,l2:string,v2:string,l3:string,v3:string)=>{ const pairs:[string,string][]=[[l1,v1],[l2,v2],[l3,v3]]; let col=1; for(const [lab,val] of pairs){ ws.getCell(r,col).value=lab; ws.getCell(r,col).font={size:8,bold:true,color:{argb:SLATE_500}}; ws.getCell(r,col).fill={type:"pattern",pattern:"solid",fgColor:{argb:SLATE_50}}; ws.getCell(r,col).alignment={vertical:"middle",indent:1}; ws.getCell(r,col).border=BORDER_THIN; col++; ws.getCell(r,col).value=val; ws.getCell(r,col).font={size:9,color:{argb:SLATE_900}}; ws.getCell(r,col).alignment={vertical:"middle",indent:1}; ws.getCell(r,col).border=BORDER_THIN; col++; ws.getCell(r,col).value=""; ws.getCell(r,col).border=BORDER_THIN; col++; } ws.getRow(r).height=18; r++; };
   addRow9("Practicante",p.nombreCompleto|| "—","DNI",p.documento|| "—","Sede",p.sede|| "—");
-  addRow9("Área",p.nombreArea||(p as any).area|| "—","Cargo",p.cargo|| "—","Instituto",(p as any).tipoInstituto|| "—");
+  addRow9("Oficina",p.nombreOficina || (p as any).oficina|| "—","Cargo",p.cargo|| "—","Instituto",(p as any).tipoInstituto|| "—");
   addRow9("Estado",p.situacion|| "—","Periodo prácticas",`${p.fechaInicioPracticas|| "—"}${p.fechaFinPracticas?" — "+p.fechaFinPracticas:""}`, "", "");
   ws.getRow(r).height=6; r++;
 

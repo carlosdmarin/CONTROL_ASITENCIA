@@ -12,11 +12,8 @@ public class PracticanteRequest {
     private String documento;
     @JsonAlias({"idAgencia"})
     private Integer idSede;
-    @JsonAlias({"idArea", "id_area"})
-    private Long idPuesto;
-    // Canónico nuevo: idArea (alias de idPuesto para migración)
-    public Long getIdArea() { return idPuesto; }
-    public void setIdArea(Long idArea) { this.idPuesto = idArea; }
+    @JsonAlias({"idOficina", "id_oficina"})
+    private Integer idOficina;
 
     private Long idTipoInstituto;
     private Long idCargo;

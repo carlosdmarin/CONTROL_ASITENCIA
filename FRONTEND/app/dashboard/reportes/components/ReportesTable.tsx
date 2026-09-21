@@ -333,8 +333,7 @@ export function ReportesPracticantesTable({
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs text-slate-600">
-                          {practicante.nombreArea ||
-                            practicante.area || "—"}
+                          {practicante.nombreOficina || practicante.oficina || "—"}
                         </span>
                       </TableCell>
                       <TableCell>

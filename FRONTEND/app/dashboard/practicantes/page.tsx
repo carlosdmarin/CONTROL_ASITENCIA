@@ -66,14 +66,14 @@ export default function PracticantesPage() {
   const practicantesFiltrados = practicantes.filter((p) => {
     const matchSituacion = filtroSituacion === "TODOS" || p.situacion === filtroSituacion;
     const sede = p.sede || "";
-    const nombreArea = p.nombreArea || p.area  || "";
+    const nombreOficina = p.nombreOficina || p.oficina  || "";
     const matchSede = filtroSede === "todas" || sede === filtroSede;
     const matchBusqueda =
       !busqueda ||
       p.nombreCompleto?.toLowerCase().includes(busqueda.toLowerCase()) ||
       p.documento?.includes(busqueda) ||
       sede.toLowerCase().includes(busqueda.toLowerCase()) ||
-      nombreArea.toLowerCase().includes(busqueda.toLowerCase()) ||
+      nombreOficina.toLowerCase().includes(busqueda.toLowerCase()) ||
       p.cargo?.toLowerCase().includes(busqueda.toLowerCase());
     return matchSituacion && matchBusqueda && matchSede;
   });
@@ -123,12 +123,12 @@ export default function PracticantesPage() {
       const nombre = practicanteEditado.nombre || practicanteEditado.nombreCompleto?.split(" ")[0] || "";
       const apellido = practicanteEditado.apellido || practicanteEditado.nombreCompleto?.split(" ").slice(1).join(" ") || "";
       const idSede = practicanteEditado.idSede;
-      const idArea = practicanteEditado.idArea;
+      const idOficina = practicanteEditado.idOficina;
       const idTipoInstituto = practicanteEditado.idTipoInstituto;
       const idCargo = practicanteEditado.idCargo;
 
-      if (!idSede || !idArea || !idTipoInstituto || !idCargo) {
-        toast.error("Faltan datos de sede/área/cargo/centro. Verifique selección.");
+      if (!idSede || !idOficina || !idTipoInstituto || !idCargo) {
+        toast.error("Faltan datos de sede/oficina/cargo/centro. Verifique selección.");
         return;
       }
 
@@ -137,7 +137,7 @@ export default function PracticantesPage() {
         apellido,
         documento: practicanteEditado.documento,
         idSede,
-        idArea,
+        idOficina,
         idTipoInstituto,
         idCargo,
         correoElectronico: practicanteEditado.correoElectronico,

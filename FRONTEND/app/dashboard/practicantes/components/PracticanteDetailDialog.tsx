@@ -153,13 +153,13 @@ export function PracticanteDetailDialog({
       icon: Building2,
     },
     {
-      label: "Área",
-      value: practicante.nombreArea || practicante.area || "—",
+      label: "Oficina",
+      value: practicante.nombreOficina || practicante.oficina || "—",
       icon: Layers,
     },
     {
-      label: "Descripción del Área",
-      value: practicante.descripcionArea || practicante.areaObj?.descripcion || "—",
+      label: "Oficina",
+      value: practicante.nombreOficina || practicante.oficina || "—",
       icon: FileText,
     },
     {

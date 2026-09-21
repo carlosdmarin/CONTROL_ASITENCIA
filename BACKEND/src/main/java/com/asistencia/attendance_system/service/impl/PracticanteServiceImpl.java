@@ -28,11 +28,11 @@ import java.util.stream.Collectors;
 public class PracticanteServiceImpl implements PracticanteService {
 
     private final PracticanteRepository practicanteRepository;
-    private final PuestoRepository puestoRepository;
     private final SedeRepository sedeRepository;
     private final CargoRepository cargoRepository;
     private final TipoInstitutoRepository tipoInstitutoRepository;
     private final BloqueHorarioRepository bloqueHorarioRepository;
+    private final OficinaRepository oficinaRepository;
 
     // ====== MÉTODOS PRINCIPALES ======
 
@@ -47,14 +47,17 @@ public class PracticanteServiceImpl implements PracticanteService {
         Sede sede = sedeRepository.findById(request.getIdSede())
                 .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getIdSede()));
 
-        Puesto puesto = puestoRepository.findById(request.getIdPuesto())
-                .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + request.getIdPuesto()));
-
-        // REGLA 2: No asignar área inactiva
-        if (puesto.getActivo() == null || !puesto.getActivo()) {
-            throw new BusinessException(
-                    "El área seleccionada '" + puesto.getNombrePuesto() + "' está inactiva y no puede asignarse a un practicante.",
-                    HttpStatus.BAD_REQUEST);
+        // Oficina es catálogo corporativo de solo lectura
+        if (request.getIdOficina() == null) {
+            throw new BusinessException("idOficina es requerido", HttpStatus.BAD_REQUEST);
+        }
+        Oficina oficina = oficinaRepository.findById(request.getIdOficina())
+                .orElseThrow(() -> new RuntimeException("Oficina no encontrada con ID: " + request.getIdOficina()));
+        if (oficina.getEstado() == null || oficina.getEstado() != 1) {
+            throw new BusinessException("La oficina seleccionada '" + oficina.getOficina() + "' está inactiva y no puede asignarse.", HttpStatus.BAD_REQUEST);
+        }
+        if (oficina.getIdSede() != null && !oficina.getIdSede().equals(sede.getIdSede())) {
+            throw new BusinessException("La oficina '" + oficina.getOficina() + "' no pertenece a la sede seleccionada.", HttpStatus.BAD_REQUEST);
         }
 
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
@@ -69,7 +72,7 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setApellido(request.getApellido());
         practicante.setDocumento(request.getDocumento());
         practicante.setSede(sede);
-        practicante.setPuesto(puesto);
+        practicante.setOficina(oficina);
         practicante.setTipoInstituto(tipoInstituto);
         practicante.setCargo(cargo);
         practicante.setSituacion(Situacion.ACTIVO);
@@ -104,14 +107,16 @@ public class PracticanteServiceImpl implements PracticanteService {
         Sede sede = sedeRepository.findById(request.getIdSede())
                 .orElseThrow(() -> new RuntimeException("Sede no encontrada con ID: " + request.getIdSede()));
 
-        Puesto puesto = puestoRepository.findById(request.getIdPuesto())
-                .orElseThrow(() -> new RuntimeException("Puesto no encontrado con ID: " + request.getIdPuesto()));
-
-        // REGLA 2: No asignar área inactiva (también al editar)
-        if (puesto.getActivo() == null || !puesto.getActivo()) {
-            throw new BusinessException(
-                    "El área seleccionada '" + puesto.getNombrePuesto() + "' está inactiva y no puede asignarse a un practicante.",
-                    HttpStatus.BAD_REQUEST);
+        if (request.getIdOficina() == null) {
+            throw new BusinessException("idOficina es requerido", HttpStatus.BAD_REQUEST);
+        }
+        Oficina oficina = oficinaRepository.findById(request.getIdOficina())
+                .orElseThrow(() -> new RuntimeException("Oficina no encontrada con ID: " + request.getIdOficina()));
+        if (oficina.getEstado() == null || oficina.getEstado() != 1) {
+            throw new BusinessException("La oficina '" + oficina.getOficina() + "' está inactiva.", HttpStatus.BAD_REQUEST);
+        }
+        if (oficina.getIdSede() != null && !oficina.getIdSede().equals(sede.getIdSede())) {
+            throw new BusinessException("La oficina '" + oficina.getOficina() + "' no pertenece a la sede seleccionada.", HttpStatus.BAD_REQUEST);
         }
 
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
@@ -125,7 +130,7 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setApellido(request.getApellido());
         practicante.setDocumento(request.getDocumento());
         practicante.setSede(sede);
-        practicante.setPuesto(puesto);
+        practicante.setOficina(oficina);
         practicante.setTipoInstituto(tipoInstituto);
         practicante.setCargo(cargo);
         practicante.setCorreoElectronico(request.getCorreoElectronico());
@@ -331,18 +336,14 @@ public class PracticanteServiceImpl implements PracticanteService {
         response.setDocumento(practicante.getDocumento());
         response.setSede(practicante.getSede().getNombre());
         response.setIdSede(practicante.getSede().getIdSede());
-        // Canónico Area
-        Long idArea = practicante.getPuesto().getIdPuesto();
-        String nombreArea = practicante.getPuesto().getNombrePuesto();
-        String descripcionArea = practicante.getPuesto().getDescripcion();
-        response.setIdArea(idArea);
-        response.setNombreArea(nombreArea);
-        response.setDescripcionArea(descripcionArea);
+        // Canónico Oficina
+        if (practicante.getOficina() != null) {
+            response.setIdOficina(practicante.getOficina().getIdOficina());
+            response.setNombreOficina(practicante.getOficina().getOficina());
+            response.setOficina(practicante.getOficina().getOficina());
+        }
         response.setIdCargo(practicante.getCargo().getIdCargo());
         response.setIdTipoInstituto(practicante.getTipoInstituto().getIdTipoInstituto());
-        // Legacy compat: puesto y area ahora ambos = nombreArea (corrige bug tabla donde area mostraba descripcion)
-        response.setPuesto(nombreArea);
-        response.setArea(nombreArea);
         response.setTipoInstituto(practicante.getTipoInstituto().getNombre());
         response.setCargo(practicante.getCargo().getNombre());
         response.setSituacion(practicante.getSituacion().toString());

@@ -109,7 +109,7 @@ export async function generarPdfMensual(reporte: ReporteMensualResponse): Promis
   const tableStyles={ styles:{font:"helvetica",fontSize:7,cellPadding:2,lineColor:SLATE_200 as unknown as string,textColor:[15,23,42] as [number,number,number]}, headStyles:{fillColor:SLATE_50 as unknown as string,textColor:SLATE_500 as unknown as string,fontStyle:"bold" as const,fontSize:6}, bodyStyles:{fontSize:7}, columnStyles:{0:{cellWidth:colW},1:{cellWidth:colW},2:{cellWidth:colW}}, margin:{left:margin,right:margin}, theme:"grid" as const };
   autoTable(doc,{...tableStyles,startY:y,head:[["Practicante","DNI","Sede"]],body:[[p.nombreCompleto|| "—",p.documento|| "—",p.sede|| "—"]]});
   y=(doc as any).lastAutoTable.finalY+0.5;
-  autoTable(doc,{...tableStyles,startY:y,head:[["Área","Cargo","Instituto"]],body:[[p.nombreArea||(p as any).area|| "—",p.cargo|| "—",(p as any).tipoInstituto|| "—"]]});
+  autoTable(doc,{...tableStyles,startY:y,head:[["Oficina","Cargo","Instituto"]],body:[[p.nombreOficina || (p as any).oficina|| "—",p.cargo|| "—",(p as any).tipoInstituto|| "—"]]});
   y=(doc as any).lastAutoTable.finalY+0.5;
   autoTable(doc,{...tableStyles,startY:y,head:[["Estado","Periodo prácticas",""]],body:[[p.situacion|| "—",`${p.fechaInicioPracticas|| "—"} ${p.fechaFinPracticas?"— "+p.fechaFinPracticas:""}`, ""]]});
   y=(doc as any).lastAutoTable.finalY+4;

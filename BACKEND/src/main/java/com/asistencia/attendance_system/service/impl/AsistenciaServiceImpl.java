@@ -11,7 +11,7 @@ import com.asistencia.attendance_system.model.entity.Justificacion;
 import com.asistencia.attendance_system.model.entity.Marcacion;
 import com.asistencia.attendance_system.model.entity.Practicante;
 import com.asistencia.attendance_system.excepcion.BusinessException;
-import com.asistencia.attendance_system.model.entity.Puesto;
+import com.asistencia.attendance_system.model.entity.Oficina;
 import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.enums.Agencia;
 import org.springframework.http.HttpStatus;
@@ -121,12 +121,12 @@ public class AsistenciaServiceImpl implements AsistenciaService {
             throw new RuntimeException("Practicante no activo: Este practicante se encuentra actualmente inactivo y no puede registrar asistencia.");
         }
 
-        // REGLA 3: Validar que el área asociada esté ACTIVA
-        Puesto area = practicante.getPuesto();
-        if (area == null || area.getActivo() == null || !area.getActivo()) {
-            String nombreArea = area != null ? area.getNombrePuesto() : "desconocida";
+        // REGLA 3: Validar que la oficina asociada esté ACTIVA (Estado=1)
+        Oficina oficina = practicante.getOficina();
+        if (oficina == null || oficina.getEstado() == null || oficina.getEstado() != 1) {
+            String nombreOficina = oficina != null ? oficina.getOficina() : "desconocida";
             throw new BusinessException(
-                    "No puede registrar asistencia porque el área asociada '" + nombreArea + "' está inactiva.",
+                    "No puede registrar asistencia porque la oficina asociada '" + nombreOficina + "' está inactiva.",
                     HttpStatus.FORBIDDEN);
         }
 
