@@ -26,11 +26,6 @@ public interface AsistenciaDiariaRepository extends JpaRepository<AsistenciaDiar
 
     List<AsistenciaDiaria> findByPracticante_IdPracticanteAndFechaBetween(Long idPracticante, LocalDate fechaInicio, LocalDate fechaFin);
 
-    List<AsistenciaDiaria> findByMinutosTardanzaGreaterThan(Integer minutos);
-
-    List<AsistenciaDiaria> findByPracticante_IdPracticanteAndMinutosTardanzaGreaterThanAndFechaBetween(
-            Long idPracticante, Integer minutos, LocalDate fechaInicio, LocalDate fechaFin);
-
     // ========== QUERYS CON JPQL ==========
 
     @Query("SELECT SUM(a.horasTrabajadas) FROM AsistenciaDiaria a WHERE a.practicante.idPracticante = :idPracticante AND FUNCTION('YEAR', a.fecha) = :anio AND FUNCTION('MONTH', a.fecha) = :mes")

@@ -16,11 +16,6 @@ public interface PracticanteRepository extends JpaRepository<Practicante, Long> 
 
     Optional<Practicante> findByDocumento(String documento);
 
-    // Alias compatibilidad: QR antiguo usaba codigoTrabajador, ahora es documento
-    default Optional<Practicante> findByCodigoTrabajador(String codigoTrabajador) {
-        return findByDocumento(codigoTrabajador);
-    }
-
     List<Practicante> findBySituacion(Situacion situacion);
 
     // ====== NUEVO MÉTODO ======
@@ -36,6 +31,4 @@ public interface PracticanteRepository extends JpaRepository<Practicante, Long> 
     default Long countActivosByAgencia(Sede sede) {
         return countActivosBySede(sede);
     }
-
-    boolean existsById(Long id);
 }
