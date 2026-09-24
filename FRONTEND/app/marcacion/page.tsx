@@ -130,7 +130,7 @@ export default function MarcacionPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-[100dvh] bg-slate-50">
       {/* HEADER */}
       <QRScannerHeader />
 
@@ -142,7 +142,7 @@ export default function MarcacionPage() {
 
           {/* LECTOR QR */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-            <div className="aspect-square bg-black rounded-xl overflow-hidden relative">
+            <div className="aspect-square bg-black rounded-xl overflow-hidden relative w-full max-w-[520px] mx-auto max-h-[60dvh]">
               <QRScanner
                 onScan={handleScan}
                 onError={handleError}
@@ -150,10 +150,11 @@ export default function MarcacionPage() {
                 isResultVisible={isResultVisible}
               />
             </div>
+            <p className="mt-3 text-center text-sm text-slate-600">Coloca el QR dentro del recuadro</p>
           </div>
 
           {/* BOTONES DE CONTROL */}
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <QRScannerButton
               isScanning={isScanning}
               onToggle={() => setIsScanning(!isScanning)}
@@ -171,7 +172,7 @@ export default function MarcacionPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-slate-800 text-sm">Historial reciente</h3>
-              <button onClick={cargarHistorial} className="text-xs text-blue-600 hover:text-blue-700">Actualizar</button>
+              <button onClick={cargarHistorial} className="text-xs font-medium text-brand hover:text-brand-hover underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 rounded-md px-1">Actualizar</button>
             </div>
             {loadingHist ? (
               <p className="text-xs text-slate-400 text-center py-4">Cargando...</p>
@@ -205,7 +206,7 @@ export default function MarcacionPage() {
                 </table>
               </div>
             )}
-            <Link href="/marcacion/historial" className="w-full text-xs text-slate-500 hover:text-slate-700 transition-colors py-2 block text-center mt-2">
+            <Link href="/marcacion/historial" className="w-full text-xs font-medium text-brand hover:text-brand-hover underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 rounded-md transition-colors py-2 block text-center mt-2">
               Ver historial completo
             </Link>
           </div>

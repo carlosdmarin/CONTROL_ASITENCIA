@@ -186,7 +186,7 @@ export default function QRScannerResult({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+      <div role="status" aria-live="polite" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
         <Card className="max-w-sm w-full mx-4 p-8 text-center">
           <div className="h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-600">Buscando practicante...</p>
@@ -199,7 +199,7 @@ export default function QRScannerResult({
   // ===== CARD: DÍA DE DESCANSO =====
   if (isDescanso) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
         <Card className="max-w-sm w-full mx-4 border-amber-200 shadow-2xl overflow-hidden animate-success-pop">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600">
             <CalendarOff className="h-5 w-5 text-white" />
@@ -317,7 +317,7 @@ export default function QRScannerResult({
   // ===== CARD: JORNADA FINALIZADA =====
   if (isJornadaFinalizada) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
         <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl overflow-hidden">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600">
             <AlertTriangle className="h-5 w-5 text-white" />
@@ -358,7 +358,7 @@ export default function QRScannerResult({
   // ===== CARD: PRACTICANTE NO ACTIVO =====
   if (isInactivo) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
         <Card className="max-w-sm w-full mx-4 border-orange-200 shadow-2xl overflow-hidden">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600">
             <Ban className="h-5 w-5 text-white" />
@@ -472,7 +472,7 @@ export default function QRScannerResult({
   // ===== CARD: YA REGISTRÓ ENTRADA Y SALIDA =====
   if (isYaRegistrado) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
         <Card className="max-w-sm w-full mx-4 border-blue-200 shadow-2xl overflow-hidden">
           <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600">
             <DoorClosed className="h-5 w-5 text-white" />
@@ -590,7 +590,7 @@ export default function QRScannerResult({
   // ===== CARD: ERROR =====
   if (isError || error || !practicante) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
         <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl animate-shake-subtle">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
@@ -629,6 +629,8 @@ export default function QRScannerResult({
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) {

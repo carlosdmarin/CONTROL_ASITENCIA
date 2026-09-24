@@ -8,6 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SplashScreen } from "@/components/auth/SplashScreen";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   InputGroup,
@@ -15,11 +16,11 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import {
-  MailIcon,
   LockIcon,
   EyeIcon,
   EyeOffIcon,
-  Sparkles,
+  User,
+  AlertCircle,
 } from "lucide-react";
 
 const formSchema = z.object({
@@ -32,6 +33,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showSplash, setShowSplash] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
@@ -69,198 +71,251 @@ const Login = () => {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-blue-100 from-slate-200">
-      <div className="flex h-full w-full p-4 max-w-6xl">
-        {/* ====== COLUMNA IZQUIERDA (FORMULARIO) ====== */}
-        <div className="flex w-full flex-col items-center justify-center p-6 lg:w-1/2 bg-white/90 backdrop-blur-sm rounded-l-2xl">
-          <div className="w-full max-w-sm space-y-5">
-            {/* ====== LOGO ====== */}
-            <div className="text-center">
-              <Image
-                src="/images/LOGO-C1.png"
-                alt="Logo XEO - Sistema de Asistencias"
-                width={160}
-                height={160}
-                className="mx-auto h-40 w-auto"
-                priority
-              />
-              <p className="text-sm text-slate-500">
-                Ingresa tus credenciales para ingresar
-              </p>
-            </div>
-
-            {/* ====== SEPARADOR ====== */}
-            <div className="flex w-full items-center gap-4">
-              <div className="flex-1 border-t border-slate-200" />
-              <Sparkles className="h-4 w-4 text-slate-300" />
-              <div className="flex-1 border-t border-slate-200" />
-            </div>
-
-            {/* ====== ERROR ====== */}
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-200">
-                {error}
-              </div>
-            )}
-
-            {/* ====== FORMULARIO ====== */}
-            <form
-              className="w-full space-y-4"
-              onSubmit={form.handleSubmit(onSubmit)}
+    <>
+      {showSplash && (
+        <SplashScreen duration={1250} onComplete={() => setShowSplash(false)} />
+      )}
+      <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 px-4 py-6 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] md:p-6 lg:p-8">
+        <div className="flex w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:max-w-[480px] lg:max-w-[1020px]">
+          {/* ====== PANEL IZQUIERDO - FORMULARIO ====== */}
+          <div className="flex w-full flex-col justify-center bg-white px-5 py-6 sm:px-8 sm:py-8 lg:w-[440px] lg:shrink-0 lg:px-8 xl:w-[460px] xl:px-10 lg:py-9">
+            <div
+              className="mx-auto w-full max-w-sm"
+              style={
+                !showSplash
+                  ? { animation: "login-enter 420ms cubic-bezier(0.16,1,0.3,1) both" }
+                  : undefined
+              }
             >
-              {/* ====== EMAIL ====== */}
-              <Controller
-                control={form.control}
-                name="email"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel className="text-slate-700">Correo</FieldLabel>
-                    <InputGroup>
-                      <InputGroupAddon>
-                        <MailIcon className="h-4 w-4 text-slate-400" />
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        className="border-0 shadow-none focus-visible:ring-0 text-slate-800 placeholder:text-slate-400"
-                        placeholder="tucorreo@empresa.com"
-                        type="email"
-                        {...field}
-                        aria-invalid={fieldState.invalid}
-                        disabled={isLoading}
-                      />
-                    </InputGroup>
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-
-              {/* ====== CONTRASEÑA ====== */}
-              <Controller
-                control={form.control}
-                name="password"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel className="text-slate-700">
-                      Contraseña
-                    </FieldLabel>
-                    <InputGroup>
-                      <InputGroupAddon>
-                        <LockIcon className="h-4 w-4 text-slate-400" />
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        className="border-0 shadow-none focus-visible:ring-0 text-slate-800 placeholder:text-slate-400"
-                        placeholder="••••••••"
-                        type={showPassword ? "text" : "password"}
-                        {...field}
-                        aria-invalid={fieldState.invalid}
-                        disabled={isLoading}
-                      />
-                      <InputGroupAddon align="inline-end">
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
-                        >
-                          {showPassword ? (
-                            <EyeOffIcon className="h-4 w-4" />
-                          ) : (
-                            <EyeIcon className="h-4 w-4" />
-                          )}
-                        </button>
-                      </InputGroupAddon>
-                    </InputGroup>
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-
-              {/* ====== RECORDARME + OLVIDASTE ====== */}
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20"
+              {/* Branding integrado */}
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
+                  <Image
+                    src="/images/practiQR_logo.png"
+                    alt="PractiQR"
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-contain"
+                    priority
                   />
-                  <span className="text-slate-600">Recordarme</span>
-                </label>
-                <Link
-                  href="#"
-                  className="text-blue-600 hover:text-blue-800 transition-colors hover:underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[15px] font-bold leading-none tracking-tight text-slate-900">
+                    PractiQR
+                  </p>
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-slate-500">
+                    Control de asistencias
+                  </p>
+                </div>
+                <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium tracking-wider text-slate-600">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  OLAMSA
+                </span>
               </div>
 
-              {/* ====== BOTÓN INICIAR SESIÓN ====== */}
-              <Button
-                className="mt-2 w-full h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white transition-all duration-200 font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
-                type="submit"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Cargando...</span>
-                  </div>
-                ) : (
-                  "Iniciar Sesión"
-                )}
-              </Button>
+              {/* Título con jerarquía clara */}
+              <div className="mt-8 space-y-1.5">
+                <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-slate-900">
+                  Bienvenido de nuevo
+                </h1>
+                <p className="text-sm leading-relaxed text-slate-500">
+                  Ingresa tus credenciales para acceder al sistema.
+                </p>
+              </div>
 
-              {/* ====== BOTÓN VOLVER ====== */}
-              <a href="/landing">
-                <Button
-                  className="w-full h-10 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-all duration-300 border border-slate-200"
-                  variant="outline"
+              {/* Error moderado, sin desplazar violentamente */}
+              {error && (
+                <div
+                  className="mt-6 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm leading-snug text-red-700"
+                  role="alert"
+                  aria-live="polite"
                 >
-                  Volver
-                </Button>
-              </a>
-            </form>
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                  <span>{error}</span>
+                </div>
+              )}
 
-            {/* ====== CREDENCIALES DE PRUEBA ====== */}
-            <div className="rounded-lg bg-slate-50/50 p-3 text-center text-xs border border-slate-200">
-              <p className="text-slate-500">
-                🔑 <span className="font-medium">Prueba:</span>
-                <br />
-                <span className="text-blue-600 font-mono">
-                  admin@asistpro.com
-                </span>
-                <span className="mx-2 text-slate-300">/</span>
-                <span className="text-blue-600 font-mono">123456</span>
+              {/* Formulario */}
+              <form
+                className="mt-6 space-y-4"
+                onSubmit={form.handleSubmit(onSubmit)}
+                noValidate
+              >
+                {/* Usuario - #10 type email porque validación es .email() */}
+                <Controller
+                  control={form.control}
+                  name="email"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid} className="gap-1.5">
+                      <FieldLabel htmlFor="login-email" className="text-[13px] font-medium text-slate-700">
+                        Usuario
+                      </FieldLabel>
+                      <InputGroup className="h-11 rounded-xl border-slate-200 bg-white shadow-sm transition-colors hover:border-slate-300 has-[[data-slot=input-group-control]:focus-visible]:border-brand/40 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-brand/15 has-[[data-slot][aria-invalid=true]]:border-red-300 has-[[data-slot][aria-invalid=true]]:ring-red-500/10">
+                        <InputGroupAddon className="pl-3">
+                          <User className="h-4 w-4 text-slate-400" />
+                        </InputGroupAddon>
+                        <InputGroupInput
+                          id="login-email"
+                          className="border-0 bg-transparent text-[16px] text-slate-900 placeholder:text-slate-400 focus-visible:ring-0 sm:text-[14px]"
+                          placeholder="Ingresa tu usuario"
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          {...field}
+                          aria-invalid={fieldState.invalid}
+                          disabled={isLoading}
+                        />
+                      </InputGroup>
+                      <FieldError
+                        errors={[fieldState.error]}
+                        className="text-[12.5px] font-normal"
+                      />
+                    </Field>
+                  )}
+                />
+
+                {/* Contraseña */}
+                <Controller
+                  control={form.control}
+                  name="password"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid} className="gap-1.5">
+                      <FieldLabel htmlFor="login-password" className="text-[13px] font-medium text-slate-700">
+                        Contraseña
+                      </FieldLabel>
+                      <InputGroup className="h-11 rounded-xl border-slate-200 bg-white shadow-sm transition-colors hover:border-slate-300 has-[[data-slot=input-group-control]:focus-visible]:border-brand/40 has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-brand/15 has-[[data-slot][aria-invalid=true]]:border-red-300 has-[[data-slot][aria-invalid=true]]:ring-red-500/10">
+                        <InputGroupAddon className="pl-3">
+                          <LockIcon className="h-4 w-4 text-slate-400" />
+                        </InputGroupAddon>
+                        <InputGroupInput
+                          id="login-password"
+                          className="border-0 bg-transparent text-[16px] text-slate-900 placeholder:text-slate-400 focus-visible:ring-0 sm:text-[14px]"
+                          placeholder="••••••••"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          {...field}
+                          aria-invalid={fieldState.invalid}
+                          disabled={isLoading}
+                        />
+                        <InputGroupAddon align="inline-end" className="pr-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20"
+                            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                            tabIndex={0}
+                            disabled={isLoading}
+                          >
+                            {showPassword ? (
+                              <EyeOffIcon className="h-4 w-4" />
+                            ) : (
+                              <EyeIcon className="h-4 w-4" />
+                            )}
+                          </button>
+                        </InputGroupAddon>
+                      </InputGroup>
+                      <FieldError
+                        errors={[fieldState.error]}
+                        className="text-[12.5px] font-normal"
+                      />
+                    </Field>
+                  )}
+                />
+
+                {/* Recordarme + Olvidaste - fila 44px clicable, sin quiebre */}
+                <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between">
+                  <label htmlFor="remember-me" className="flex min-h-[44px] cursor-pointer items-center gap-2 py-2 pr-2 text-sm">
+                    <input
+                      id="remember-me"
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-slate-300 accent-brand focus:ring-brand/20 focus:ring-2 focus:ring-offset-0"
+                      disabled={isLoading}
+                    />
+                    <span className="text-[13.5px] text-slate-600">Recordarme</span>
+                  </label>
+                  <Link
+                    href="#"
+                    className="flex min-h-[44px] items-center whitespace-nowrap rounded-md px-2 py-2 text-[13.5px] font-medium text-brand underline-offset-4 transition-colors hover:text-brand-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+
+                {/* Botón principal - acento de marca con degradado sutil */}
+                <Button
+                  className="h-11 min-h-[44px] w-full rounded-xl bg-gradient-to-r from-brand to-brand-hover text-[14px] font-medium text-brand-foreground shadow-sm transition-all hover:opacity-[0.95] focus-visible:ring-2 focus-visible:ring-brand/20 active:scale-[0.99] disabled:opacity-60"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Ingresando...
+                    </span>
+                  ) : (
+                    "Ingresar"
+                  )}
+                </Button>
+              </form>
+
+              <p className="mt-8 text-center text-xs leading-relaxed text-slate-400">
+                © 2026 OLAMSA · Sistema interno de control
               </p>
             </div>
           </div>
-        </div>
 
-        {/* ====== COLUMNA DERECHA (IMAGEN CON EFECTOS) ====== */}
-        <div className="relative hidden lg:block lg:w-1/2 rounded-r-2xl overflow-hidden group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt="Login"
-            className="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src="https://www.olamsa.com.pe/images/planta.png"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/40 to-transparent transition-all duration-700 group-hover:bg-gradient-to-b group-hover:from-slate-900/70 group-hover:via-slate-900/30" />
-          <div className="absolute top-0 left-0 right-0 p-8 text-white transition-all duration-700 group-hover:translate-y-[-4px]">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
-              Gestiona la <span className="text-blue-400">asistencia</span>
-              <br />
-              de tus praticantes
-            </h2>
-            <p className="mt-2 text-sm md:text-base text-gray-300 max-w-xs transition-all duration-700 group-hover:text-white/90">
-              Registra entradas, controla horarios y genera reportes en
-              segundos.
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              <div className="h-1 w-10 bg-blue-400 rounded-full transition-all duration-700 group-hover:w-16 group-hover:bg-blue-300" />
-              <span className="text-xs text-gray-400 transition-all duration-700 group-hover:text-gray-200">
-                Sistema de Asistencias
-              </span>
+          {/* ====== PANEL DERECHO - BRANDING VISUAL ====== */}
+          <div className="relative hidden flex-1 overflow-hidden bg-slate-900 lg:flex">
+            <Image
+              alt=""
+              aria-hidden="true"
+              fill
+              className="object-cover"
+              src="/images/olamsa-planta.png"
+              sizes="(min-width: 1024px) 50vw, 0vw"
+              priority={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/75 via-slate-900/35 to-slate-900/10" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_700px_400px_at_20%_10%,rgba(59,130,246,0.18),transparent_70%)]" />
+            <div className="relative flex h-full flex-col justify-between p-8 xl:p-10">
+              <div>
+                <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-medium tracking-wider text-white/80 backdrop-blur">
+                  OLAMSA · Ucayali, Perú
+                </span>
+                <h2 className="mt-6 max-w-[360px] text-[28px] font-bold leading-[1.15] tracking-tight text-white xl:text-[32px]">
+                  Gestiona la <span className="text-blue-300">asistencia</span>
+                  <br />
+                  de tus practicantes
+                </h2>
+                <p className="mt-3 max-w-[340px] text-sm leading-relaxed text-slate-200/80">
+                  Registra entradas, controla horarios y genera reportes en
+                  segundos. Todo en un solo lugar.
+                </p>
+                <div className="mt-6 flex items-center gap-3">
+                  <span className="h-px w-10 bg-blue-400/80" />
+                  <span className="text-xs font-medium tracking-widest text-white/60 uppercase">
+                    Sistema de Asistencias
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-white/50">
+                <span className="h-1 w-1 rounded-full bg-white/40" />
+                Fotografías: Planta OLAMSA KM 36.8
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <style>{`
+        @keyframes login-enter {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          div[style*="login-enter"] { animation: none !important; }
+        }
+      `}</style>
+    </>
   );
 };
 

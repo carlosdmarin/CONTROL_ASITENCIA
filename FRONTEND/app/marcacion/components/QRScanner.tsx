@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 
 interface QRScannerProps {
@@ -20,6 +19,7 @@ export default function QRScanner({
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const containerId = "qr-reader-container";
+  const QR_BOX_SIZE = 250;
 
   const stopScanner = useCallback(async () => {
     try {
@@ -63,7 +63,7 @@ export default function QRScanner({
           { facingMode: "environment" },
           {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: { width: QR_BOX_SIZE, height: QR_BOX_SIZE },
             aspectRatio: 1.0,
           },
           (decodedText) => {
@@ -131,29 +131,33 @@ export default function QRScanner({
         className="w-full h-full [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_canvas]:hidden"
       />
 
-      {/* Overlay visual */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 border-4 border-blue-500/60 rounded-xl m-8">
-          <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></div>
-          <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-blue-500 rounded-tr-lg"></div>
-          <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-blue-500 rounded-bl-lg"></div>
-          <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-blue-500 rounded-br-lg"></div>
+      {/* Overlay visual — único marco 250px centrado, color marca */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[250px] w-[250px] pointer-events-none"
+          aria-hidden="true"
+        >
+          <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-brand rounded-tl-xl"></div>
+          <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-brand rounded-tr-xl"></div>
+          <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-brand rounded-bl-xl"></div>
+          <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-brand rounded-br-xl"></div>
         </div>
-        <div className="absolute bottom-6 left-0 right-0 text-center">
-          <span className="inline-block bg-black/60 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Camera className="h-4 w-4 text-blue-500"></Camera>
-              <span>Coloca el QR dentro del recuadro</span>
-            </div>
-          </span>
-        </div>
-        {isCameraReady && !isResultVisible && (
-          <div className="absolute left-12 right-12 h-0.5 bg-blue-400/80 animate-scan-line rounded-full shadow-lg shadow-blue-500/50 top-1/2"></div>
+        {isCameraReady && isActive && !isResultVisible && (
+          <div className="absolute left-1/2 top-1/2 h-0.5 w-[200px] -translate-x-1/2 -translate-y-1/2 bg-brand/80 animate-scan-line rounded-full shadow-lg shadow-brand/50"></div>
         )}
       </div>
 
+      {/* Estado pausado */}
+      {!isActive && !isResultVisible && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <span className="bg-white/90 text-slate-800 px-4 py-2 rounded-full text-sm font-medium shadow-sm">
+            Escáner en pausa
+          </span>
+        </div>
+      )}
+
       {/* Ayuda para HTTPS */}
-      {!isCameraReady && (
+      {!isCameraReady && isActive && !isResultVisible && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-4">
           <p className="text-white text-xs text-center">
             Si la cámara no inicia, asegúrate de usar <b>https://</b> o{" "}

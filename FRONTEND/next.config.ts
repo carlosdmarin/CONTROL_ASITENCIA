@@ -5,9 +5,7 @@ const nextConfig: NextConfig = {
     viewTransition: true,
   },
 
-  allowedDevOrigins: [
-    "genome-high-mirror-platforms.trycloudflare.com",
-  ],
+  allowedDevOrigins: ["*.trycloudflare.com"],
 };
 
 export default nextConfig;

@@ -243,10 +243,10 @@ export default function Historial({ onBack }: HistorialProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-[100dvh] bg-slate-50">
       {/* HEADER - Responsive */}
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2">
+      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50 pt-[max(0px,env(safe-area-inset-top))]">
+        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button
               variant="ghost"
@@ -368,7 +368,7 @@ export default function Historial({ onBack }: HistorialProps) {
                     placeholder="Buscar..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-9 sm:h-10 text-sm"
+                    className="pl-9 h-9 sm:h-10 text-[16px] sm:text-sm"
                   />
                 </div>
 

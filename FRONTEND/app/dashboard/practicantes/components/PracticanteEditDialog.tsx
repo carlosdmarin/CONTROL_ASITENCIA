@@ -589,14 +589,14 @@ export function PracticanteEditDialog({
           <div className="grid gap-1.5">
             <Label
               htmlFor="documento"
-              className="text-xs font-medium flex items-center gap-1"
+              className="text-xs font-medium flex items-center gap-1 pl-1"
             >
               Documento / DNI *
               <span className="text-xs text-gray-400 font-normal">
                 (8 dígitos)
               </span>
             </Label>
-            <div className="relative">
+            <div className="relative pl-1">
               <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 id="documento"
@@ -624,9 +624,9 @@ export function PracticanteEditDialog({
                 </>
               ) : formData.documento.length === 8 ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span className="text-xs text-green-600">DNI válido</span>
-                </>
+                  <CircleCheck className="h-4.5 w-4.5 text-green-500 shrink-0 pl-1" />
+                  <span className="text-xs text-green-600 pl-1">DNI válido</span>
+                </> 
               ) : (
                 <span className="text-xs text-gray-400">Ingresa 8 dígitos</span>
               )}
@@ -677,10 +677,10 @@ export function PracticanteEditDialog({
 
           {/* Apellido */}
           <div className="grid gap-1.5">
-            <Label htmlFor="apellido" className="text-xs font-medium">
+            <Label htmlFor="apellido" className="text-xs font-medium pl-1">
               Apellido *
             </Label>
-            <div className="relative">
+            <div className="relative pl-1">
               <BookUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 id="apellido"
@@ -708,8 +708,8 @@ export function PracticanteEditDialog({
                 </>
               ) : formData.apellido.length >= 2 ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span className="text-xs text-green-600">
+                  <CircleCheck className="h-4.5 w-4.5 text-green-500 shrink-0 pl-1" />
+                  <span className="text-xs text-green-600 pl-1">
                     Apellido válido
                   </span>
                 </>
@@ -725,10 +725,10 @@ export function PracticanteEditDialog({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Sede */}
           <div className="grid gap-1.5">
-            <Label htmlFor="idSede" className="text-xs font-medium">
+            <Label htmlFor="idSede" className="text-xs font-medium pl-1">
               Sede *
             </Label>
-            <div className="relative">
+            <div className="relative pl-1">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
                 id="idSede"
@@ -775,10 +775,10 @@ export function PracticanteEditDialog({
 
           {/* Cargo */}
           <div className="grid gap-1.5">
-            <Label htmlFor="idCargo" className="text-xs font-medium">
+            <Label htmlFor="idCargo" className="text-xs font-medium pl-1">
               Cargo *
             </Label>
-            <div className="relative">
+            <div className="relative pl-1">
               <BriefcaseBusiness className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
                 id="idCargo"
@@ -829,10 +829,10 @@ export function PracticanteEditDialog({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Email */}
           <div className="grid gap-1.5">
-            <Label htmlFor="correoElectronico" className="text-xs font-medium">
+            <Label htmlFor="correoElectronico" className="text-xs font-medium pl-1">
               Email *
             </Label>
-            <div className="relative">
+            <div className="relative pl-1">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 id="correoElectronico"
@@ -919,11 +919,11 @@ export function PracticanteEditDialog({
           <div className="grid gap-1.5">
             <Label
               htmlFor="fechaInicioPracticas"
-              className="text-xs font-medium"
+              className="text-xs font-medium pl-1"
             >
               Fecha de inicio *
             </Label>
-            <div className="relative">
+            <div className="relative pl-1 mb-1">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 id="fechaInicioPracticas"
@@ -941,8 +941,8 @@ export function PracticanteEditDialog({
           <div className="grid gap-1.5">
             <Label htmlFor="fechaFinPracticas" className="text-xs font-medium">
               Fecha de fin (opcional)
-            </Label>
-            <div className="relative">
+            </Label> 
+            <div className="relative mb-1">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 id="fechaFinPracticas"

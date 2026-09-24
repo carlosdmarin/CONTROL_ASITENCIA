@@ -17,8 +17,7 @@ export default function QRScannerButton({
   return (
     <>
       <Button 
-        variant="outline" 
-        className="flex-1 gap-2"
+        className="flex-1 gap-3 min-h-[44px] h-11 rounded-xl bg-brand text-brand-foreground hover:bg-brand-hover focus-visible:ring-2 focus-visible:ring-brand/20"
         onClick={onToggle}
       >
         {isScanning ? (
@@ -36,7 +35,7 @@ export default function QRScannerButton({
 
       <Button 
         variant="outline" 
-        className="flex-1 gap-2"
+        className="flex-1 gap-3 min-h-[44px] h-11 rounded-xl border-slate-200 bg-white hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand/20"
         onClick={onReset}
       >
         <RotateCcw className="h-4 w-4" />
