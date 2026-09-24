@@ -2,24 +2,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  CheckCircle,
-  Building2,
-  Briefcase,
-  Clock,
-  User,
-  Sparkles,
-  AlertTriangle,
-  CalendarOff,
-  DoorClosed,
-  UserX,
-  Ban,
-} from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { practicantesApi } from "@/lib/api/practicantes";
+import { ResultadoCard } from "./ResultadoCard";
+
+const AUTO_CLOSE_MS = 5000;
 
 interface QRScannerResultProps {
   codigo: string;
@@ -173,7 +160,7 @@ export default function QRScannerResult({
       timer = setTimeout(() => {
         setVisible(false);
         setTimeout(onClose, 300);
-      }, 5000);
+      }, AUTO_CLOSE_MS);
     }
 
     return () => {
@@ -199,567 +186,208 @@ export default function QRScannerResult({
   // ===== CARD: DÍA DE DESCANSO =====
   if (isDescanso) {
     return (
-      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-        <Card className="max-w-sm w-full mx-4 border-amber-200 shadow-2xl overflow-hidden animate-success-pop">
-          <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600">
-            <CalendarOff className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold text-sm">
-              {" "}
-              Día de Descanso
-            </span>
-            <CalendarOff className="h-5 w-5 text-white" />
-          </div>
-
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto relative">
-              <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2 relative">
-                <Avatar className="w-20 h-20 border-4 border-amber-200">
-                  <AvatarFallback className="text-2xl bg-amber-200 text-amber-700">
-                    {practicante?.nombreCompleto
-                      ?.split(" ")
-                      .map((p) => p[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase() || "??"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center">
-                  <CalendarOff className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </div>
-            <CardTitle className="text-xl font-bold text-gray-800">
-              {practicante?.nombreCompleto || "Practicante"}
-            </CardTitle>
-            <div className="flex items-center justify-center gap-2 mt-1">
-              <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-                DESCANSO
-              </Badge>
-              <Badge variant="outline" className="text-gray-500">
-                {fecha}
-              </Badge>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-3">
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-amber-800">
-                    {marcacionStatus?.message ||
-                      "Hoy es tu día de descanso según tu horario."}
-                  </p>
-                  <p className="text-xs text-amber-600 mt-1">
-                    No puedes marcar asistencia los días de descanso.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Building2 className="h-4 w-4" />
-                  <span>Sede</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.sede || "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Briefcase className="h-4 w-4" />
-                  <span>Cargo</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.cargo || "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <User className="h-4 w-4" />
-                  <span>Documento</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.documento || codigo}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Clock className="h-4 w-4" />
-                  <span>Hora</span>
-                </div>
-                <span className="font-mono font-medium text-amber-600">
-                  {hora}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              className="w-full bg-amber-600 hover:bg-amber-700"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 300);
-              }}
-            >
-              Entendido
-            </Button>
-            <p className="text-center text-xs text-gray-400">
-              Esta tarjeta permanece visible hasta que la cierres.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <ResultadoCard
+        variant="descanso"
+        closing={!visible}
+        onClose={() => {
+          setVisible(false);
+          setTimeout(onClose, 300);
+        }}
+        practicante={
+          practicante
+            ? {
+                nombreCompleto: practicante.nombreCompleto,
+                cargo: practicante.cargo,
+                area: practicante.area,
+                sede: practicante.sede,
+                documento: practicante.documento,
+              }
+            : null
+        }
+        hora={hora}
+        fecha={fecha}
+        message={marcacionStatus?.message}
+      />
     );
   }
 
   // ===== CARD: JORNADA FINALIZADA =====
   if (isJornadaFinalizada) {
+    const rawMsg = marcacionStatus?.message;
+    const hasMsg = rawMsg && rawMsg.trim().length > 0;
     return (
-      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-        <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl overflow-hidden">
-          <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600">
-            <AlertTriangle className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold text-sm">
-              {" "}
-              Jornada finalizada
-            </span>
-            <AlertTriangle className="h-5 w-5 text-white" />
-          </div>
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
-              <Clock className="h-8 w-8 text-red-600" />
-            </div>
-            <CardTitle className="text-lg text-red-700">
-              No se puede registrar entrada
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center pb-6 space-y-3">
-            <p className="text-sm text-slate-600">
-              {marcacionStatus?.message ||
-                "La jornada de ingreso ya terminó. No es posible registrar una entrada para esta jornada."}
-            </p>
-            <Button
-              className="w-full bg-red-600 hover:bg-red-700"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 300);
-              }}
-            >
-              Entendido
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ResultadoCard
+        variant="jornada_finalizada"
+        subtitle={hasMsg ? "" : undefined}
+        message={hasMsg ? rawMsg : undefined}
+        closing={!visible}
+        onClose={() => {
+          setVisible(false);
+          setTimeout(onClose, 300);
+        }}
+        practicante={
+          practicante
+            ? {
+                nombreCompleto: practicante.nombreCompleto,
+                cargo: practicante.cargo,
+                area: practicante.area,
+                sede: practicante.sede,
+                documento: practicante.documento,
+              }
+            : null
+        }
+        hora={hora}
+        fecha={fecha}
+      />
     );
   }
 
   // ===== CARD: PRACTICANTE NO ACTIVO =====
   if (isInactivo) {
+    const msgInactivo = marcacionStatus?.message;
+    const isSameInactivo = msgInactivo && msgInactivo.trim().toLowerCase() === "practicante no activo";
     return (
-      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-        <Card className="max-w-sm w-full mx-4 border-orange-200 shadow-2xl overflow-hidden">
-          <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600">
-            <Ban className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold text-sm">
-              {" "}
-              Practicante no activo
-            </span>
-            <Ban className="h-5 w-5 text-white" />
-          </div>
-
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto relative">
-              <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-2 relative">
-                <Avatar className="w-20 h-20 border-4 border-orange-200">
-                  <AvatarFallback className="text-2xl bg-orange-200 text-orange-700">
-                    {practicante?.nombreCompleto
-                      ?.split(" ")
-                      .map((p) => p[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase() || "??"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
-                  <UserX className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </div>
-            <CardTitle className="text-xl font-bold text-gray-800">
-              {practicante?.nombreCompleto || "Practicante"}
-            </CardTitle>
-            <div className="flex items-center justify-center gap-2 mt-1">
-              <Badge className="bg-orange-100 text-orange-700 border-orange-200">
-                INACTIVO
-              </Badge>
-              <Badge variant="outline" className="text-gray-500">
-                {fecha}
-              </Badge>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-3">
-            <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-orange-800">
-                    Practicante no activo
-                  </p>
-                  <p className="text-xs text-orange-600 mt-1">
-                    Este practicante se encuentra actualmente inactivo y no
-                    puede registrar asistencia.
-                  </p>
-                  {marcacionStatus?.message && (
-                    <p className="text-xs text-orange-700 mt-1 font-mono bg-white/60 px-2 py-1 rounded">
-                      {marcacionStatus.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Building2 className="h-4 w-4" />
-                  <span>Sede</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.sede || "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Briefcase className="h-4 w-4" />
-                  <span>Cargo</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.cargo || "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <User className="h-4 w-4" />
-                  <span>Documento</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.documento || codigo}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              className="w-full bg-orange-600 hover:bg-orange-700"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 300);
-              }}
-            >
-              Entendido
-            </Button>
-            <p className="text-center text-xs text-gray-400">
-              Contacte a RRHH para reactivar al practicante.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <ResultadoCard
+        variant="inactivo"
+        closing={!visible}
+        onClose={() => {
+          setVisible(false);
+          setTimeout(onClose, 300);
+        }}
+        practicante={
+          practicante
+            ? {
+                nombreCompleto: practicante.nombreCompleto,
+                cargo: practicante.cargo,
+                area: practicante.area,
+                sede: practicante.sede,
+                documento: practicante.documento,
+              }
+            : null
+        }
+        hora={hora}
+        fecha={fecha}
+        message={isSameInactivo ? undefined : msgInactivo}
+      />
     );
   }
 
   // ===== CARD: YA REGISTRÓ ENTRADA Y SALIDA =====
   if (isYaRegistrado) {
     return (
-      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-        <Card className="max-w-sm w-full mx-4 border-blue-200 shadow-2xl overflow-hidden">
-          <div className="px-6 py-3 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600">
-            <DoorClosed className="h-5 w-5 text-white" />
-            <span className="text-white font-semibold text-sm">
-              {" "}
-              Jornada Completada
-            </span>
-            <DoorClosed className="h-5 w-5 text-white" />
-          </div>
-
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto relative">
-              <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2 relative">
-                <Avatar className="w-20 h-20 border-4 border-blue-200">
-                  <AvatarFallback className="text-2xl bg-blue-200 text-blue-700">
-                    {practicante?.nombreCompleto
-                      ?.split(" ")
-                      .map((p) => p[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase() || "??"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                  <CheckCircle className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </div>
-            <CardTitle className="text-xl font-bold text-gray-800">
-              {practicante?.nombreCompleto || "Practicante"}
-            </CardTitle>
-            <div className="flex items-center justify-center gap-2 mt-1">
-              <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-                COMPLETADO
-              </Badge>
-              <Badge variant="outline" className="text-gray-500">
-                {fecha}
-              </Badge>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-3">
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-blue-800">
-                    {marcacionStatus?.message ||
-                      "Ya registraste entrada y salida hoy."}
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Tu jornada de hoy está completa. ¡Buen trabajo!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Building2 className="h-4 w-4" />
-                  <span>Sede</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.sede || "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Briefcase className="h-4 w-4" />
-                  <span>Cargo</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.cargo || "—"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <User className="h-4 w-4" />
-                  <span>Documento</span>
-                </div>
-                <span className="font-medium text-gray-800">
-                  {practicante?.documento || codigo}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Clock className="h-4 w-4" />
-                  <span>Hora</span>
-                </div>
-                <span className="font-mono font-medium text-blue-600">
-                  {hora}
-                </span>
-              </div>
-            </div>
-
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 300);
-              }}
-            >
-              Entendido
-            </Button>
-            <p className="text-center text-xs text-gray-400">
-              Esta tarjeta permanece visible hasta que la cierres.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <ResultadoCard
+        variant="ya_registrado"
+        closing={!visible}
+        onClose={() => {
+          setVisible(false);
+          setTimeout(onClose, 300);
+        }}
+        practicante={
+          practicante
+            ? {
+                nombreCompleto: practicante.nombreCompleto,
+                cargo: practicante.cargo,
+                area: practicante.area,
+                sede: practicante.sede,
+                documento: practicante.documento,
+              }
+            : null
+        }
+        hora={hora}
+        fecha={fecha}
+        message={marcacionStatus?.message}
+      />
     );
   }
 
   // ===== CARD: ERROR =====
   if (isError || error || !practicante) {
+    const hasPracticante = !!practicante?.nombreCompleto;
+    const msgError = marcacionStatus?.message || error || "Practicante no encontrado";
     return (
-      <div role="alert" aria-live="assertive" className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-        <Card className="max-w-sm w-full mx-4 border-red-200 shadow-2xl animate-shake-subtle">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-            </div>
-            <CardTitle className="text-lg text-red-700"> Error</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center pb-6 space-y-3">
-            <p className="text-sm text-slate-600">
-              {marcacionStatus?.message || error || "Practicante no encontrado"}
-            </p>
-            <code className="block bg-slate-100 px-3 py-2 rounded-lg font-mono text-xs break-all">
-              {codigo}
-            </code>
-            <Button className="w-full mt-2" onClick={onClose}>
-              Intentar de nuevo
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ResultadoCard
+        variant="error"
+        subtitle={hasPracticante ? undefined : `Código escaneado: ${codigo}`}
+        message={msgError}
+        practicante={
+          hasPracticante && practicante
+            ? {
+                nombreCompleto: practicante.nombreCompleto,
+                cargo: practicante.cargo,
+                area: practicante.area,
+                sede: practicante.sede,
+                documento: practicante.documento,
+              }
+            : null
+        }
+        hora={hasPracticante ? hora : undefined}
+        fecha={hasPracticante ? fecha : undefined}
+        closing={!visible}
+        onClose={() => {
+          setVisible(false);
+          setTimeout(onClose, 300);
+        }}
+        actionLabel="Intentar de nuevo"
+      />
     );
   }
 
-  // ===== CARD: ÉXITO (ENTRADA O SALIDA) =====
-  const getInitials = () => {
-    if (!practicante) return "??";
-    return practicante.nombreCompleto
-      .split(" ")
-      .map((p) => p[0])
-      .slice(0, 2)
-      .join("")
-      .toUpperCase();
-  };
-
+  // ===== CARD: ÉXITO — inactivo variante y entrada/salida
   const isInactive = practicante?.situacion !== "ACTIVO";
 
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
+  // Inactivo variante — Grupo 3
+  if (isInactive) {
+    return (
+      <ResultadoCard
+        variant="inactivo_exito"
+        closing={!visible}
+        onClose={() => {
           setVisible(false);
           setTimeout(onClose, 300);
-        }
-      }}
-    >
-      <Card className="max-w-sm w-full mx-4 border-green-200 shadow-2xl overflow-hidden animate-success-pop">
-        <div
-          className={`px-6 py-3 flex items-center justify-center gap-2 ${isInactive ? "bg-amber-500" : "bg-gradient-to-r from-green-500 to-green-600"}`}
-        >
-          <Sparkles className="h-5 w-5 text-white" />
-          <span className="text-white font-semibold text-sm">
-            {isInactive
-              ? "Practicante inactivo"
-              : isEntrada
-                ? "Entrada registrada"
-                : isSalida
-                  ? "✅ Salida registrada"
-                  : "¡Marcación exitosa!"}
-          </span>
-          <Sparkles className="h-5 w-5 text-white" />
-        </div>
-
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto relative">
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2 relative">
-              <Avatar className="w-20 h-20 border-4 border-green-200">
-                <AvatarFallback className="text-2xl bg-green-200 text-green-700">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <div
-                className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${isInactive ? "bg-amber-500" : "bg-green-500"}`}
-              >
-                {isInactive ? (
-                  <AlertTriangle className="h-4 w-4 text-white" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 text-white" />
-                )}
-              </div>
-            </div>
-          </div>
-          <CardTitle className="text-xl font-bold text-gray-800">
-            {practicante?.nombreCompleto || "Practicante"}
-          </CardTitle>
-          <div className="flex items-center justify-center gap-2 mt-1">
-            <Badge
-              className={
-                isInactive
-                  ? "bg-amber-100 text-amber-700 border-amber-200"
-                  : "bg-green-100 text-green-700 border-green-200"
+        }}
+        practicante={
+          practicante
+            ? {
+                nombreCompleto: practicante.nombreCompleto,
+                cargo: practicante.cargo,
+                area: practicante.area,
+                sede: practicante.sede,
+                documento: practicante.documento,
               }
-            >
-              {practicante?.situacion || "ACTIVO"}
-            </Badge>
-            <Badge variant="outline" className="text-gray-500">
-              {fecha}
-            </Badge>
-          </div>
-        </CardHeader>
+            : null
+        }
+        hora={hora}
+        fecha={fecha}
+        message={marcacionStatus?.message}
+        autoCloseMs={AUTO_CLOSE_MS}
+      />
+    );
+  }
 
-        <CardContent className="space-y-3">
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 text-gray-500">
-                <Building2 className="h-4 w-4" />
-                <span>Sede</span>
-              </div>
-              <span className="font-medium text-gray-800">
-                {practicante?.sede || "—"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 text-gray-500">
-                <Briefcase className="h-4 w-4" />
-                <span>Cargo</span>
-              </div>
-              <span className="font-medium text-gray-800">
-                {practicante?.cargo || "—"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2 text-gray-500">
-                <User className="h-4 w-4" />
-                <span>Documento</span>
-              </div>
-              <span className="font-medium text-gray-800">
-                {practicante?.documento || codigo}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
-              <div className="flex items-center gap-2 text-gray-500">
-                <Clock className="h-4 w-4" />
-                <span>Hora</span>
-              </div>
-              <span className="font-mono font-medium text-green-600">
-                {hora}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 300);
-              }}
-            >
-              Cerrar
-            </Button>
-            <Button
-              className="flex-1 bg-green-600 hover:bg-green-700"
-              onClick={() => {
-                setVisible(false);
-                setTimeout(onClose, 600);
-              }}
-            >
-              Escanear otro
-            </Button>
-          </div>
-          <p className="text-center text-xs text-gray-400">
-            Ventana se cierra en 5 segundos...
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+  // Entrada / Salida — nuevo
+  return (
+    <ResultadoCard
+      variant={isEntrada ? "entrada" : isSalida ? "salida" : "entrada"}
+      closing={!visible}
+      onClose={() => {
+        setVisible(false);
+        setTimeout(onClose, 300);
+      }}
+      practicante={
+        practicante
+          ? {
+              nombreCompleto: practicante.nombreCompleto,
+              cargo: practicante.cargo,
+              area: practicante.area,
+              sede: practicante.sede,
+              documento: practicante.documento,
+            }
+          : null
+      }
+      hora={hora}
+      fecha={fecha}
+      message={marcacionStatus?.message}
+      autoCloseMs={AUTO_CLOSE_MS}
+    />
   );
 }

@@ -14,6 +14,22 @@
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-fg: var(--brand-fg);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-fg: var(--success-fg);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-fg: var(--warning-fg);
+  --color-rest: var(--rest);
+  --color-rest-soft: var(--rest-soft);
+  --color-rest-fg: var(--rest-fg);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-fg: var(--danger-fg);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-neutral-fg: var(--neutral-fg);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -57,6 +73,22 @@
   --brand: #13467a;
   --brand-hover: #0f355c;
   --brand-foreground: oklch(0.985 0 0);
+  --brand-fg: #0b2a4a;
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --success-fg: #14532d;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --warning-fg: #78350f;
+  --rest: #0369a1;
+  --rest-soft: #e0f2fe;
+  --rest-fg: #0c4a6e;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+  --danger-fg: #7f1d1d;
+  --neutral: #475569;
+  --neutral-soft: #f1f5f9;
+  --neutral-fg: #1e293b;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -453,6 +485,38 @@ body, button, input, textarea, p, h1, h2, h3, h4, h5, h6, span, div {
   .splash-qr-ring { animation: none !important; opacity: 0.25 !important; transform: none !important; }
   .splash-qr-scan { animation: none !important; transform: translateY(calc(var(--qr-size) * 0.5 - 1px)) !important; }
   .splash-progress-fill { animation: none !important; transform: scaleX(1) !important; }
+}
+
+/* ====== RESULTADO CARD ====== */
+@keyframes resultado-enter {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes resultado-exit {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.96) translateY(8px); }
+}
+.resultado-card-enter {
+  animation: resultado-enter 200ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.resultado-card-exit {
+  animation: resultado-exit 300ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.resultado-progress {
+  height: 4px;
+  transform-origin: left;
+  transform: scaleX(1);
+  animation: resultado-progress linear forwards;
+  animation-duration: var(--auto-close-ms, 5000ms);
+}
+@keyframes resultado-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resultado-card-enter,
+  .resultado-card-exit,
+  .resultado-progress { animation: none !important; }
 }
 
 /* Transiciones eficientes solo transform/opacity */
