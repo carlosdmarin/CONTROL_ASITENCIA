@@ -6,6 +6,7 @@ import com.asistencia.attendance_system.model.dto.MarcacionResponse;
 import com.asistencia.attendance_system.model.dto.ResumenAsistenciaDTO;
 import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.enums.Agencia;
+import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -26,12 +29,87 @@ import java.util.Map;
 public class AsistenciaController {
 
     private final AsistenciaService asistenciaService;
+    private final PracticanteRepository practicanteRepository;
 
     // ========== MARCACIONES ==========
 
     @PostMapping("/marcar")
     @PreAuthorize("hasRole('VIGILANTE')")
     public ResponseEntity<?> registrarMarcacion(@Valid @RequestBody MarcacionRequest request) {
+        // Validación QR dinámico PRACTIQR|ID|TIMESTAMP (sin HMAC, sin BD)
+        String rawDoc = request.getDocumento() != null ? request.getDocumento().trim() : "";
+        String metodo = request.getMetodoRegistro();
+        boolean isQr = metodo == null || "QR".equalsIgnoreCase(metodo);
+        if (isQr) {
+            if (!rawDoc.startsWith("PRACTIQR|")) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "El código QR no es válido.");
+                err.put("error", true);
+                err.put("tipo", "QR_INVALIDO");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+            String[] parts = rawDoc.split("\\|");
+            if (parts.length != 3 || !"PRACTIQR".equals(parts[0])) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "El código QR no es válido.");
+                err.put("error", true);
+                err.put("tipo", "QR_INVALIDO");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+            Long id;
+            try {
+                id = Long.parseLong(parts[1]);
+            } catch (NumberFormatException e) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "El código QR no es válido.");
+                err.put("error", true);
+                err.put("tipo", "QR_INVALIDO");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+            Instant qrTime;
+            try {
+                qrTime = Instant.parse(parts[2]);
+            } catch (Exception e) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "El código QR no es válido.");
+                err.put("error", true);
+                err.put("tipo", "QR_INVALIDO");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+            Instant now = Instant.now();
+            Duration age = Duration.between(qrTime, now);
+            if (age.isNegative()) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "El código QR no es válido.");
+                err.put("error", true);
+                err.put("tipo", "QR_INVALIDO");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+            if (age.getSeconds() > 30) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "El código QR ha expirado. Espere al nuevo código y vuelva a escanear.");
+                err.put("error", true);
+                err.put("tipo", "QR_EXPIRADO");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+            var opt = practicanteRepository.findById(id);
+            if (opt.isEmpty()) {
+                Map<String, Object> err = new HashMap<>();
+                err.put("success", false);
+                err.put("message", "Practicante no encontrado con código: " + rawDoc);
+                err.put("error", true);
+                err.put("tipo", "NOT_FOUND");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+            // Reutilizar lógica existente: resolver documento real y delegar
+            request.setDocumento(opt.get().getDocumento());
+        }
         try {
             MarcacionResponse response = asistenciaService.registrarMarcacion(request);
             return new ResponseEntity<>(response, HttpStatus.CREATED);

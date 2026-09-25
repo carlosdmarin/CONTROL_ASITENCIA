@@ -69,11 +69,10 @@ public class JwtFilterAndCookieCorsTest {
         assertTrue(header.contains("Path=/"), "Cookie debe tener Path=/ : " + header);
         // Max-Age=28800
         assertTrue(header.contains("Max-Age=28800"), "Cookie debe tener Max-Age=28800 : " + header);
-        // SameSite=Lax
+        // SameSite=Lax para same-origin via Next.js rewrite (más seguro que None)
         assertTrue(header.toLowerCase().contains("samesite=lax"), "Cookie debe tener SameSite=Lax : " + header);
-        // Secure en desarrollo es false, en prod true - verificamos que no es Secure en test dev
-        // Para test, jwt.cookie.secure=false, entonces no debe contener Secure
-        assertFalse(header.contains("Secure"), "En dev Secure debe ser false: " + header);
+        // Secure true (HTTPS trycloudflare)
+        assertTrue(header.contains("Secure"), "Secure debe ser true: " + header);
     }
 
     @Test

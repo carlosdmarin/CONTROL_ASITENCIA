@@ -33,6 +33,7 @@ const formSchema = z.object({
 function LoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,10 +41,10 @@ function LoginInner() {
   const [showSplash, setShowSplash] = useState(true);
 
   // Si ya hay sesión, redirigir según rol (client, backend autoridad via /me)
+  // returnTo es string estable, evita que el objeto searchParams dispare el efecto en cada render
   useEffect(() => {
     if (auth.status === "authenticated" && auth.user) {
       const home = getHomeForRole(auth.user.rol);
-      const returnTo = searchParams.get("returnTo");
       // Si returnTo existe y pertenece al home del rol, respetarlo, si no ir al home
       if (returnTo && returnTo.startsWith(home)) {
         router.replace(returnTo);
@@ -51,7 +52,7 @@ function LoginInner() {
         router.replace(home);
       }
     }
-  }, [auth.status, (auth as any).user?.rol, router, searchParams]);
+  }, [auth.status, (auth as any).user?.rol, router, returnTo]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
@@ -88,7 +89,6 @@ function LoginInner() {
           console.warn("Rol no reconocido:", rol);
           return;
         }
-        const returnTo = searchParams.get("returnTo");
         if (returnTo && returnTo.startsWith(home)) {
           router.push(returnTo);
         } else {

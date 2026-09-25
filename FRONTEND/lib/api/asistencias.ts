@@ -23,17 +23,19 @@ export const asistenciasApi = {
 
   marcar: async (qrData: string, tipo: 'ENTRADA' | 'SALIDA' = 'ENTRADA'): Promise<any> => {
     try {
-      // Extraer el documento del contenido del QR (puede ser JSON, URL o texto plano)
       let documento = qrData.trim();
-      try {
-        const obj = JSON.parse(qrData);
-        documento = obj.documento || obj.dni || obj.codigo || obj.documentoPracticante || qrData;
-      } catch {
+      // QR dinámico PRACTIQR|id|timestamp debe viajar completo sin parsear
+      if (!documento.startsWith("PRACTIQR|")) {
         try {
-          const url = new URL(qrData);
-          documento = url.searchParams.get("documento") || url.searchParams.get("dni") || url.searchParams.get("codigo") || qrData;
+          const obj = JSON.parse(qrData);
+          documento = obj.documento || obj.dni || obj.codigo || obj.documentoPracticante || qrData;
         } catch {
-          // texto plano, usar tal cual
+          try {
+            const url = new URL(qrData);
+            documento = url.searchParams.get("documento") || url.searchParams.get("dni") || url.searchParams.get("codigo") || qrData;
+          } catch {
+            // texto plano, usar tal cual
+          }
         }
       }
 

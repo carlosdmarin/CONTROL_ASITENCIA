@@ -7,11 +7,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CustomQRCode } from "./CustomQRCode";
-import { Download, QrCode, Upload, X } from "lucide-react";
+import { CarnetPracti } from "./CarnetPracti";
+import { Download, QrCode } from "lucide-react";
 import { Practicante } from "@/types/practicante";
 import { toPng } from "html-to-image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface PracticanteQRDialogProps {
   open: boolean;
@@ -29,9 +29,18 @@ export function PracticanteQRDialog({
   const [isDownloading, setIsDownloading] = useState(false); //
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!practicante) return null;
+  const [qrValue, setQrValue] = useState("");
 
-  const qrValue = practicante.documento;
+  useEffect(() => {
+    if (!open || !practicante) return;
+    const build = () =>
+      `PRACTIQR|${practicante.idPracticante}|${new Date().toISOString()}`;
+    setQrValue(build());
+    const id = setInterval(() => setQrValue(build()), 30000);
+    return () => clearInterval(id);
+  }, [open, practicante]);
+
+  if (!practicante) return null;
 
   const downloadCarnet = async () => {
     if (!carnetRef.current) return;
@@ -83,37 +92,6 @@ export function PracticanteQRDialog({
     }
   };
 
-  // Renderizar la foto (real o avatar por defecto SVG) — CORREGIDO tamaño/centrado
-  const renderFoto = () => {
-    if (fotoPreview) {
-      return (
-        <img
-          src={fotoPreview}
-          alt={`Foto de ${practicante.nombreCompleto}`}
-          className="h-full w-full object-top"
-        />
-      );
-    }
-
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-gray-100 overflow-hidden">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="#d3d3d3"
-          className="h-18 w-18" // ahora más proporcionado
-        >
-          <circle cx="12" cy="12" r="11" />
-          <circle cx="12" cy="9.5" r="3.5" fill="white" />
-          <path
-            d="M12 14c-3.5 0-6.5 2.9-6.5 6.5h13c0-3.6-3-6.5-6.5-6.5z"
-            fill="white"
-          />
-        </svg>
-      </div>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md justify-center">
@@ -124,150 +102,20 @@ export function PracticanteQRDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* CARNET */}
-        <div
-          ref={carnetRef}
-          className="mx-auto w-90 overflow-hidden rounded-2xl bg-white shadow-xl"
-          style={{ borderRadius: "16px" }}
-        >
-          {/* ENCABEZADO */}
-          <div className="relative flex items-center justify-center h-22 bg-[#E64A19] px-2 py-3">
-            <img
-              src="/images/LOGO-H6.png"
-              alt="OLAMSA"
-              className="h-60 w-auto" // Usé w-auto para mantener la proporción del logo
-              onError={(e) => {
-                e.currentTarget.src =
-                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='40'%3E%3Ctext x='0' y='30' font-family='Arial' font-size='24' fill='white' font-weight='bold'%3EOLAMSA%3C/text%3E%3C/svg%3E";
-              }}
-            />
-          </div>
-
-          {/* DATOS */}
-          <div className="px-6 py-5">
-            <div className="flex gap-4">
-              {/* FOTO */}
-              <div className="relative group">
-                <div
-                  className={`aspect-[3/4] w-28 overflow-hidden rounded-xl border-2 transition-all ${
-                    fotoPreview
-                      ? "border-[#E64A19]"
-                      : isDownloading
-                        ? "border-transparent" // sin punteado al exportar
-                        : "border-dashed border-gray-300 hover:border-[#E64A19]"
-                  } bg-slate-50`}
-                  style={{ borderRadius: "12px" }}
-                >
-                  {renderFoto()}
-                </div>
-
-                {/* Botones de acción sobre la foto (no se ven en descarga porque opacity-0 por defecto) */}
-                <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 rounded-xl">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-7 w-7 bg-white/90 hover:bg-white"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                  </Button>
-                  {fotoPreview && (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="h-7 w-7 bg-white/90 hover:bg-red-50 hover:text-red-600"
-                      onClick={removeFoto}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFotoChange}
-                  className="hidden"
-                />
-              </div>
-
-              {/* INFORMACIÓN */}
-              <div className="flex-1 pl-3">
-                <p className="text-lg font-bold uppercase text-[#0A2F6B]">
-                  {practicante.nombreCompleto}
-                </p>
-
-                <div className="mt-3">
-                  <p className="text-xs font-semibold text-[#E64A19]">DNI</p>
-                  <p className="font-mono text-sm font-bold text-[#0A2F6B]">
-                    {practicante.documento}
-                  </p>
-                </div>
-
-                <div className="mt-2">
-                  <p className="text-xs font-semibold text-[#E64A19]">SEDE</p>
-                  <p className="text-sm font-semibold text-[#0A2F6B]">
-                    {practicante.sede || "No asignada"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* QR */}
-            <div className="mt-5 flex items-center gap-5">
-              <div className="rounded-xl border-2 border-[#E64A19] bg-white p-3">
-                <div className="relative inline-block">
-                  <CustomQRCode
-                    value={qrValue}
-                    size={140}
-                    cornerColor="#E64A19"
-                    fgColor="#000000"
-                    bgColor="#FFFFFF"
-                    excavateSize={44}
-                  />
-
-                  {/* Logo real, centrado, con círculo blanco tipo Starbucks */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="">
-                      <img
-                        src="/images/ISOTIPO-H6.png"
-                        alt="OLAMSA"
-                        className="h-full w-full object-contain"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-bold text-[#0A2F6B]">MARCACIÓN</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Escanea este código QR
-                  <br />
-                  desde la página de
-                  <br />
-                  marcación para registrar
-                  <br />
-                  tu asistencia.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* PIE */}
-          <div className="bg-white px-6 py-4 text-center">
-            <p className="text-xs font-medium text-[#0A2F6B]">
-              Somos una gran familia sostenible
-            </p>
-            <p className="text-xs font-medium text-[#E64A19]">
-              de palmicultores de Ucayali
-            </p>
-          </div>
-        </div>
+        <CarnetPracti
+          carnetRef={carnetRef}
+          practicante={practicante}
+          qrValue={qrValue || `PRACTIQR|${practicante.idPracticante}|${new Date().toISOString()}`}
+          fotoPreview={fotoPreview}
+          isDownloading={isDownloading}
+          fileInputRef={fileInputRef}
+          onFotoChange={handleFotoChange}
+          onRemoveFoto={removeFoto}
+          editableFoto={true}
+        />
 
         {/* BOTONES */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-4">
           <Button
             onClick={downloadCarnet}
             className="flex-1 gap-2 h-8 bg-[#0A2F6B] hover:bg-[#08244f]"

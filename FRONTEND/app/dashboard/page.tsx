@@ -60,8 +60,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { practicantesApi } from "@/lib/api/practicantes";
-import { asistenciasApi } from "@/lib/api/asistencias";
+// APIs utilizadas por el Dashboard
+import { practicantesApi } from "@/lib/api/practicantes"; // GET /api/practicantes
+import { asistenciasApi } from "@/lib/api/asistencias"; // GET /api/asistencias/resumen/rango y /diaria
 import { Practicante } from "@/types/practicante";
 import {
   AsistenciaDiariaResponse,
@@ -141,6 +142,7 @@ function TrendIcon({ percent }: { percent: string }) {
 }
 
 export default function DashboardPage() {
+  // Estados del Dashboard
   const [loading, setLoading] = useState(true);
   const [practicantes, setPracticantes] = useState<Practicante[]>([]);
   const [resumenAsistencia, setResumenAsistencia] = useState({
@@ -169,6 +171,8 @@ export default function DashboardPage() {
   const [actividadLoading, setActividadLoading] = useState(true);
   const [asistenciasHoy, setAsistenciasHoy] = useState<AsistenciaDiariaResponse[]>([]);
 
+  // Carga de datos principales - KPIs y actividad del día
+  // Obtiene practicantes desde GET /api/practicantes, resumen diario y asistencias del día
   const cargarDatos = async () => {
     try {
       setLoading(true);
@@ -293,9 +297,8 @@ export default function DashboardPage() {
   const totalPracticantes = practicantes.length;
 
   const chartConfig: ChartConfig = {
-    presentes: { label: "Presentes", color: "hsl(206, 70%, 45%)" }, // Azul profundo
-    tardanzas: { label: "Tardanzas", color: "hsl(30, 60%, 50%)" }, // Ámbar
-    faltas: { label: "Faltas", color: "hsl(340, 60%, 45%)" }, // Rojo ciruela
+    presentes: { label: "Presentes", color: "hsl(206, 70%, 45%)" }, // Azul profundo - PRESENTE+TARDANZA
+    ausentes: { label: "Ausentes", color: "hsl(340, 60%, 45%)" }, // Rojo ciruela - AUSENTE no justificado
   };
 
   const chartData = rangoData.map((r) => {
@@ -304,9 +307,8 @@ export default function DashboardPage() {
     return {
       day: label,
       fecha: r.fecha,
-      presentes: r.presentes ?? 0,
-      tardanzas: r.tardanzas ?? 0,
-      faltas: r.faltas ?? 0,
+      presentes: r.presentes ?? 0, // PRESENTE+TARDANZA ya agrupado por backend
+      ausentes: r.faltas ?? 0, // AUSENTE no justificado
     };
     }).filter((d) =>{
       const date = new Date(d.fecha +  "T00:00:00");
@@ -317,30 +319,33 @@ export default function DashboardPage() {
   // fondo cuando los valores son bajos (solo visual, no toca los datos).
   const chartMax = Math.max(
     1,
-    ...chartData.map((d) => d.presentes + d.tardanzas + d.faltas === 0 ? 0 : Math.max(d.presentes, d.tardanzas, d.faltas)),
+    ...chartData.map((d) => d.presentes + d.ausentes === 0 ? 0 : Math.max(d.presentes, d.ausentes)),
   );
   const yAxisMax = Math.max(4, chartMax + 2);
 
-  // Puntualidad de hoy: solo quienes debían asistir hoy (excluye DESCANSO), solo PRESENTE vs TARDANZA
-  // Usa asistenciasHoy (datos reales de GET /diaria?fecha, que ya filtra INACTIVOS y usa horaFin para SIN_MARCAR/AUSENTE)
+  // Estado de marcación hoy: Con asistencia vs Sin marcar (excluye AUSENTE/DESCANSO/JUSTIFICADO)
+  // Usa asistenciasHoy (GET /diaria?fecha, filtra INACTIVOS, respeta jornadaTerminada para SIN_MARCAR->AUSENTE)
+  // Con asistencia = PRESENTE+TARDANZA (no justificado), Sin marcar = SIN_MARCAR pendiente (jornada abierta)
   const descansos = asistenciasHoy.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length;
-  const esperados = asistenciasHoy.filter((a) => normalizeEstadoDia(a.estadoDia) !== "DESCANSO").length;
-  const puntuales = asistenciasHoy.filter((a) => normalizeEstadoDia(a.estadoDia) === "PRESENTE").length;
-  const tardanzasPunt = asistenciasHoy.filter((a) => {
+  const conAsistencia = asistenciasHoy.filter((a) => {
     const n = normalizeEstadoDia(a.estadoDia);
-    return n === "TARDANZA" || isTardanza(a.estadoDia);
+    const isPresente = n === "PRESENTE";
+    const isTard = n === "TARDANZA" || isTardanza(a.estadoDia);
+    return (isPresente || isTard) && !a.justificado;
   }).length;
-  const marcados = puntuales + tardanzasPunt;
-  const puntualidad = marcados > 0 ? (puntuales / marcados) * 100 : 0;
-  const puntualidadStr = marcados > 0 ? `${puntualidad.toFixed(1).replace(/\.0$/, "")}%` : "0%";
+  const sinMarcar = asistenciasHoy.filter((a) => {
+    const n = normalizeEstadoDia(a.estadoDia);
+    return n === "SIN_MARCAR" && !a.justificado;
+  }).length;
+  const totalDonut = conAsistencia + sinMarcar;
   const donutData = [
-    { name: "Puntuales", value: puntuales, fill: "var(--color-presentes)" },
-    { name: "Tardanzas", value: tardanzasPunt, fill: "var(--color-tardanzas)" },
+    { name: "Con asistencia", value: conAsistencia, fill: "var(--color-conAsistencia)" },
+    { name: "Sin marcar", value: sinMarcar, fill: "var(--color-sinMarcar)" },
   ].filter((d) => d.value > 0);
 
   const donutConfig: ChartConfig = {
-    presentes: { label: "Puntuales", color: "hsl(206, 70%, 45%)" },
-    tardanzas: { label: "Tardanzas", color: "hsl(30, 60%, 50%)" },
+    conAsistencia: { label: "Con asistencia", color: "hsl(206, 70%, 45%)" }, // mismo azul que Presentes
+    sinMarcar: { label: "Sin marcar", color: "hsl(220, 9%, 65%)" }, // gris neutro
   };
 
   return (
@@ -522,7 +527,7 @@ export default function DashboardPage() {
                   Asistencias semanales
                 </CardTitle>
                 <CardDescription className="text-xs mt-1">
-                  Lunes a sabado · presentes, tardanzas y faltas
+                  Lunes a sábado · presentes y ausentes
                 </CardDescription>
               </div>
               <Badge
@@ -572,33 +577,15 @@ export default function DashboardPage() {
                         stopOpacity={0.1}
                       />
                     </linearGradient>
-                    <linearGradient
-                      id="fillTardanzas"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
+                    <linearGradient id="fillAusentes" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="var(--color-tardanzas)"
+                        stopColor="var(--color-ausentes)"
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor="var(--color-tardanzas)"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                    <linearGradient id="fillFaltas" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-faltas)"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-faltas)"
+                        stopColor="var(--color-ausentes)"
                         stopOpacity={0.1}
                       />
                     </linearGradient>
@@ -648,23 +635,12 @@ export default function DashboardPage() {
                   <Area
                     isAnimationActive={true}
                     animationDuration={700}
-                    dataKey="tardanzas"
+                    dataKey="ausentes"
                     type="natural"
-                    fill="url(#fillTardanzas)"
-                    stroke="var(--color-tardanzas)"
+                    fill="url(#fillAusentes)"
+                    stroke="var(--color-ausentes)"
                     strokeWidth={2}
-                    dot={{ r: 3, strokeWidth: 0, fill: "var(--color-tardanzas)" }}
-                    activeDot={{ r: 4, strokeWidth: 0 }}
-                  />
-                  <Area
-                    isAnimationActive={true}
-                    animationDuration={700}
-                    dataKey="faltas"
-                    type="natural"
-                    fill="url(#fillFaltas)"
-                    stroke="var(--color-faltas)"
-                    strokeWidth={2}
-                    dot={{ r: 3, strokeWidth: 0, fill: "var(--color-faltas)" }}
+                    dot={{ r: 3, strokeWidth: 0, fill: "var(--color-ausentes)" }}
                     activeDot={{ r: 4, strokeWidth: 0 }}
                   />
                 </AreaChart>
@@ -673,27 +649,27 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Donut Puntualidad de hoy */}
+        {/* Donut Estado de marcación */}
         <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-[15px] font-semibold text-slate-900">
-              Puntualidad de hoy
+              Estado de marcación
             </CardTitle>
             <CardDescription className="text-xs">
-              Practicantes que marcaron entrada
+              Con asistencia y sin marcar de hoy
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col items-center justify-center pt-2">
             {atencionLoading ? (
               <Skeleton className="h-[220px] w-[220px] rounded-full" />
-            ) : esperados === 0 ? (
+            ) : totalDonut === 0 ? (
               <div className="h-[220px] flex flex-col items-center justify-center text-center">
                 <div className="p-3 bg-slate-50 rounded-full mb-3">
                   <Clock className="h-6 w-6 text-slate-400" />
                 </div>
                 <p className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">--</p>
-                <p className="text-xs font-medium text-slate-500">Puntualidad</p>
-                <p className="text-[11px] text-slate-400 mt-2">Sin jornada programada</p>
+                <p className="text-xs font-medium text-slate-500">Sin datos</p>
+                <p className="text-[11px] text-slate-400 mt-2">Sin datos de marcación</p>
               </div>
             ) : (
               <>
@@ -715,27 +691,27 @@ export default function DashboardPage() {
                   </ChartContainer>
                   <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums">
-                      {marcados === 0 ? "0%" : puntualidadStr}
+                      {totalDonut === 0 ? "0%" : `${Math.round((conAsistencia / totalDonut) * 100)}%`}
                     </span>
-                    <span className="text-xs font-medium text-slate-500">Puntualidad</span>
+                    <span className="text-xs font-medium text-slate-500">Con asistencia</span>
                   </div>
                 </div>
                 <div className="w-full space-y-2 mt-4">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[#227DC3]" /> Puntuales
+                      <span className="h-2 w-2 rounded-full bg-[hsl(206,70%,45%)]" /> Con asistencia
                     </span>
-                    <span className="font-medium text-slate-900 tabular-nums">{puntuales}</span>
+                    <span className="font-medium text-slate-900 tabular-nums">{conAsistencia} <span className="text-slate-500">({totalDonut ? Math.round((conAsistencia / totalDonut) * 100) : 0}%)</span></span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[hsl(38,92%,50%)]" /> Tardanzas
+                      <span className="h-2 w-2 rounded-full bg-[hsl(220,9%,65%)]" /> Sin marcar
                     </span>
-                    <span className="font-medium text-slate-900 tabular-nums">{tardanzasPunt}</span>
+                    <span className="font-medium text-slate-900 tabular-nums">{sinMarcar} <span className="text-slate-500">({totalDonut ? Math.round((sinMarcar / totalDonut) * 100) : 0}%)</span></span>
                   </div>
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-center">
                     <span className="text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">{marcados}</span> de <span className="font-medium text-slate-700">{esperados}</span> marcaron
+                      <span className="font-medium text-slate-700">{conAsistencia}</span> con asistencia · <span className="font-medium text-slate-700">{sinMarcar}</span> pendientes · <span className="font-medium text-slate-700">{totalDonut}</span> total
                     </span>
                   </div>
                 </div>

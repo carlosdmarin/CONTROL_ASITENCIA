@@ -513,10 +513,87 @@ body, button, input, textarea, p, h1, h2, h3, h4, h5, h6, span, div {
   from { transform: scaleX(1); }
   to { transform: scaleX(0); }
 }
+/* Icono pop sutil para resultado exitoso/error */
+@keyframes icon-pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-icon-pop {
+  animation: icon-pop 250ms cubic-bezier(0.16,1,0.3,1) both;
+}
+/* Pulso sutil esquinas scanner activo */
+@keyframes corners-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+.animate-corners-pulse {
+  animation: corners-pulse 2.8s ease-in-out infinite;
+}
+/* Flash corto al detectar QR */
+@keyframes scanner-flash {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(0.98); opacity: 0.92; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+.animate-scanner-flash {
+  animation: scanner-flash 200ms ease-out both;
+}
 @media (prefers-reduced-motion: reduce) {
   .resultado-card-enter,
   .resultado-card-exit,
-  .resultado-progress { animation: none !important; }
+  .resultado-progress,
+  .animate-icon-pop,
+  .animate-corners-pulse,
+  .animate-scanner-flash { animation: none !important; }
+}
+
+/* ====== CARNET PRACTICANTE ====== */
+@keyframes carnet-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes qr-enter {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes qr-refresh {
+  from { opacity: 0.85; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-carnet-enter {
+  animation: carnet-enter 300ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.animate-qr-enter {
+  animation: qr-enter 220ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.animate-qr-refresh {
+  animation: qr-refresh 170ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-carnet-enter,
+  .animate-qr-enter,
+  .animate-qr-refresh { animation: none !important; }
+}
+
+/* ====== INFORMACIÓN PRACTICANTE ====== */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-page-enter {
+  animation: page-enter 300ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.animate-hero {
+  animation: page-enter 320ms cubic-bezier(0.16,1,0.3,1) both;
+}
+.animate-section {
+  animation: page-enter 280ms cubic-bezier(0.16,1,0.3,1) both;
+  animation-fill-mode: both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-enter,
+  .animate-hero,
+  .animate-section { animation: none !important; }
 }
 
 /* Transiciones eficientes solo transform/opacity */

@@ -65,44 +65,44 @@ export function ResultadoCardBody({ variant, title, subtitle, message, practican
 
   const hasPracticante = !!practicante?.nombreCompleto;
 
-  // Botón: entrada/salida outline, resto relleno
+  // Botón: entrada/salida outline, resto relleno - feedback táctil sutil
   const isOutline = variant === "entrada" || variant === "salida";
   const buttonClass = isOutline
-    ? `w-full h-12 min-h-[48px] rounded-xl border-2 bg-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-0 ${variant === "entrada" ? "border-success text-success hover:bg-success-soft focus-visible:ring-success/20" : "border-brand text-brand hover:bg-brand/10 focus-visible:ring-brand/20"}`
-    : `w-full h-12 min-h-[48px] rounded-xl text-white focus-visible:ring-2 ${cfg.color} hover:opacity-95 focus-visible:ring-offset-0 ${variant === "descanso" ? "focus-visible:ring-rest/20" : variant === "ya_registrado" ? "focus-visible:ring-neutral/20" : variant === "jornada_finalizada" || variant === "inactivo_exito" ? "focus-visible:ring-warning/20" : "focus-visible:ring-danger/20"}`;
+    ? `w-full h-12 min-h-[48px] rounded-xl border-2 bg-white hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-0 transition-all duration-150 active:scale-[0.98] ${variant === "entrada" ? "border-success text-success hover:bg-success-soft focus-visible:ring-success/20" : "border-brand text-brand hover:bg-brand/10 focus-visible:ring-brand/20"}`
+    : `w-full h-12 min-h-[48px] rounded-xl text-white focus-visible:ring-2 ${cfg.color} hover:opacity-95 focus-visible:ring-offset-0 transition-all duration-150 active:scale-[0.98] ${variant === "descanso" ? "focus-visible:ring-rest/20" : variant === "ya_registrado" ? "focus-visible:ring-neutral/20" : variant === "jornada_finalizada" || variant === "inactivo_exito" ? "focus-visible:ring-warning/20" : "focus-visible:ring-danger/20"}`;
 
   return (
     <div
       role={cfg.role}
       aria-live={cfg.live}
-      className={`w-[calc(100%-2rem)] max-w-sm md:max-w-md bg-white rounded-2xl border border-slate-200 shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col ${closing ? "resultado-card-exit" : "resultado-card-enter"}`}
+      className={`w-[calc(100%-1rem)] max-w-100 sm:max-w-sm bg-white rounded-2xl border border-slate-200 shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto flex flex-col ${closing ? "resultado-card-exit" : "resultado-card-enter"}`}
       style={autoCloseMs ? ({ ["--auto-close-ms" as any]: `${autoCloseMs}ms` } as React.CSSProperties) : undefined}
     >
       {/* NIVEL 1 — Qué pasó */}
-      <div className={`rounded-t-2xl px-6 pt-7 pb-6 flex flex-col items-center text-center ${cfg.soft}`}>
-        <div className={`w-[72px] h-[72px] rounded-full flex items-center justify-center shrink-0 ${cfg.color}`}>
-          <Icon className="w-8 h-8 text-white" aria-hidden="true" strokeWidth={2} />
+      <div className={`rounded-t-2xl px-4 sm:px-6 pt-5 sm:pt-7 pb-4 sm:pb-6 flex flex-col items-center text-center ${cfg.soft}`}>
+        <div className={`w-14 h-14 sm:w-[72px] sm:h-[72px] rounded-full flex items-center justify-center shrink-0 ${cfg.color} animate-icon-pop`}>
+          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" aria-hidden="true" strokeWidth={2} />
         </div>
-        <h2 className={`mt-4 text-2xl sm:text-3xl font-semibold tracking-tight ${cfg.fg}`}>{displayTitle}</h2>
-        {displaySubtitle && <p className={`mt-1.5 text-base ${cfg.fg} opacity-80`}>{displaySubtitle}</p>}
+        <h2 className={`mt-3 sm:mt-4 text-xl sm:text-2xl font-semibold tracking-tight ${cfg.fg}`}>{displayTitle}</h2>
+        {displaySubtitle && <p className={`mt-1 sm:mt-1.5 text-sm sm:text-base ${cfg.fg} opacity-80`}>{displaySubtitle}</p>}
       </div>
 
-      <div className="px-6 py-5 space-y-4">
+      <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-4">
         {/* NIVEL 2 — La prueba (solo si hay practicante) */}
         {hasPracticante && (
           <>
             {(hora || fecha) && (
               <div className="text-center">
-                {hora && <p className="text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{hora}</p>}
-                {fecha && <p className="text-sm text-slate-600 mt-1">{fecha}</p>}
+                {hora && <p className="text-2xl sm:text-3xl font-semibold tabular-nums tracking-tight text-slate-900">{hora}</p>}
+                {fecha && <p className="text-xs sm:text-sm text-slate-600 mt-1">{fecha}</p>}
               </div>
             )}
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
-              <Avatar className="h-12 w-12 shrink-0 bg-slate-100">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 bg-slate-100">
                 <AvatarFallback className="bg-slate-100 text-slate-600 font-medium">{getInitials(practicante?.nombreCompleto)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="text-xl font-semibold leading-tight break-words line-clamp-2 text-slate-900" title={practicante?.nombreCompleto}>
+                <p className="text-lg sm:text-xl font-semibold leading-tight break-words line-clamp-2 text-slate-900" title={practicante?.nombreCompleto}>
                   {practicante?.nombreCompleto}
                 </p>
                 {practicante?.cargo && (
@@ -164,7 +164,7 @@ export function ResultadoCard(props: Props) {
   const isAlert = CONFIG[props.variant].role === "alert";
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 md:backdrop-blur-sm ${props.closing ? "resultado-card-exit" : "resultado-card-enter"}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 md:backdrop-blur-sm ${props.closing ? "resultado-card-exit" : "resultado-card-enter"}`}
       style={{ paddingTop: "max(1rem, env(safe-area-inset-top))", paddingBottom: "max(1rem, env(safe-area-inset-bottom))" } as React.CSSProperties}
       role={isAlert ? "alert" : "status"}
       aria-live={isAlert ? "assertive" : "polite"}

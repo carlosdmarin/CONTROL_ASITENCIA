@@ -33,7 +33,11 @@ public class AuthService {
 
     private Set<Integer> parseRrhhIds() {
         Set<Integer> ids = new HashSet<>();
-        if (rrhhWorkerIds == null || rrhhWorkerIds.isBlank()) return ids;
+
+        if (rrhhWorkerIds == null || rrhhWorkerIds.isBlank()) {
+            return ids;
+        }
+
         for (String s : rrhhWorkerIds.split(",")) {
             try {
                 ids.add(Integer.valueOf(s.trim()));
@@ -41,118 +45,316 @@ public class AuthService {
                 log.warn("Id RRHH inválido en configuración: {}", s);
             }
         }
+
         return ids;
     }
 
     private boolean isBCrypt(String hash) {
-        return hash != null && (hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$"));
+        return hash != null &&
+                (hash.startsWith("$2a$")
+                        || hash.startsWith("$2b$")
+                        || hash.startsWith("$2y$"));
     }
 
     private String normalizeForBcrypt(String hash) {
         if (hash != null && hash.startsWith("$2y$")) {
             return "$2a$" + hash.substring(4);
         }
+
         return hash;
     }
 
     @Transactional
     public AuthResult authenticate(String usuario, String contrasena) {
-        if (usuario == null || usuario.isBlank() || contrasena == null || contrasena.isBlank()) {
-            throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+
+        if (usuario == null || usuario.isBlank()
+                || contrasena == null || contrasena.isBlank()) {
+
+            throw new BusinessException(
+                    "Usuario o contraseña incorrectos",
+                    HttpStatus.UNAUTHORIZED
+            );
         }
+
         String usuarioTrim = usuario.trim();
-        String contrasenaTrim = contrasena; // no trim password, pero usuario sí
+
+        // No hacemos trim de la contraseña
+        String contrasenaTrim = contrasena;
 
         List<Candidate> candidates = new ArrayList<>();
 
-        // Practicante - identificador principal usuario, compatibilidad documento
-        Optional<Practicante> optPracticante = practicanteRepository.findByUsuario(usuarioTrim);
+        // =========================================================
+        // PRACTICANTE
+        // =========================================================
+
+        Optional<Practicante> optPracticante =
+                practicanteRepository.findByUsuario(usuarioTrim);
+
         if (optPracticante.isEmpty()) {
-            // Compatibilidad: si no encontró por usuario, intentar por documento (mismo valor en datos actuales)
-            optPracticante = practicanteRepository.findByDocumento(usuarioTrim);
+
+            // Compatibilidad:
+            // si no encontró por usuario, intenta por documento
+            optPracticante =
+                    practicanteRepository.findByDocumento(usuarioTrim);
         }
+
         if (optPracticante.isPresent()) {
+
             Practicante p = optPracticante.get();
-            // Solo activo
-            if (p.getSituacion() != null && p.getSituacion().name().equals("ACTIVO")) {
-                candidates.add(new Candidate("practicante", p));
+
+            // Solo practicantes activos
+            if (p.getSituacion() != null
+                    && p.getSituacion().name().equals("ACTIVO")) {
+
+                candidates.add(
+                        new Candidate("practicante", p)
+                );
+
             } else {
-                log.debug("Practicante encontrado pero inactivo: {}", usuarioTrim);
+
+                log.debug(
+                        "Practicante encontrado pero inactivo: {}",
+                        usuarioTrim
+                );
             }
         }
 
-        // Vigilante
-        Optional<Vigilante> optVigilante = vigilanteRepository.findByUsuario(usuarioTrim);
+        // =========================================================
+        // VIGILANTE
+        // =========================================================
+
+        Optional<Vigilante> optVigilante =
+                vigilanteRepository.findByUsuario(usuarioTrim);
+
         if (optVigilante.isPresent()) {
+
             Vigilante v = optVigilante.get();
+
             if (Boolean.TRUE.equals(v.getEstado())) {
-                candidates.add(new Candidate("vigilante", v));
+
+                candidates.add(
+                        new Candidate("vigilante", v)
+                );
+
             } else {
-                log.debug("Vigilante inactivo: {}", usuarioTrim);
+
+                log.debug(
+                        "Vigilante inactivo: {}",
+                        usuarioTrim
+                );
             }
         }
 
-        // Trabajador / RRHH
-        Optional<Trabajador> optTrabajador = trabajadorRepository.findByUsuario(usuarioTrim);
+        // =========================================================
+        // TRABAJADOR / RRHH
+        // =========================================================
+
+        Optional<Trabajador> optTrabajador =
+                trabajadorRepository.findByUsuario(usuarioTrim);
+
         if (optTrabajador.isEmpty()) {
-            // Fallback por email si usuario parece email (contiene @)
+
+            // Fallback por email
             if (usuarioTrim.contains("@")) {
-                optTrabajador = trabajadorRepository.findByEmail(usuarioTrim);
+
+                optTrabajador =
+                        trabajadorRepository.findByEmail(usuarioTrim);
             }
         }
+
         if (optTrabajador.isPresent()) {
+
             Trabajador t = optTrabajador.get();
+
             Set<Integer> allowed = parseRrhhIds();
-            boolean isAuthorized = allowed.contains(t.getIdTrabajador());
-            boolean estadoOk = t.getEstado() != null && t.getEstado() == 1;
-            boolean estadoUsuarioOk = t.getEstadoUsuario() != null && t.getEstadoUsuario() == 1;
-            if (isAuthorized && estadoOk && estadoUsuarioOk) {
-                candidates.add(new Candidate("trabajadores", t));
+
+            boolean isAuthorized =
+                    allowed.contains(t.getIdTrabajador());
+
+            boolean estadoOk =
+                    t.getEstado() != null
+                            && t.getEstado() == 1;
+
+            boolean estadoUsuarioOk =
+                    t.getEstadoUsuario() != null
+                            && t.getEstadoUsuario() == 1;
+
+            if (isAuthorized
+                    && estadoOk
+                    && estadoUsuarioOk) {
+
+                candidates.add(
+                        new Candidate("trabajadores", t)
+                );
+
             } else {
-                log.debug("Trabajador no autorizado o inactivo: usuario={}, id={}, estado={}, estadoUsuario={}, autorizado={}", usuarioTrim, t.getIdTrabajador(), t.getEstado(), t.getEstadoUsuario(), isAuthorized);
+
+                log.debug(
+                        "Trabajador no autorizado o inactivo: " +
+                                "usuario={}, id={}, estado={}, " +
+                                "estadoUsuario={}, autorizado={}",
+                        usuarioTrim,
+                        t.getIdTrabajador(),
+                        t.getEstado(),
+                        t.getEstadoUsuario(),
+                        isAuthorized
+                );
             }
         }
+
+        // =========================================================
+        // DEBUG: CANDIDATOS ENCONTRADOS
+        // =========================================================
+
+        log.info(
+                "LOGIN DEBUG - usuario recibido: [{}]",
+                usuarioTrim
+        );
+
+        log.info(
+                "LOGIN DEBUG - candidatos encontrados: {}",
+                candidates.size()
+        );
+
+        for (Candidate c : candidates) {
+
+            log.info(
+                    "LOGIN DEBUG - source={}",
+                    c.source
+            );
+        }
+
+        // =========================================================
+        // SIN CANDIDATOS
+        // =========================================================
 
         if (candidates.isEmpty()) {
-            throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+
+            log.warn(
+                    "LOGIN DEBUG - No se encontró ningún usuario activo/autorizado para [{}]",
+                    usuarioTrim
+            );
+
+            throw new BusinessException(
+                    "Usuario o contraseña incorrectos",
+                    HttpStatus.UNAUTHORIZED
+            );
         }
+
+        // =========================================================
+        // MÁS DE UN CANDIDATO
+        // =========================================================
+
         if (candidates.size() > 1) {
-            log.warn("Autenticación ambigua para usuario {}: {} candidatos en fuentes distintas", usuarioTrim, candidates.size());
-            throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+
+            log.warn(
+                    "Autenticación ambigua para usuario {}: {} candidatos en fuentes distintas",
+                    usuarioTrim,
+                    candidates.size()
+            );
+
+            throw new BusinessException(
+                    "Usuario o contraseña incorrectos",
+                    HttpStatus.UNAUTHORIZED
+            );
         }
 
         Candidate candidate = candidates.get(0);
+
         String source = candidate.source;
+
         Object entity = candidate.entity;
 
-        // Validar contraseña según fuente
+        // =========================================================
+        // AUTENTICACIÓN DEL PRACTICANTE
+        // =========================================================
+
         if ("practicante".equals(source)) {
+
             Practicante p = (Practicante) entity;
+
             String stored = p.getContrasena();
+
+            // DEBUG
+            log.info(
+                    "LOGIN DEBUG - practicante encontrado id={}, usuario={}, passwordBCrypt={}",
+                    p.getIdPracticante(),
+                    p.getUsuario(),
+                    isBCrypt(stored)
+            );
+
             boolean matches;
+
             if (isBCrypt(stored)) {
-                String normalized = normalizeForBcrypt(stored);
-                matches = passwordEncoder.matches(contrasenaTrim, normalized);
+
+                String normalized =
+                        normalizeForBcrypt(stored);
+
+                matches =
+                        passwordEncoder.matches(
+                                contrasenaTrim,
+                                normalized
+                        );
+
             } else {
-                // Compatibilidad legacy: texto plano = documento (comparación segura temporal)
-                // No almacenar contraseña ingresada, solo comparar y migrar
-                boolean legacyMatches = stored != null && stored.equals(contrasenaTrim);
-                // Alternativa segura: usar MessageDigest.isEqual para tiempo constante, pero no crítico para esta fase
+
+                // Compatibilidad legacy:
+                // contraseña antigua = documento
+
+                boolean legacyMatches =
+                        stored != null
+                                && stored.equals(contrasenaTrim);
+
                 matches = legacyMatches;
+
                 if (matches) {
-                    // Migrar a BCrypt después de autenticación exitosa
-                    String newHash = passwordEncoder.encode(contrasenaTrim);
+
+                    // Migrar automáticamente a BCrypt
+                    String newHash =
+                            passwordEncoder.encode(
+                                    contrasenaTrim
+                            );
+
                     p.setContrasena(newHash);
+
                     practicanteRepository.save(p);
-                    log.info("Migración de contraseña legacy a BCrypt para practicante usuario={} id={}", p.getUsuario(), p.getIdPracticante());
+
+                    log.info(
+                            "Migración de contraseña legacy a BCrypt para practicante usuario={} id={}",
+                            p.getUsuario(),
+                            p.getIdPracticante()
+                    );
                 }
             }
+
             if (!matches) {
-                throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+
+                log.warn(
+                        "LOGIN DEBUG - contraseña incorrecta para practicante usuario={}",
+                        p.getUsuario()
+                );
+
+                throw new BusinessException(
+                        "Usuario o contraseña incorrectos",
+                        HttpStatus.UNAUTHORIZED
+                );
             }
-            // Construir AuthResult
-            String nombre = p.getNombre() + " " + p.getApellido();
-            String sede = p.getSede() != null ? p.getSede().getNombre() : null;
+
+            // Construir resultado de autenticación
+
+            String nombre =
+                    p.getNombre() + " " + p.getApellido();
+
+            String sede =
+                    p.getSede() != null
+                            ? p.getSede().getNombre()
+                            : null;
+
+            log.info(
+                    "LOGIN DEBUG - autenticación exitosa como PRACTICANTE, id={}",
+                    p.getIdPracticante()
+            );
+
             return AuthResult.builder()
                     .id(p.getIdPracticante())
                     .nombre(nombre)
@@ -163,22 +365,69 @@ public class AuthService {
                     .sid("practicante:" + p.getIdPracticante())
                     .source("practicante")
                     .build();
+        }
 
-        } else if ("vigilante".equals(source)) {
+        // =========================================================
+        // AUTENTICACIÓN DEL VIGILANTE
+        // =========================================================
+
+        else if ("vigilante".equals(source)) {
+
             Vigilante v = (Vigilante) entity;
+
             String stored = v.getContrasena();
-            String normalized = normalizeForBcrypt(stored);
-            // Vigilante siempre BCrypt (aunque tabla vacía, preparado)
+
+            // DEBUG
+            log.info(
+                    "LOGIN DEBUG - vigilante encontrado id={}, usuario={}, passwordBCrypt={}",
+                    v.getIdVigilante(),
+                    v.getUsuario(),
+                    isBCrypt(stored)
+            );
+
+            String normalized =
+                    normalizeForBcrypt(stored);
+
             boolean matches;
+
+            // Vigilante normalmente usa BCrypt
             if (isBCrypt(stored)) {
-                matches = passwordEncoder.matches(contrasenaTrim, normalized);
+
+                matches =
+                        passwordEncoder.matches(
+                                contrasenaTrim,
+                                normalized
+                        );
+
             } else {
-                matches = stored != null && stored.equals(contrasenaTrim);
+
+                // Compatibilidad legacy
+                matches =
+                        stored != null
+                                && stored.equals(contrasenaTrim);
             }
+
             if (!matches) {
-                throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+
+                log.warn(
+                        "LOGIN DEBUG - contraseña incorrecta para vigilante usuario={}",
+                        v.getUsuario()
+                );
+
+                throw new BusinessException(
+                        "Usuario o contraseña incorrectos",
+                        HttpStatus.UNAUTHORIZED
+                );
             }
-            String nombre = v.getNombre() + " " + v.getApellido();
+
+            String nombre =
+                    v.getNombre() + " " + v.getApellido();
+
+            log.info(
+                    "LOGIN DEBUG - autenticación exitosa como VIGILANTE, id={}",
+                    v.getIdVigilante()
+            );
+
             return AuthResult.builder()
                     .id(Long.valueOf(v.getIdVigilante()))
                     .nombre(nombre)
@@ -188,40 +437,111 @@ public class AuthService {
                     .sid("vigilante:" + v.getIdVigilante())
                     .source("vigilante")
                     .build();
+        }
 
-        } else if ("trabajadores".equals(source)) {
+        // =========================================================
+        // AUTENTICACIÓN DE RRHH
+        // =========================================================
+
+        else if ("trabajadores".equals(source)) {
+
             Trabajador t = (Trabajador) entity;
-            String stored = t.getPasswordUser();
-            String normalized = normalizeForBcrypt(stored);
+
+            String stored =
+                    t.getPasswordUser();
+
+            // DEBUG
+            log.info(
+                    "LOGIN DEBUG - trabajador encontrado id={}, usuario={}, passwordBCrypt={}",
+                    t.getIdTrabajador(),
+                    t.getUsuario(),
+                    isBCrypt(stored)
+            );
+
+            String normalized =
+                    normalizeForBcrypt(stored);
+
+            // Trabajadores deben tener BCrypt
             if (!isBCrypt(stored)) {
-                // No debería ocurrir, trabajadores siempre bcrypt
-                log.warn("Trabajador {} con password no BCrypt", t.getUsuario());
-                throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+
+                log.warn(
+                        "Trabajador {} con password no BCrypt",
+                        t.getUsuario()
+                );
+
+                throw new BusinessException(
+                        "Usuario o contraseña incorrectos",
+                        HttpStatus.UNAUTHORIZED
+                );
             }
-            boolean matches = passwordEncoder.matches(contrasenaTrim, normalized);
+
+            boolean matches =
+                    passwordEncoder.matches(
+                            contrasenaTrim,
+                            normalized
+                    );
+
             if (!matches) {
-                throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+
+                log.warn(
+                        "LOGIN DEBUG - contraseña incorrecta para trabajador usuario={}",
+                        t.getUsuario()
+                );
+
+                throw new BusinessException(
+                        "Usuario o contraseña incorrectos",
+                        HttpStatus.UNAUTHORIZED
+                );
             }
-            String nombre = t.getNombres() + " " + t.getApellidos();
+
+            String nombre =
+                    t.getNombres() + " " + t.getApellidos();
+
+            log.info(
+                    "LOGIN DEBUG - autenticación exitosa como RRHH, id={}",
+                    t.getIdTrabajador()
+            );
+
             return AuthResult.builder()
                     .id(Long.valueOf(t.getIdTrabajador()))
                     .nombre(nombre)
                     .usuario(t.getUsuario())
                     .rol("RRHH")
                     .documento(t.getNroDoc())
-                    .sede(t.getIdSede() != null ? String.valueOf(t.getIdSede()) : null)
+                    .sede(
+                            t.getIdSede() != null
+                                    ? String.valueOf(t.getIdSede())
+                                    : null
+                    )
                     .sid("trabajadores:" + t.getIdTrabajador())
                     .source("trabajadores")
                     .build();
         }
 
-        throw new BusinessException("Usuario o contraseña incorrectos", HttpStatus.UNAUTHORIZED);
+        // =========================================================
+        // FALLBACK
+        // =========================================================
+
+        throw new BusinessException(
+                "Usuario o contraseña incorrectos",
+                HttpStatus.UNAUTHORIZED
+        );
     }
 
+    // =============================================================
+    // CANDIDATO DE AUTENTICACIÓN
+    // =============================================================
+
     private static class Candidate {
+
         String source;
+
         Object entity;
-        Candidate(String source, Object entity) {
+
+        Candidate(
+                String source,
+                Object entity
+        ) {
             this.source = source;
             this.entity = entity;
         }

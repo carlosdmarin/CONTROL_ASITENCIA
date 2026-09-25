@@ -42,7 +42,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of("http://localhost:3000",
+                "https://gathered-glad-clara-sig.trycloudflare.com"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -54,9 +55,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // CSRF con cookie separada del JWT (XSRF-TOKEN no HttpOnly, JWT sí HttpOnly)
+        // Con arquitectura SAME-ORIGIN (Next.js rewrite /api -> backend) la cookie es first-party
+        // por lo que Lax es suficiente y más seguro que None
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         requestHandler.setCsrfRequestAttributeName(null);
         CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfRepo.setCookieCustomizer(c -> c.sameSite("Lax").secure(true).path("/"));
         // Para desarrollo, el CSRF no debe bloquear /api/auth/** (login) antes de tener token
         // Se permite CSRF pero se ignora para endpoints de auth si se desea; aquí se mantiene habilitado globalmente
         // y el frontend Next.js deberá leer XSRF-TOKEN y enviar X-XSRF-TOKEN
@@ -88,6 +92,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login", "/api/auth/logout").permitAll()
+                .requestMatchers("/api/csrf").permitAll()
                 .requestMatchers("/api/auth/me").authenticated()
                 .requestMatchers("/health", "/health/**").permitAll()
                 // Todo /api/** requiere autenticación; autorización por rol vía @PreAuthorize

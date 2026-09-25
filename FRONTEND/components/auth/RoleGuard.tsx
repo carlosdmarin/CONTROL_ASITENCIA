@@ -15,20 +15,29 @@ export function RoleGuard({ allowedRoles, children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // allowedRoles es literal en cada layout (ej. ["PRACTICANTE"]) y cambia de referencia cada render.
+  // Usamos una clave estable para deps y evitamos múltiples replace.
+  const allowedKey = allowedRoles.join(",");
+
   useEffect(() => {
     if (auth.status === "loading") return;
     if (auth.status === "unauthenticated") {
       const returnTo = pathname || "/";
+      // Evitar loop si ya estamos en /login
+      if (pathname === "/login" || pathname?.startsWith("/login")) return;
       router.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
       return;
     }
     if (auth.status === "authenticated") {
       const rol = auth.user.rol;
       if (!allowedRoles.includes(rol as any)) {
-        router.replace(getHomeForRole(rol));
+        const home = getHomeForRole(rol);
+        // No redirigir si ya estamos en el home correcto (evita replace innecesario)
+        if (pathname === home || pathname?.startsWith(home + "/")) return;
+        router.replace(home);
       }
     }
-  }, [auth.status, (auth as any).user?.rol, pathname, router, allowedRoles]);
+  }, [auth.status, (auth as any).user?.rol, pathname, router, allowedKey]);
 
   if (auth.status === "loading") {
     return (

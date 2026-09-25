@@ -39,4 +39,9 @@ export async function logout(): Promise<void> {
     method: "POST",
     credentials: "include",
   });
+  // Limpiar token CSRF en memoria (backend lo rotará)
+  try {
+    const { clearCsrfToken } = await import('./api/axios');
+    clearCsrfToken();
+  } catch {}
 }

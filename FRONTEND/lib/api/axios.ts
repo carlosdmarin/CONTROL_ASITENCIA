@@ -13,6 +13,64 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// CSRF para entorno cross-origin: la cookie XSRF-TOKEN del backend no es legible
+// via document.cookie (dominio distinto), por eso se obtiene via GET /api/csrf (JSON)
+// y se guarda en memoria para enviar como X-XSRF-TOKEN
+let csrfToken: string | null = null;
+let csrfPromise: Promise<string> | null = null;
+
+export async function fetchCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken;
+  if (csrfPromise) return csrfPromise;
+  csrfPromise = fetch(`${API_URL}/csrf`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  })
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`CSRF fetch ${res.status}`);
+      const data = await res.json();
+      const t = data.token || data.csrf || data.value;
+      if (!t) throw new Error('CSRF token missing');
+      csrfToken = t;
+      return t;
+    })
+    .finally(() => {
+      csrfPromise = null;
+    });
+  return csrfPromise;
+}
+
+export function clearCsrfToken() {
+  csrfToken = null;
+  csrfPromise = null;
+}
+
+// Interceptor de request: añade X-XSRF-TOKEN en mutaciones (POST/PUT/PATCH/DELETE)
+// excepto rutas ignoradas por backend (/api/auth/** y /api/csrf)
+api.interceptors.request.use(async (config) => {
+  const method = (config.method || '').toLowerCase();
+  const url = config.url || '';
+  const isMutating = ['post', 'put', 'patch', 'delete'].includes(method);
+  const isIgnored =
+    url.includes('/api/auth/') ||
+    url.includes('/auth/') ||
+    url.includes('/api/csrf') ||
+    url.includes('/csrf');
+  if (isMutating && !isIgnored) {
+    try {
+      const token = await fetchCsrfToken();
+      if (token) {
+        config.headers = config.headers || {};
+        (config.headers as any)['X-XSRF-TOKEN'] = token;
+      }
+    } catch (e) {
+      console.warn('No se pudo obtener CSRF token', e);
+    }
+  }
+  return config;
+});
+
 // Interceptor para manejar errores globalmente
 api.interceptors.response.use(
   (response) => {

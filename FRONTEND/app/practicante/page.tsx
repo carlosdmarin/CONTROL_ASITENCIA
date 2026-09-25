@@ -5,25 +5,54 @@ import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { LogOut, User, Clock, FileText, CalendarDays } from "lucide-react";
+import { LogOut, ChevronDown, Info } from "lucide-react";
 import Link from "next/link";
+import { CarnetPracti } from "@/app/dashboard/practicantes/components/CarnetPracti";
+import { CarnetSkeleton } from "@/app/dashboard/practicantes/components/CarnetSkeleton";
+import { Practicante } from "@/types/practicante";
 
 export default function PracticantePage() {
   const auth = useAuth();
-  const [horario, setHorario] = useState<any[] | null>(null);
-  const [loadingHorario, setLoadingHorario] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [qrValue, setQrValue] = useState("");
+  const [practicanteFull, setPracticanteFull] = useState<Practicante | null>(null);
 
   useEffect(() => {
     if (auth.status !== "authenticated" || !auth.user) return;
-    const id = auth.user.id;
-    setLoadingHorario(true);
-    // Intenta cargar horario vía API si existe
+    const build = () => `PRACTIQR|${auth.user!.id}|${new Date().toISOString()}`;
+    setQrValue(build());
+    const id = setInterval(() => setQrValue(build()), 30000);
+    return () => clearInterval(id);
+  }, [auth.status, (auth as any).user?.id]);
+
+  useEffect(() => {
+    if (auth.status !== "authenticated" || !auth.user) return;
+    let mounted = true;
     import("@/lib/api/practicantes")
-      .then(({ practicantesApi }) => practicantesApi.getHorario(id))
-      .then(setHorario)
-      .catch(() => setHorario([]))
-      .finally(() => setLoadingHorario(false));
+      .then(({ practicantesApi }) => practicantesApi.getById(auth.user!.id))
+      .then((data) => {
+        if (mounted) setPracticanteFull(data);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setPracticanteFull({
+          idPracticante: auth.user!.id,
+          nombreCompleto: auth.user!.nombre,
+          documento: auth.user!.documento || auth.user!.usuario,
+          sede: "",
+          oficina: "",
+          idOficina: 0,
+          nombreOficina: "",
+          tipoInstituto: "",
+          cargo: "",
+          situacion: "ACTIVO",
+          horasSemanalesRequeridas: 0,
+          fechaInicioPracticas: new Date().toISOString(),
+        });
+      });
+    return () => {
+      mounted = false;
+    };
   }, [auth.status, (auth as any).user?.id]);
 
   if (auth.status === "loading") {
@@ -71,79 +100,36 @@ export default function PracticantePage() {
         </Button>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <Card className="rounded-2xl border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <User className="h-4 w-4 text-brand" />
-              Bienvenido, {user?.nombre}
-            </CardTitle>
-            <CardDescription>
-              Documento: <span className="font-mono font-medium text-slate-700">{user?.documento || user?.usuario}</span> · Usuario: {user?.usuario}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-slate-600">
-              Desde aquí puedes consultar tu horario, tus asistencias y tu código QR para marcación.
-            </p>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="rounded-2xl border-slate-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-blue-600" />
-                Mi horario
-              </CardTitle>
-              <CardDescription className="text-xs">Turnos programados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loadingHorario ? (
-                <p className="text-xs text-slate-400">Cargando horario…</p>
-              ) : !horario || horario.length === 0 ? (
-                <p className="text-xs text-slate-500">Sin horario registrado. Consulta con RRHH.</p>
-              ) : (
-                <ul className="space-y-1 text-xs">
-                  {horario.slice(0, 6).map((b: any, i: number) => (
-                    <li key={i} className="flex justify-between border-b last:border-0 py-1.5">
-                      <span className="font-medium">{b.diaSemana || b.dia || "Día"}</span>
-                      <span className="font-mono text-slate-600">
-                        {b.horaInicio || b.horaEntrada || ""} - {b.horaFin || b.horaSalida || ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-slate-200 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <CalendarDays className="h-4 w-4 text-emerald-600" />
-                Asistencia
-              </CardTitle>
-              <CardDescription className="text-xs">Tu control diario</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-xs text-slate-600">
-                La marcación se realiza con el vigilante mediante tu QR. Si necesitas justificar una falta, contacta a RRHH.
-              </p>
-              <Link href="/practicante" className="inline-flex text-xs font-medium text-brand hover:underline">
-                <FileText className="h-3 w-3 mr-1" />
-                Ver reportes (próximamente)
-              </Link>
-            </CardContent>
-          </Card>
+      <main className="max-w-3xl mx-auto px-4 py-6">
+        {/* SALUDO COMPACTO + CARNET PRINCIPAL */}
+        <div className="text-center mb-4">
+          <p className="text-sm text-slate-500">Hola, <span className="font-semibold text-slate-800">{user?.nombre}</span></p>
+          <p className="text-xs text-slate-400">PractiQR · Tu carnet está listo para mostrar al vigilante</p>
         </div>
 
-        <Card className="rounded-2xl border-slate-200 bg-white shadow-sm">
-          <CardContent className="p-6 text-center">
-            <p className="text-sm font-medium text-slate-700">¿Necesitas tu QR?</p>
-            <p className="text-xs text-slate-500 mt-1">Solicita a RRHH la generación de tu código QR para marcación.</p>
-          </CardContent>
-        </Card>
+        <div className="flex justify-center" aria-live="polite" aria-busy={!practicanteFull || !qrValue}>
+          {practicanteFull && qrValue ? (
+            <CarnetPracti
+              practicante={practicanteFull}
+              qrValue={qrValue}
+              editableFoto={false}
+            />
+          ) : (
+            <CarnetSkeleton />
+          )}
+        </div>
+
+        {/* BOTÓN VER INFORMACIÓN */}
+        <div className="flex justify-center mt-6">
+          <Link
+            href="/practicante/informacion"
+            className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all duration-150"
+          >
+            <Info className="h-4 w-4 text-slate-500" />
+            Ver información
+            <ChevronDown className="h-4 w-4 text-slate-400 transition-transform duration-200 group-hover:translate-y-0.5 rotate-[-90deg]" />
+          </Link>
+        </div>
       </main>
     </div>
   );

@@ -249,11 +249,14 @@ public class AuthorizationTest {
 
     @Test
     void vigilante_marcacion_permitido() throws Exception {
+        String now = java.time.Instant.now().toString();
+        String qr = "PRACTIQR|1|" + now;
+        String json = "{\"documento\":\"" + qr + "\",\"tipoMarcacion\":\"ENTRADA\",\"metodoRegistro\":\"QR\"}";
         mockMvc.perform(post("/api/asistencias/marcar")
                 .with(csrf())
                 .cookie(vigilanteCookie)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"documento\":\"70000001\",\"tipoMarcacion\":\"ENTRADA\",\"metodoRegistro\":\"QR\"}"))
+                .content(json))
                 .andExpect(status().isCreated());
     }
 

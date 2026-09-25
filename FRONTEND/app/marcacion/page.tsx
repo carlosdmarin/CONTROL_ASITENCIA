@@ -92,8 +92,23 @@ export default function MarcacionPage() {
       const isInactivo =
         msg.toLowerCase().includes("no activo") ||
         msg.toLowerCase().includes("inactivo");
+      const isQrExpirado =
+        msg.toLowerCase().includes("expirado") ||
+        msg.toLowerCase().includes("qr_expirado");
+      const isQrInvalido =
+        msg.toLowerCase().includes("no es válido") ||
+        msg.toLowerCase().includes("qr_invalido") ||
+        (msg.toLowerCase().includes("qr") && msg.toLowerCase().includes("no es válido"));
 
-      if (isInactivo) {
+      if (isQrExpirado) {
+        const m = "El código QR ha expirado. Espere al nuevo código y vuelva a escanear.";
+        setMarcacionStatus({ success: false, message: m, tipo: "QR_EXPIRADO" as any });
+        toast.error(`⏰ ${m}`);
+      } else if (isQrInvalido) {
+        const m = "El código QR no es válido.";
+        setMarcacionStatus({ success: false, message: m, tipo: "QR_INVALIDO" as any });
+        toast.error(`❌ ${m}`);
+      } else if (isInactivo) {
         setMarcacionStatus({ success: false, message: msg, tipo: "INACTIVO" });
         toast.error(`🚫 ${msg}`);
       } else if (isDescanso) {
@@ -135,14 +150,14 @@ export default function MarcacionPage() {
       <QRScannerHeader />
 
       {/* CONTENIDO */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto space-y-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="max-w-[390px] sm:max-w-md mx-auto space-y-4 sm:space-y-6">
           {/* ESTADO DEL SCANNER */}
           <QRScannerStatus isScanning={isScanning} />
 
           {/* LECTOR QR */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-            <div className="aspect-square bg-black rounded-xl overflow-hidden relative w-full max-w-[520px] mx-auto max-h-[60dvh]">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-4">
+            <div className="aspect-square bg-black rounded-xl overflow-hidden relative w-full max-w-[520px] mx-auto max-h-[52dvh] sm:max-h-[60dvh]">
               <QRScanner
                 onScan={handleScan}
                 onError={handleError}
@@ -150,11 +165,11 @@ export default function MarcacionPage() {
                 isResultVisible={isResultVisible}
               />
             </div>
-            <p className="mt-3 text-center text-sm text-slate-600">Coloca el QR dentro del recuadro</p>
+            <p className="mt-2.5 sm:mt-3 text-center text-xs sm:text-sm text-slate-600">Coloca el QR dentro del recuadro</p>
           </div>
 
           {/* BOTONES DE CONTROL */}
-          <div className="flex gap-3">
+          <div className="flex gap-2.5 sm:gap-3">
             <QRScannerButton
               isScanning={isScanning}
               onToggle={() => setIsScanning(!isScanning)}
@@ -169,10 +184,10 @@ export default function MarcacionPage() {
           </div>
 
           {/* HISTORIAL RECIENTE */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-3 sm:p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-slate-800 text-sm">Historial reciente</h3>
-              <button onClick={cargarHistorial} className="text-xs font-medium text-brand hover:text-brand-hover underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 rounded-md px-1">Actualizar</button>
+              <button onClick={cargarHistorial} className="text-xs font-medium text-brand hover:text-brand-hover underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20 rounded-md px-1.5 py-1.5 min-h-[32px]">Actualizar</button>
             </div>
             {loadingHist ? (
               <p className="text-xs text-slate-400 text-center py-4">Cargando...</p>

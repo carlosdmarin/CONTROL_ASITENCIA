@@ -42,7 +42,8 @@ public class JwtService {
     public String generateToken(String subject, String rol, String sid) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expiration);
-        return Jwts.builder()
+
+        String token = Jwts.builder()
                 .subject(subject)
                 .claim("rol", rol)
                 .claim("sid", sid)
@@ -51,6 +52,10 @@ public class JwtService {
                 .expiration(expiry)
                 .signWith(key)
                 .compact();
+
+        System.out.println("JWT DEBUG - token generado para subject=" + subject + ", rol=" + rol + ", sid=" + sid);
+
+        return token;
     }
 
     public boolean isValid(String token) {
@@ -97,6 +102,14 @@ public class JwtService {
     }
 
     public ResponseCookie createCookie(String token) {
+
+        System.out.println(
+                "JWT DEBUG - cookie creada: name=" + cookieName
+                        + ", secure=" + cookieSecure
+                        + ", sameSite=" + cookieSameSite
+                        + ", maxAge=" + cookieMaxAge
+        );
+
         return ResponseCookie.from(cookieName, token)
                 .httpOnly(true)
                 .secure(cookieSecure)

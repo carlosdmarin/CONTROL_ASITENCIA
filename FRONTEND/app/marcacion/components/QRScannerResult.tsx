@@ -21,6 +21,8 @@ interface QRScannerResultProps {
       | "YA_REGISTRADO"
       | "JORNADA_FINALIZADA"
       | "INACTIVO"
+      | "QR_EXPIRADO"
+      | "QR_INVALIDO"
       | "ERROR";
   } | null;
 }
@@ -53,12 +55,20 @@ export default function QRScannerResult({
   const isDescanso = marcacionStatus?.tipo === "DESCANSO";
   const isYaRegistrado = marcacionStatus?.tipo === "YA_REGISTRADO";
   const isJornadaFinalizada = marcacionStatus?.tipo === "JORNADA_FINALIZADA";
+  const isQrExpirado =
+    marcacionStatus?.tipo === "QR_EXPIRADO" ||
+    marcacionStatus?.message?.toLowerCase().includes("expirado");
+  const isQrInvalido =
+    marcacionStatus?.tipo === "QR_INVALIDO" ||
+    marcacionStatus?.message?.toLowerCase().includes("no es válido");
   const isInactivo =
     marcacionStatus?.tipo === "INACTIVO" ||
     marcacionStatus?.message?.toLowerCase().includes("no activo") ||
     marcacionStatus?.message?.toLowerCase().includes("inactivo");
   const isError =
     marcacionStatus?.tipo === "ERROR" ||
+    isQrExpirado ||
+    isQrInvalido ||
     (!marcacionStatus?.success &&
       marcacionStatus !== null &&
       !isDescanso &&
@@ -89,6 +99,8 @@ export default function QRScannerResult({
         archivoSonido = "/sounds/completed.mp3";
         break;
 
+      case "QR_EXPIRADO":
+      case "QR_INVALIDO":
       case "ERROR":
       case "INACTIVO":
       case "DESCANSO":
@@ -110,13 +122,25 @@ export default function QRScannerResult({
     });
   }, [marcacionStatus, codigo]);
 
+  // Fetch practicante solo cuando cambia el código escaneado (evita doble fetch por cambio de marcacionStatus)
   useEffect(() => {
     let mounted = true;
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await practicantesApi.getByDocumento(codigo);
+        let data;
+        if (codigo.startsWith("PRACTIQR|")) {
+          const parts = codigo.split("|");
+          const id = Number(parts[1]);
+          if (!isNaN(id)) {
+            data = await practicantesApi.getById(id);
+          } else {
+            throw new Error("QR inválido");
+          }
+        } else {
+          data = await practicantesApi.getByDocumento(codigo);
+        }
         if (!mounted) return;
         setPracticante({
           idPracticante: data.idPracticante,
@@ -154,20 +178,20 @@ export default function QRScannerResult({
       }),
     );
 
-    // Cerrar automático SOLO si es éxito
-    let timer: NodeJS.Timeout;
-    if (isSuccess) {
-      timer = setTimeout(() => {
-        setVisible(false);
-        setTimeout(onClose, 300);
-      }, AUTO_CLOSE_MS);
-    }
-
     return () => {
       mounted = false;
-      if (timer) clearTimeout(timer);
     };
-  }, [codigo, onClose, isSuccess]);
+  }, [codigo]);
+
+  // Auto-cierre solo cuando el registro es exitoso
+  useEffect(() => {
+    if (!isSuccess) return;
+    const timer = setTimeout(() => {
+      setVisible(false);
+      setTimeout(onClose, 300);
+    }, AUTO_CLOSE_MS);
+    return () => clearTimeout(timer);
+  }, [isSuccess, onClose]);
 
   if (!visible) return null;
 

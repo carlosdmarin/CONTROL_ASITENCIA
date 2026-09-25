@@ -18,6 +18,7 @@ export default function QRScanner({
 }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [justScanned, setJustScanned] = useState(false);
   const containerId = "qr-reader-container";
   const QR_BOX_SIZE = 250;
 
@@ -67,34 +68,12 @@ export default function QRScanner({
             aspectRatio: 1.0,
           },
           (decodedText) => {
-            // Decodificado con éxito - extraer documento
-            let documento = decodedText.trim();
-            // Si es JSON {"documento":"70000001"} o {"dni":"..."} intentar parsear
-            try {
-              const obj = JSON.parse(decodedText);
-              documento =
-                obj.documento ||
-                obj.dni ||
-                obj.codigo ||
-                obj.documentoPracticante ||
-                decodedText;
-            } catch {
-              // Si es URL con ?doc= o ?codigo=, extraer param
-              try {
-                const url = new URL(decodedText);
-                documento =
-                  url.searchParams.get("documento") ||
-                  url.searchParams.get("dni") ||
-                  url.searchParams.get("codigo") ||
-                  decodedText;
-              } catch {
-                // texto plano, usar tal cual
-              }
-            }
-            // Limpiar: solo dígitos del documento
-            documento = documento.toString().trim();
-            if (documento) {
-              onScan(documento);
+            const raw = decodedText.trim();
+            if (raw) {
+              // Feedback visual corto sin delay: pulso del marco
+              setJustScanned(true);
+              setTimeout(() => setJustScanned(false), 220);
+              onScan(raw);
             }
           },
           () => {
@@ -131,16 +110,16 @@ export default function QRScanner({
         className="w-full h-full [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_canvas]:hidden"
       />
 
-      {/* Overlay visual — único marco 250px centrado, color marca */}
+      {/* Overlay visual — único marco centrado, color marca */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
         <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[250px] w-[250px] pointer-events-none"
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[220px] w-[220px] sm:h-[250px] sm:w-[250px] pointer-events-none ${justScanned ? "animate-scanner-flash" : ""} ${isCameraReady && isActive && !isResultVisible && !justScanned ? "animate-corners-pulse" : ""}`}
           aria-hidden="true"
         >
-          <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-brand rounded-tl-xl"></div>
-          <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-brand rounded-tr-xl"></div>
-          <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-brand rounded-bl-xl"></div>
-          <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-brand rounded-br-xl"></div>
+          <div className="absolute top-0 left-0 w-8 h-8 sm:w-10 sm:h-10 border-t-[3px] sm:border-t-4 border-l-[3px] sm:border-l-4 border-brand rounded-tl-xl"></div>
+          <div className="absolute top-0 right-0 w-8 h-8 sm:w-10 sm:h-10 border-t-[3px] sm:border-t-4 border-r-[3px] sm:border-r-4 border-brand rounded-tr-xl"></div>
+          <div className="absolute bottom-0 left-0 w-8 h-8 sm:w-10 sm:h-10 border-b-[3px] sm:border-b-4 border-l-[3px] sm:border-l-4 border-brand rounded-bl-xl"></div>
+          <div className="absolute bottom-0 right-0 w-8 h-8 sm:w-10 sm:h-10 border-b-[3px] sm:border-b-4 border-r-[3px] sm:border-r-4 border-brand rounded-br-xl"></div>
         </div>
         {isCameraReady && isActive && !isResultVisible && (
           <div className="absolute left-1/2 top-1/2 h-0.5 w-[200px] -translate-x-1/2 -translate-y-1/2 bg-brand/80 animate-scan-line rounded-full shadow-lg shadow-brand/50"></div>

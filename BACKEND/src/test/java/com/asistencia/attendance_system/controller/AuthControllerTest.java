@@ -144,8 +144,7 @@ public class AuthControllerTest {
         assertTrue(header.contains("Path=/"), "Path=/ " + header);
         assertTrue(header.contains("Max-Age=28800"), "Max-Age 28800 " + header);
         assertTrue(header.toLowerCase().contains("samesite=lax"), "SameSite Lax " + header);
-        // Secure false en dev
-        assertFalse(header.contains("Secure"), "Secure false en dev: " + header);
+        assertTrue(header.contains("Secure"), "Secure true " + header);
     }
 
     @Test
