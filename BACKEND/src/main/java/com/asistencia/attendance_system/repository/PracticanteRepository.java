@@ -14,6 +14,8 @@ import java.util.Optional;
 @Repository
 public interface PracticanteRepository extends JpaRepository<Practicante, Long> {
 
+    Optional<Practicante> findByUsuario(String usuario);
+
     Optional<Practicante> findByDocumento(String documento);
 
     List<Practicante> findBySituacion(Situacion situacion);

@@ -24,8 +24,8 @@ import {
 } from "lucide-react";
 
 const formSchema = z.object({
-  email: z.string().email("Correo inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  usuario: z.string().min(1, "Usuario requerido"),
+  contrasena: z.string().min(1, "Contraseña requerida"),
 });
 
 const Login = () => {
@@ -37,34 +37,66 @@ const Login = () => {
 
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
-      email: "",
-      password: "",
+      usuario: "",
+      contrasena: "",
     },
     resolver: zodResolver(formSchema),
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    if (isLoading) return;
     setIsLoading(true);
     setError("");
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      if (data.email && data.password.length >= 6) {
-        // ✅ GUARDAR SESIÓN EN LOCALSTORAGE
-        const userData = {
-          email: data.email,
-          role: data.email.includes("admin") ? "admin" : "practicante",
-          name: data.email.split("@")[0] || "Usuario",
-        };
-        localStorage.setItem("user", JSON.stringify(userData));
-        
-        // ✅ REDIRIGIR A MARCACION
-        router.push("/marcacion");
-      } else {
-        setError("Credenciales incorrectas");
+      const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api";
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usuario: data.usuario.trim(),
+          contrasena: data.contrasena,
+        }),
+      });
+
+      const body = await response.json().catch(() => null);
+
+      if (response.ok && body?.authenticated) {
+        const rol = body?.user?.rol as string | undefined;
+        // Limpiar contraseña del estado (no persistir)
+        form.setValue("contrasena", "");
+        switch (rol) {
+          case "PRACTICANTE":
+            router.push("/practicante");
+            break;
+          case "VIGILANTE":
+            router.push("/marcacion");
+            break;
+          case "RRHH":
+            router.push("/dashboard");
+            break;
+          default:
+            setError("Tu cuenta no tiene un rol válido para PractiQR.");
+            console.warn("Rol no reconocido:", rol);
+            break;
+        }
+        return;
       }
+
+      if (response.status === 401) {
+        setError("Usuario o contraseña incorrectos");
+        return;
+      }
+      if (response.status === 400) {
+        const msg = body?.message || "Datos inválidos. Revisa los campos.";
+        setError(msg);
+        return;
+      }
+      const msg = body?.message || `Error inesperado (${response.status})`;
+      setError(msg);
     } catch (err) {
       console.error(err);
-      setError("Error al iniciar sesión");
+      setError("No se pudo conectar con el servidor. Intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
@@ -141,10 +173,9 @@ const Login = () => {
                 onSubmit={form.handleSubmit(onSubmit)}
                 noValidate
               >
-                {/* Usuario - #10 type email porque validación es .email() */}
                 <Controller
                   control={form.control}
-                  name="email"
+                  name="usuario"
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid} className="gap-1.5">
                       <FieldLabel htmlFor="login-email" className="text-[13px] font-medium text-slate-700">
@@ -158,9 +189,8 @@ const Login = () => {
                           id="login-email"
                           className="border-0 bg-transparent text-[16px] text-slate-900 placeholder:text-slate-400 focus-visible:ring-0 sm:text-[14px]"
                           placeholder="Ingresa tu usuario"
-                          type="email"
-                          inputMode="email"
-                          autoComplete="email"
+                          type="text"
+                          autoComplete="username"
                           {...field}
                           aria-invalid={fieldState.invalid}
                           disabled={isLoading}
@@ -177,7 +207,7 @@ const Login = () => {
                 {/* Contraseña */}
                 <Controller
                   control={form.control}
-                  name="password"
+                  name="contrasena"
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid} className="gap-1.5">
                       <FieldLabel htmlFor="login-password" className="text-[13px] font-medium text-slate-700">
