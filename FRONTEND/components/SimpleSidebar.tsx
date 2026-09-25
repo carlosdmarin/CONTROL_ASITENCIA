@@ -73,15 +73,17 @@ export function SimpleSidebar() {
 
             <div className="pt-4 mt-4 border-t border-slate-200/80" />
 
-            <Link href="/login" onClick={() => setOpen(false)}>
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-3 px-3 py-2.5 text-sm font-normal text-red-600 bg-red-50 hover:text-red-700 hover:bg-red-100 transition-all duration-200 rounded-lg mt-2"
-              >
-                <LogOut className="h-[18px] w-[18px]" />
-                Cerrar Sesión
-              </Button>
-            </Link>
+            <button
+              onClick={async () => {
+                const { logout } = await import("@/lib/auth");
+                await logout();
+                window.location.href = "/login";
+              }}
+              className="w-full justify-start gap-3 px-3 py-2.5 text-sm font-normal text-red-600 bg-red-50 hover:text-red-700 hover:bg-red-100 transition-all duration-200 rounded-lg mt-2 flex items-center"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+              Cerrar Sesión
+            </button>
           </nav>
 
           {/* Card OLAMSA compacto - sobre el footer, no scrollea con nav en desktop pero sí en drawer corto */}

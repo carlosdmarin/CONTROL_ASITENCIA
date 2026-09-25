@@ -10,6 +10,7 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 10000, // 10 segundos
+  withCredentials: true,
 });
 
 // Interceptor para manejar errores globalmente

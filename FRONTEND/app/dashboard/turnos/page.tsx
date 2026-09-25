@@ -30,7 +30,7 @@ export default function TurnosPage() {
   const cargarTurnos = async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_URL);
+      const response = await fetch(API_URL, { credentials: "include" });
       if(!response.ok) throw new Error("Error al cargar los turnos");
       const data = await response.json();
       setTurnos(data);
@@ -58,6 +58,7 @@ export default function TurnosPage() {
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(nuevoTurno),
       });
       if (!response.ok) throw new Error("Error al crear turno");
@@ -77,6 +78,7 @@ export default function TurnosPage() {
       const response = await fetch(`${API_URL}/${turnoEditado.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(turnoEditado),
       });
       if (!response.ok) throw new Error("Error al actualizar turno");
@@ -95,6 +97,7 @@ export default function TurnosPage() {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!response.ok) throw new Error("Error al eliminar turno");
       setTurnos(turnos.filter((t) => t.id !== id));

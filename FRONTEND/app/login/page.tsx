@@ -2,11 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { getHomeForRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
 import { SplashScreen } from "@/components/auth/SplashScreen";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -28,12 +30,28 @@ const formSchema = z.object({
   contrasena: z.string().min(1, "Contraseña requerida"),
 });
 
-const Login = () => {
+function LoginInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showSplash, setShowSplash] = useState(true);
+
+  // Si ya hay sesión, redirigir según rol (client, backend autoridad via /me)
+  useEffect(() => {
+    if (auth.status === "authenticated" && auth.user) {
+      const home = getHomeForRole(auth.user.rol);
+      const returnTo = searchParams.get("returnTo");
+      // Si returnTo existe y pertenece al home del rol, respetarlo, si no ir al home
+      if (returnTo && returnTo.startsWith(home)) {
+        router.replace(returnTo);
+      } else {
+        router.replace(home);
+      }
+    }
+  }, [auth.status, (auth as any).user?.rol, router, searchParams]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
@@ -63,22 +81,18 @@ const Login = () => {
 
       if (response.ok && body?.authenticated) {
         const rol = body?.user?.rol as string | undefined;
-        // Limpiar contraseña del estado (no persistir)
         form.setValue("contrasena", "");
-        switch (rol) {
-          case "PRACTICANTE":
-            router.push("/practicante");
-            break;
-          case "VIGILANTE":
-            router.push("/marcacion");
-            break;
-          case "RRHH":
-            router.push("/dashboard");
-            break;
-          default:
-            setError("Tu cuenta no tiene un rol válido para PractiQR.");
-            console.warn("Rol no reconocido:", rol);
-            break;
+        const home = getHomeForRole(rol);
+        if (home === "/login") {
+          setError("Tu cuenta no tiene un rol válido para PractiQR.");
+          console.warn("Rol no reconocido:", rol);
+          return;
+        }
+        const returnTo = searchParams.get("returnTo");
+        if (returnTo && returnTo.startsWith(home)) {
+          router.push(returnTo);
+        } else {
+          router.push(home);
         }
         return;
       }
@@ -101,6 +115,18 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  // Mientras verifica sesión existente, evita flash de formulario para usuarios ya autenticados
+  if (auth.status === "authenticated") {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand" />
+          <p className="text-sm text-slate-500">Redirigiendo…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -349,4 +375,16 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default function Login() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-brand" />
+        </div>
+      }
+    >
+      <LoginInner />
+    </Suspense>
+  );
+}

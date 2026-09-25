@@ -7,6 +7,7 @@ import com.asistencia.attendance_system.service.ReportesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -19,6 +20,7 @@ public class ReportesController {
     private final ReportesService reportesService;
 
     @GetMapping("/diario")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #practicanteId.toString() == authentication.name)")
     public ResponseEntity<ReporteDiarioResponse> getReporteDiario(
             @RequestParam Long practicanteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -28,6 +30,7 @@ public class ReportesController {
 
     // Alias por practicante
     @GetMapping("/diario/practicante/{practicanteId}/fecha/{fecha}")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #practicanteId.toString() == authentication.name)")
     public ResponseEntity<ReporteDiarioResponse> getReporteDiarioPorRuta(
             @PathVariable Long practicanteId,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -35,6 +38,7 @@ public class ReportesController {
     }
 
     @GetMapping("/semanal")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #practicanteId.toString() == authentication.name)")
     public ResponseEntity<ReporteSemanalResponse> getReporteSemanal(
             @RequestParam Long practicanteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -43,6 +47,7 @@ public class ReportesController {
     }
 
     @GetMapping("/semanal/practicante/{practicanteId}/semana/{fecha}")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #practicanteId.toString() == authentication.name)")
     public ResponseEntity<ReporteSemanalResponse> getReporteSemanalPorRuta(
             @PathVariable Long practicanteId,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -50,6 +55,7 @@ public class ReportesController {
     }
 
     @GetMapping("/mensual")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #practicanteId.toString() == authentication.name)")
     public ResponseEntity<ReporteMensualResponse> getReporteMensual(
             @RequestParam Long practicanteId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -58,6 +64,7 @@ public class ReportesController {
     }
 
     @GetMapping("/mensual/practicante/{practicanteId}/mes/{fecha}")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #practicanteId.toString() == authentication.name)")
     public ResponseEntity<ReporteMensualResponse> getReporteMensualPorRuta(
             @PathVariable Long practicanteId,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {

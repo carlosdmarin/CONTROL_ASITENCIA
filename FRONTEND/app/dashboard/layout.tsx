@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { LogOut, Sparkles } from "lucide-react";
 import { menuItems } from "@/lib/navigation";
+import { RoleGuard } from "@/components/auth/RoleGuard";
+import { logout } from "@/lib/auth";
 
 export default function DashboardLayout({
   children,
@@ -21,7 +23,8 @@ export default function DashboardLayout({
 
   return (
     <>
-      <div className="flex h-[100dvh] overflow-hidden bg-slate-50/80 flex-col md:flex-row">
+      <RoleGuard allowedRoles={["RRHH"]}>
+        <div className="flex h-[100dvh] overflow-hidden bg-slate-50/80 flex-col md:flex-row">
         {/* Header móvil - fijo arriba solo en cel */}
         <header className="md:hidden shrink-0 sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
@@ -83,15 +86,16 @@ export default function DashboardLayout({
 
               <div className="pt-6 mt-4 border-t border-slate-200/80" />
 
-              <Link href="/login">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-3 px-3 py-2.5 text-sm font-normal text-red-600 bg-red-50 hover:text-red-700 hover:bg-red-100 transition-all duration-200 rounded-lg"
-                >
-                  <LogOut className="h-[18px] w-[18px]" />
-                  Cerrar Sesión
-                </Button>
-              </Link>
+              <button
+                onClick={async () => {
+                  await logout();
+                  window.location.href = "/login";
+                }}
+                className="w-full justify-start gap-3 px-3 py-2.5 text-sm font-normal text-red-600 bg-red-50 hover:text-red-700 hover:bg-red-100 transition-all duration-200 rounded-lg flex items-center"
+              >
+                <LogOut className="h-[18px] w-[18px]" />
+                Cerrar Sesión
+              </button>
             </nav>
 
             {/* CARD OLAMSA - fijo, sobre el footer */}
@@ -117,8 +121,8 @@ export default function DashboardLayout({
             {children}
           </div>
         </main>
-      </div>
-
+        </div>
+      </RoleGuard>
       <Toaster position="top-center" richColors />
     </>
   );

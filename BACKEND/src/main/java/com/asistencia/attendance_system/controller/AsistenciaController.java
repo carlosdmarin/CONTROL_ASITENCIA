@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -29,6 +30,7 @@ public class AsistenciaController {
     // ========== MARCACIONES ==========
 
     @PostMapping("/marcar")
+    @PreAuthorize("hasRole('VIGILANTE')")
     public ResponseEntity<?> registrarMarcacion(@Valid @RequestBody MarcacionRequest request) {
         try {
             MarcacionResponse response = asistenciaService.registrarMarcacion(request);
@@ -67,6 +69,7 @@ public class AsistenciaController {
         }
     }
     @PostMapping({"/entrada/{documento}", "/entrada/{codigoTrabajador}"})
+    @PreAuthorize("hasRole('VIGILANTE')")
     public ResponseEntity<MarcacionResponse> registrarEntrada(@PathVariable Map<String, String> pathVars) {
         String doc = pathVars.get("documento");
         if (doc == null) doc = pathVars.get("codigoTrabajador");
@@ -75,6 +78,7 @@ public class AsistenciaController {
     }
 
     @PostMapping({"/salida/{documento}", "/salida/{codigoTrabajador}"})
+    @PreAuthorize("hasRole('VIGILANTE')")
     public ResponseEntity<MarcacionResponse> registrarSalida(@PathVariable Map<String, String> pathVars) {
         String doc = pathVars.get("documento");
         if (doc == null) doc = pathVars.get("codigoTrabajador");
@@ -85,12 +89,14 @@ public class AsistenciaController {
     // ========== CONSULTA DE MARCACIONES ==========
 
     @GetMapping("/marcaciones/practicante/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<MarcacionResponse>> obtenerMarcacionesPorPracticante(@PathVariable Long idPracticante) {
         List<MarcacionResponse> responses = asistenciaService.obtenerMarcacionesPorPracticante(idPracticante);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/marcaciones/fecha")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<MarcacionResponse>> obtenerMarcacionesPorFecha(@RequestParam String fecha) {
         LocalDate fechaLocal = LocalDate.parse(fecha);
         List<MarcacionResponse> responses = asistenciaService.obtenerMarcacionesPorFecha(fechaLocal);
@@ -98,6 +104,7 @@ public class AsistenciaController {
     }
 
     @GetMapping("/marcaciones/practicante/{idPracticante}/fecha/{fecha}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<MarcacionResponse>> obtenerMarcacionesPorPracticanteYFecha(
             @PathVariable Long idPracticante,
             @PathVariable String fecha) {
@@ -107,6 +114,7 @@ public class AsistenciaController {
     }
 
     @GetMapping("/marcaciones/recientes")
+    @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
     public ResponseEntity<List<MarcacionResponse>> obtenerMarcacionesRecientes(@RequestParam(defaultValue = "20") int limite) {
         List<MarcacionResponse> responses = asistenciaService.obtenerMarcacionesRecientes(limite);
         return ResponseEntity.ok(responses);
@@ -115,6 +123,7 @@ public class AsistenciaController {
     // ========== ASISTENCIA DIARIA ==========
 
     @GetMapping("/diaria")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<AsistenciaDiariaResponse>> obtenerAsistenciasDelDia(
             @RequestParam String fecha) {
         LocalDate fechaLocal = LocalDate.parse(fecha);
@@ -123,6 +132,7 @@ public class AsistenciaController {
     }
 
     @GetMapping("/resumen/diario")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<ResumenAsistenciaDTO> obtenerResumenDiario(
             @RequestParam String fecha) {
         LocalDate fechaLocal = LocalDate.parse(fecha);
@@ -131,6 +141,7 @@ public class AsistenciaController {
     }
 
     @GetMapping("/resumen/rango")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> obtenerResumenRango(
             @RequestParam String fechaInicio,
             @RequestParam String fechaFin) {
@@ -157,6 +168,7 @@ public class AsistenciaController {
     }
 
     @GetMapping("/diaria/practicante/{idPracticante}/fecha/{fecha}")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #idPracticante.toString() == authentication.name)")
     public ResponseEntity<AsistenciaDiariaResponse> obtenerAsistenciaDiaria(
             @PathVariable Long idPracticante,
             @PathVariable String fecha) {
@@ -166,12 +178,14 @@ public class AsistenciaController {
     }
 
     @GetMapping("/diaria/practicante/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #idPracticante.toString() == authentication.name)")
     public ResponseEntity<List<AsistenciaDiariaResponse>> obtenerAsistenciasPorPracticante(@PathVariable Long idPracticante) {
         List<AsistenciaDiariaResponse> responses = asistenciaService.obtenerAsistenciasPorPracticante(idPracticante);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/diaria/practicante/{idPracticante}/mes")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #idPracticante.toString() == authentication.name)")
     public ResponseEntity<List<AsistenciaDiariaResponse>> obtenerAsistenciasPorPracticanteYMes(
             @PathVariable Long idPracticante,
             @RequestParam Integer mes,
@@ -183,12 +197,14 @@ public class AsistenciaController {
     // ========== VALIDACIONES ==========
 
     @GetMapping("/validar/entrada-hoy/{idPracticante}")
+    @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
     public ResponseEntity<Boolean> yaMarcoEntradaHoy(@PathVariable Long idPracticante) {
         boolean resultado = asistenciaService.yaMarcoEntradaHoy(idPracticante);
         return ResponseEntity.ok(resultado);
     }
 
     @GetMapping("/validar/salida-hoy/{idPracticante}")
+    @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
     public ResponseEntity<Boolean> yaMarcoSalidaHoy(@PathVariable Long idPracticante) {
         boolean resultado = asistenciaService.yaMarcoSalidaHoy(idPracticante);
         return ResponseEntity.ok(resultado);
@@ -197,6 +213,7 @@ public class AsistenciaController {
     // ========== REPORTES ==========
 
     @GetMapping("/reporte/semanal/practicante/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<ResumenAsistenciaDTO> obtenerResumenSemanal(
             @PathVariable Long idPracticante,
             @RequestParam String fechaInicio) {
@@ -206,6 +223,7 @@ public class AsistenciaController {
     }
 
     @GetMapping({"/reporte/semanal/agencia/{agencia}", "/reporte/semanal/sede/{agencia}"})
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<ResumenAsistenciaDTO>> obtenerResumenSemanalPorAgencia(
             @PathVariable String agencia,
             @RequestParam String fechaInicio) {
@@ -218,6 +236,7 @@ public class AsistenciaController {
     // ========== PROCESAMIENTO ==========
 
     @PostMapping("/procesar/diaria/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<Void> procesarAsistenciaDiaria(
             @PathVariable Long idPracticante,
             @RequestParam String fecha) {
@@ -227,6 +246,7 @@ public class AsistenciaController {
     }
 
     @PostMapping("/procesar/pendientes")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<Void> procesarAsistenciasPendientes(@RequestParam String fecha) {
         LocalDate fechaLocal = LocalDate.parse(fecha);
         asistenciaService.procesarAsistenciasPendientes(fechaLocal);
@@ -234,6 +254,7 @@ public class AsistenciaController {
     }
 
     @PostMapping("/procesar/jornada-semanal/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<Void> generarJornadaSemanal(
             @PathVariable Long idPracticante,
             @RequestParam String fechaInicio) {
@@ -245,6 +266,7 @@ public class AsistenciaController {
     // ========== JUSTIFICAR / PERMISO / CORRECCIÓN MANUAL ==========
 
     @PostMapping("/justificar/{idAsistencia}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> justificarAsistencia(
             @PathVariable Long idAsistencia,
             @RequestBody Map<String, String> body) {
@@ -272,6 +294,7 @@ public class AsistenciaController {
     }
 
     @PostMapping("/permiso")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> registrarPermiso(@RequestBody Map<String, String> body) {
         try {
             Long idPracticante = Long.valueOf(body.get("idPracticante"));
@@ -290,6 +313,7 @@ public class AsistenciaController {
     }
 
     @PutMapping("/corregir/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> corregirAsistenciaManual(
             @PathVariable Long idPracticante,
             @RequestBody Map<String, String> body) {
@@ -315,6 +339,7 @@ public class AsistenciaController {
     }
 
     @PostMapping("/cerrar-jornada")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> cerrarJornada(@RequestParam String fecha) {
         LocalDate f = LocalDate.parse(fecha);
         int c = asistenciaService.cerrarJornadaDelDia(f);

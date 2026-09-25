@@ -7,6 +7,7 @@ Login real conectado a `POST /api/auth/login` con `credentials: "include"` y man
 
 ## 2. Login mock eliminado
 Eliminados de `FRONTEND/app/login/page.tsx:46-70`:
+- `await new Promise(setTimeout 1500)` artificial
 - `if (email && password.length >=6) { role = email.includes("admin")?"admin":"practicante" }`
 - `localStorage.setItem("user", JSON.stringify(...))`
 - `router.push("/marcacion")` incondicional

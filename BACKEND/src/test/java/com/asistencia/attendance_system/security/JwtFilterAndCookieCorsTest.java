@@ -51,8 +51,9 @@ public class JwtFilterAndCookieCorsTest {
     public void rolVigilanteSeConvierteCorrectamente() throws Exception {
         String token = jwtService.generateToken("10", "VIGILANTE", "vigilante:10");
         Cookie cookie = new Cookie("practiqr_token", token);
+        // VIGILANTE no debe acceder a /api/practicantes (lista) que es exclusivo RRHH → 403
         int status = mockMvc.perform(get("/api/practicantes").cookie(cookie)).andReturn().getResponse().getStatus();
-        assertEquals(200, status, "VIGILANTE también debe autenticar y pasar a 200");
+        assertEquals(403, status, "VIGILANTE no debe acceder a lista practicantes (RRHH only), debe ser 403, fue " + status);
         // Verificar claim rol
         assertEquals("VIGILANTE", jwtService.getRol(token));
     }

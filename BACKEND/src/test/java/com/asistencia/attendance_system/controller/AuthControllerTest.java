@@ -187,8 +187,10 @@ public class AuthControllerTest {
     public void testAutorizacionVigilanteRol() throws Exception {
         String token = jwtService.generateToken("10", "VIGILANTE", "vigilante:10");
         Cookie cookie = new Cookie("practiqr_token", token);
+        // VIGILANTE no tiene acceso a lista de practicantes (RRHH only)
         int status = mockMvc.perform(get("/api/practicantes").cookie(cookie)).andReturn().getResponse().getStatus();
-        assertEquals(200, status);
+        assertEquals(403, status);
         assertEquals("VIGILANTE", jwtService.getRol(token));
+        // Pero VIGILANTE sí debe poder acceder a endpoints de marcación (probado en AuthorizationTest)
     }
 }

@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class PracticanteController {
 
     // ========== TEST ==========
     @GetMapping("/test")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("Backend funcionando correctamente");
     }
@@ -31,17 +33,20 @@ public class PracticanteController {
     // ========== CRUD BÁSICO ==========
 
     @GetMapping
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<PracticanteResponse>> obtenerTodos() {
         return ResponseEntity.ok(practicanteService.obtenerTodos());
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<PracticanteResponse> crear(@Valid @RequestBody PracticanteRequest request) {
         PracticanteResponse response = practicanteService.crear(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<PracticanteResponse> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody PracticanteRequest request) {
@@ -51,6 +56,7 @@ public class PracticanteController {
 
     @DeleteMapping("/{id}")
     @Deprecated
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         // DEPRECADO: ya no elimina físicamente, hace soft-delete para conservar historial
         practicanteService.eliminar(id);
@@ -58,18 +64,21 @@ public class PracticanteController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('RRHH','VIGILANTE') or (hasRole('PRACTICANTE') and #id.toString() == authentication.name)")
     public ResponseEntity<PracticanteResponse> obtenerPorId(@PathVariable Long id) {
         PracticanteResponse response = practicanteService.obtenerPorId(id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/codigo/{codigo}")
+    @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
     public ResponseEntity<PracticanteResponse> obtenerPorCodigo(@PathVariable String codigo) {
         PracticanteResponse response = practicanteService.obtenerPorCodigo(codigo);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/documento/{documento}")
+    @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
     public ResponseEntity<PracticanteResponse> obtenerPorDocumento(@PathVariable String documento) {
         PracticanteResponse response = practicanteService.obtenerPorDocumento(documento);
         return ResponseEntity.ok(response);
@@ -78,11 +87,13 @@ public class PracticanteController {
     // ========== BÚSQUEDAS ==========
 
     @GetMapping("/activos")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<PracticanteResponse>> obtenerActivos() {
         return ResponseEntity.ok(practicanteService.obtenerActivos());
     }
 
     @GetMapping("/buscar")
+    @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
     public ResponseEntity<List<PracticanteResponse>> buscar(@RequestParam String termino) {
         return ResponseEntity.ok(practicanteService.buscarPorNombre(termino));
     }
@@ -90,11 +101,13 @@ public class PracticanteController {
     // ========== ESTADÍSTICAS ==========
 
     @GetMapping("/contar/activos")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<Long> contarActivos() {
         return ResponseEntity.ok(practicanteService.contarActivos());
     }
 
     @GetMapping({"/contar/sede/{id}", "/contar/agencia/{id}"})
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<Long> contarPorSede(@PathVariable Integer id) {
         return ResponseEntity.ok(practicanteService.contarPorSede(id));
     }
@@ -102,11 +115,13 @@ public class PracticanteController {
     // ========== CAMBIOS DE ESTADO ==========
 
     @PatchMapping("/{id}/activar")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<PracticanteResponse> activar(@PathVariable Long id) {
         return ResponseEntity.ok(practicanteService.activar(id));
     }
 
     @PatchMapping("/{id}/desactivar")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<PracticanteResponse> desactivar(@PathVariable Long id) {
         return ResponseEntity.ok(practicanteService.desactivar(id));
     }
@@ -114,12 +129,14 @@ public class PracticanteController {
     // ========== ENDPOINTS PARA HORARIO ==========
 
     @GetMapping("/{id}/horario")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #id.toString() == authentication.name)")
     public ResponseEntity<List<BloqueHorarioResponseDTO>> getHorario(@PathVariable Long id) {
         List<BloqueHorarioResponseDTO> horario = horarioService.obtenerHorarioPorPracticante(id);
         return ResponseEntity.ok(horario);
     }
 
     @PutMapping("/{id}/horario")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<Void> updateHorario(
             @PathVariable Long id,
             @RequestBody List<BloqueHorarioRequest> horario) {

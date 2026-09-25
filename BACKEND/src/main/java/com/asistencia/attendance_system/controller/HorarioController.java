@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class HorarioController {
     // OBTENER HORARIO DE UN PRACTICANTE
     // ============================================
     @GetMapping("/practicante/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #idPracticante.toString() == authentication.name)")
     public ResponseEntity<List<BloqueHorarioResponseDTO>> obtenerHorarioPorPracticante(
             @PathVariable Long idPracticante) {
         List<BloqueHorarioResponseDTO> horario = horarioService.obtenerHorarioPorPracticante(idPracticante);
@@ -35,6 +37,7 @@ public class HorarioController {
     // OBTENER HORARIO ACTIVO DE UN PRACTICANTE
     // ============================================
     @GetMapping("/practicante/{idPracticante}/activos")
+    @PreAuthorize("hasRole('RRHH') or (hasRole('PRACTICANTE') and #idPracticante.toString() == authentication.name)")
     public ResponseEntity<List<BloqueHorarioResponseDTO>> obtenerHorarioActivoPorPracticante(
             @PathVariable Long idPracticante) {
         List<BloqueHorarioResponseDTO> horario = horarioService.obtenerHorarioActivoPorPracticante(idPracticante);
@@ -45,6 +48,7 @@ public class HorarioController {
     // GUARDAR HORARIO
     // ============================================
     @PostMapping("/practicante/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> guardarHorario(
             @PathVariable Long idPracticante,
             @RequestBody List<BloqueHorarioRequest> horarioRequests) {
@@ -63,6 +67,7 @@ public class HorarioController {
     // ACTUALIZAR HORARIO
     // ============================================
     @PutMapping("/practicante/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> actualizarHorario(
             @PathVariable Long idPracticante,
             @RequestBody List<BloqueHorarioRequest> horarioRequests) {
@@ -81,6 +86,7 @@ public class HorarioController {
     // ELIMINAR HORARIO
     // ============================================
     @DeleteMapping("/practicante/{idPracticante}")
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<?> eliminarHorario(@PathVariable Long idPracticante) {
         try {
             log.info("🗑️ Eliminando horario para practicante ID: {}", idPracticante);

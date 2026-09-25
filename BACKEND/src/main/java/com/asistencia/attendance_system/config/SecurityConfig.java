@@ -1,8 +1,12 @@
 package com.asistencia.attendance_system.config;
 
 import com.asistencia.attendance_system.security.JwtAuthenticationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,9 +21,11 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -37,7 +43,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -55,6 +61,8 @@ public class SecurityConfig {
         // Se permite CSRF pero se ignora para endpoints de auth si se desea; aquí se mantiene habilitado globalmente
         // y el frontend Next.js deberá leer XSRF-TOKEN y enviar X-XSRF-TOKEN
 
+        ObjectMapper objectMapper = new ObjectMapper();
+
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf
@@ -64,10 +72,28 @@ public class SecurityConfig {
                 .ignoringRequestMatchers("/api/auth/**")
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    Map<String, Object> body = Map.of("error", "Unauthorized", "message", "No autenticado");
+                    response.getWriter().write(objectMapper.writeValueAsString(body));
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    Map<String, Object> body = Map.of("error", "Forbidden", "message", "Acceso denegado");
+                    response.getWriter().write(objectMapper.writeValueAsString(body));
+                })
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login", "/api/auth/logout").permitAll()
                 .requestMatchers("/api/auth/me").authenticated()
+                .requestMatchers("/health", "/health/**").permitAll()
+                // Todo /api/** requiere autenticación; autorización por rol vía @PreAuthorize
                 .requestMatchers("/api/**").authenticated()
+                // Alias sin prefijo /api (compatibilidad frontend antiguo)
+                .requestMatchers("/asistencias/**", "/cargos/**", "/cargo/**", "/sedes/**", "/agencias/**", "/oficinas/**", "/tipos-instituto/**", "/tipo-instituto/**").authenticated()
                 .anyRequest().permitAll()
             )
             .httpBasic(httpBasic -> httpBasic.disable())

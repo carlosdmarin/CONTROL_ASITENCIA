@@ -5,6 +5,7 @@ import com.asistencia.attendance_system.model.entity.TipoInstituto;
 import com.asistencia.attendance_system.repository.TipoInstitutoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ public class TipoInsitutoController {
     public final TipoInstitutoRepository tipoInstitutoRepository;
 //    Obtenemos tods los tipos de instito
     @GetMapping
+    @PreAuthorize("hasRole('RRHH')")
     public ResponseEntity<List<TipoInstituto>> getAll() {
         return ResponseEntity.ok(tipoInstitutoRepository.findAll());
     }

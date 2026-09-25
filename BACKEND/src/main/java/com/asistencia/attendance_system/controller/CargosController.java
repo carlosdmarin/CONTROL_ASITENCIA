@@ -4,6 +4,7 @@ package com.asistencia.attendance_system.controller;
 import com.asistencia.attendance_system.model.entity.Cargo;
 import com.asistencia.attendance_system.repository.CargoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ public class CargosController {
 
     public final CargoRepository cargoRepository;
     @GetMapping
+    @PreAuthorize("hasRole('RRHH')")
     public List<Cargo> getAllCargos()
     {
         return cargoRepository.findAll();
