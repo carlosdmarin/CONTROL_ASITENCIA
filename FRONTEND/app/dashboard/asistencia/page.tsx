@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import AsistenciaHeader from "./components/AsistenciaHeader";
 import AsistenciaFilters from "./components/AsistenciaFilters";
@@ -11,12 +11,8 @@ import {
   AsistenciaDiaria,
   AsistenciaDiariaResponse,
   normalizeEstadoDia,
-  isTardanza,
-  isAusente,
 } from "@/types/asistencia";
 import { Practicante } from "@/types/practicante";
-import { Card, CardContent } from "@/components/ui/card";
-import { Users } from "lucide-react";
 
 function formatFechaISO(date: Date): string {
   const y = date.getFullYear();
@@ -69,6 +65,7 @@ export default function AsistenciaPage() {
     justificados: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroSede, setFiltroSede] = useState("todas");
@@ -83,13 +80,15 @@ export default function AsistenciaPage() {
   const [practicantesAll, setPracticantesAll] = useState<Practicante[]>([]);
 
   const fechaISO = formatFechaISO(fecha);
+  const requestIdRef = useRef(0);
 
   const cargarDatos = async () => {
+    const requestId = ++requestIdRef.current;
     try {
       setLoading(true);
-      const data = await asistenciasApi
-        .getAsistenciasDelDia(fechaISO)
-        .catch(() => [] as AsistenciaDiariaResponse[]);
+      setError(null);
+      const data = await asistenciasApi.getAsistenciasDelDia(fechaISO);
+      if (requestId !== requestIdRef.current) return;
       const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data) ? data : [];
       setAsistencias(dataArray);
       const presentes = dataArray.filter((a) => {
@@ -108,10 +107,12 @@ export default function AsistenciaPage() {
       const total = dataArray.length;
       setResumen({ total, presentes, tardanzas, ausentes, descansos, sinMarcar, justificados });
     } catch (e: unknown) {
+      if (requestId !== requestIdRef.current) return;
       const msg = e instanceof Error ? e.message : "Error al cargar asistencias";
+      setError(msg);
       toast.error(msg);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
@@ -143,8 +144,15 @@ export default function AsistenciaPage() {
       return n;
     });
   const handleFechaChange = (iso: string) => {
+    if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
     const [y, m, d] = iso.split("-").map(Number);
-    setFecha(new Date(y, m - 1, d));
+    if (!y || !m || !d) return;
+    const parsed = new Date(y, m - 1, d);
+    if (isNaN(parsed.getTime())) return;
+    // Validar que el parseo no haya hecho overflow (ej 2026-13-40)
+    if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) return;
+    setFecha(parsed);
+    setError(null);
   };
 
   const practicantesMap = useMemo(
@@ -174,13 +182,14 @@ export default function AsistenciaPage() {
     return Array.from(s).sort();
   }, [asistencias, sedeMap, practicantesAll]);
 
-  const asistenciasUI = useMemo(() => {
+  // Filas unificadas con referencia estable al registro original
+  const filasCompletas = useMemo(() => {
     return asistencias.map((a) => {
       const practInfo = practicantesMap.get(a.idPracticante);
       const sede = sedeMap.get(a.idPracticante) || practInfo?.sede || "";
       const oficina = practInfo?.nombreOficina || practInfo?.oficina || "";
       const documento = practInfo?.documento || "";
-      return {
+      const ui = {
         id: a.idAsistencia || a.idPracticante,
         practicante: a.nombreCompleto,
         documento,
@@ -196,6 +205,7 @@ export default function AsistenciaPage() {
         _sede: sede,
         _justificado: Boolean(a.justificado) || Boolean(a.situacion && a.situacion !== "NINGUNA") || Boolean(a.situacionesDetalle?.length),
       };
+      return { ui, raw: a };
     });
   }, [asistencias, sedeMap, practicantesMap]);
 
@@ -214,38 +224,38 @@ export default function AsistenciaPage() {
     };
   }, [asistencias]);
 
-  const filtradasIndices = useMemo(() => {
-    return asistenciasUI
-      .map((a, idx) => ({ ...a, _idx: idx }))
-      .filter((a) => {
-        const matchBusqueda =
-          !busqueda ||
-          a.practicante.toLowerCase().includes(busqueda.toLowerCase()) ||
-          a._sede.toLowerCase().includes(busqueda.toLowerCase()) ||
-          a.documento.toLowerCase().includes(busqueda.toLowerCase());
-        let matchEstado = true;
-        if (filtroEstado !== "todos") {
-          if (filtroEstado === "justificado") {
-            matchEstado = a._justificado;
-          } else {
-            matchEstado = a.estado.toLowerCase() === filtroEstado.toLowerCase();
-          }
+  const filasFiltradas = useMemo(() => {
+    return filasCompletas.filter(({ ui }) => {
+      const matchBusqueda =
+        !busqueda ||
+        ui.practicante.toLowerCase().includes(busqueda.toLowerCase()) ||
+        ui._sede.toLowerCase().includes(busqueda.toLowerCase()) ||
+        ui.documento.toLowerCase().includes(busqueda.toLowerCase());
+      let matchEstado = true;
+      if (filtroEstado !== "todos") {
+        if (filtroEstado === "justificado") {
+          matchEstado = ui._justificado;
+        } else {
+          matchEstado = ui.estado.toLowerCase() === filtroEstado.toLowerCase();
         }
-        let matchTab = true;
-        if (tabEstado !== "todos") {
-          if (tabEstado === "justificado") {
-            matchTab = a._justificado;
-          } else {
-            matchTab = a.estado.toLowerCase() === tabEstado.toLowerCase();
-          }
+      }
+      let matchTab = true;
+      if (tabEstado !== "todos") {
+        if (tabEstado === "justificado") {
+          matchTab = ui._justificado;
+        } else {
+          matchTab = ui.estado.toLowerCase() === tabEstado.toLowerCase();
         }
-        const matchSede = filtroSede === "todas" || a._sede === filtroSede;
-        return matchBusqueda && matchEstado && matchTab && matchSede;
-      });
-  }, [asistenciasUI, busqueda, filtroEstado, tabEstado, filtroSede]);
+      }
+      const matchSede = filtroSede === "todas" || ui._sede === filtroSede;
+      return matchBusqueda && matchEstado && matchTab && matchSede;
+    });
+  }, [filasCompletas, busqueda, filtroEstado, tabEstado, filtroSede]);
 
-  const filtradas = filtradasIndices;
-  const filtradasRaw = filtradasIndices.map((f) => asistencias[f._idx]);
+  const filtradas = filasFiltradas.map((f) => f.ui);
+  const filtradasRaw = filasFiltradas.map((f) => f.raw);
+  // Estructura unificada para tabla sin índices frágiles
+  const filasParaTabla = filasFiltradas.map(({ ui, raw }) => ({ ui, raw }));
 
   const openPermiso = async () => {
     setPermisoOpen(true);
@@ -276,8 +286,9 @@ export default function AsistenciaPage() {
       setPermisoMotivo("");
       setPermisoObs("");
       cargarDatos();
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al registrar permiso";
+      toast.error(msg);
     }
   };
 
@@ -286,6 +297,7 @@ export default function AsistenciaPage() {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "America/Lima",
   });
 
   return (
@@ -344,9 +356,16 @@ export default function AsistenciaPage() {
         loading={loading}
       />
 
+      {error && !loading && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <AsistenciaTable
-        asistencias={filtradas.map(({ _idx, _sede, _justificado, ...rest }) => rest)}
+        asistencias={filtradas.map(({ _sede, _justificado, ...rest }) => rest)}
         rawData={filtradasRaw}
+        filas={filasParaTabla}
         loading={loading}
         onRefresh={cargarDatos}
       />

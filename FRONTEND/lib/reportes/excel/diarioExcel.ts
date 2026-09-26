@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { ReporteDiarioResponse } from "@/types/reporte";
+import { formatHora, formatHoras, formatFechaLarga, formatFechaGeneracion } from "@/lib/utils/reportesDate";
 
 // Paleta OLAMSA
 const OLAMSA_GREEN = "FF0E7A4C";
@@ -9,25 +10,6 @@ const SLATE_500 = "FF64748B";
 const SLATE_200 = "FFE2E8F0";
 const SLATE_100 = "FFF1F5F9";
 const SLATE_50 = "FFF8FAFC";
-
-function formatHora(hora?: string | null) {
-  if (!hora) return "—";
-  return hora.substring(0, 5);
-}
-function formatHoras(num?: number | null) {
-  if (num == null) return "—";
-  const h = Math.floor(num);
-  const m = Math.round((num - h) * 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-function formatFechaLarga(fechaStr: string) {
-  try {
-    const d = new Date(fechaStr + "T00:00:00");
-    return d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return fechaStr;
-  }
-}
 
 async function loadImageBase64ForExcel(
   url: string

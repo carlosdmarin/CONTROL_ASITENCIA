@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping({"/api/oficinas", "/oficinas"})
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class OficinaController {
 
     private final OficinaRepository oficinaRepository;

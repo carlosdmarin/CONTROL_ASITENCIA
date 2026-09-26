@@ -6,7 +6,7 @@
 // ============================================
 // REACT HOOKS
 // ============================================
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 // → useState: Guarda datos que cambian (ej: lista de asistencias, carga)
 // → useEffect: Ejecuta código al cargar la página (ej: traer datos del backend)
 
@@ -118,9 +118,8 @@ import {
 import {
   AsistenciaDiaria, // Tipo: Datos de asistencia de un día
   AsistenciaDiariaResponse, // Tipo: Respuesta del backend
+  SituacionDetalle,
   normalizeEstadoDia, // Función: Normaliza el estado (PRESENTE/AUSENTE)
-  isTardanza, // Función: ¿Es tardanza?
-  isAusente, // Función: ¿Está ausente?
   getSituacionLabel, // Función: Traduce el estado a texto
 } from "@/types/asistencia";
 
@@ -148,6 +147,7 @@ type AsistenciaRow = AsistenciaDiaria & {
 interface AsistenciaTableProps {
   asistencias: AsistenciaRow[]; // Lista de asistencias
   rawData?: AsistenciaDiariaResponse[]; // Datos crudos del backend (opcional)
+  filas?: Array<{ ui: AsistenciaRow; raw: AsistenciaDiariaResponse }>; // Referencia estable ui+raw
   loading?: boolean; // ¿Está cargando? (opcional)
   onRefresh?: () => void; // Función para actualizar (opcional)
 }
@@ -155,6 +155,7 @@ interface AsistenciaTableProps {
 export default function AsistenciaTable({
   asistencias,
   rawData = [],
+  filas,
   loading = false,
   onRefresh,
 }: AsistenciaTableProps) {
@@ -170,12 +171,10 @@ export default function AsistenciaTable({
   // ============================================
   // 📦 DATOS SELECCIONADOS (cuándo el usuario hace clic en una fila)
   // ============================================
-  const [selected, setSelected] = useState<AsistenciaDiariaResponse | null>(
-    null,
-  );
+  const [selectedJustificar, setSelectedJustificar] = useState<AsistenciaDiariaResponse | null>(null);
+  const [selectedEditar, setSelectedEditar] = useState<AsistenciaDiariaResponse | null>(null);
 
-  // → Guarda el registro que el usuario eligió para justificar o editar
-  // → null = no hay nada seleccionado
+  // → Guarda el registro que el usuario eligió para justificar o editar (estados separados)
   const [verData, setVerData] = useState<AsistenciaDiariaResponse | null>(null);
   // → Guarda el registro que el usuario eligió para ver detalles
   // → null = no hay nada seleccionado
@@ -189,17 +188,25 @@ export default function AsistenciaTable({
   const [horaEntrada, setHoraEntrada] = useState("");
   const [horaSalida, setHoraSalida] = useState("");
   const [horaSalidaAnticipada, setHoraSalidaAnticipada] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [savingJustificar, setSavingJustificar] = useState(false);
+  const [savingEditar, setSavingEditar] = useState(false);
 
   // Paginación - mismo patrón que PracticanteTable (10 por página)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const totalItems = asistencias.length;
+  // Fuente estable: preferir filas unificadas para evitar desalineación por índices
+  const effectiveFilas = useMemo(() => {
+    if (filas && filas.length >= 0) return filas;
+    // Fallback legacy: reconstruir desde asistencias/rawData paralelos
+    return asistencias.map((ui, i) => ({ ui, raw: rawData[i] as AsistenciaDiariaResponse })).filter((f) => f.raw);
+  }, [filas, asistencias, rawData]);
+  const totalItems = effectiveFilas.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentAsistencias = asistencias.slice(startIndex, endIndex);
-  const currentRawData = rawData.slice(startIndex, endIndex);
+  const currentFilas = effectiveFilas.slice(startIndex, endIndex);
+  const currentAsistencias = currentFilas.map((f) => f.ui);
+  const currentRawData = currentFilas.map((f) => f.raw);
 
   const goToPage = (page: number) => {
     if (page < 1 || page > totalPages) return;
@@ -209,7 +216,7 @@ export default function AsistenciaTable({
   // Volver a página 1 cuando cambian filtros (asistencias filtradas)
   useEffect(() => {
     setCurrentPage(1);
-  }, [asistencias]);
+  }, [effectiveFilas]);
 
   // Ajustar si totalPages disminuye y currentPage queda fuera de rango
   useEffect(() => {
@@ -279,8 +286,7 @@ export default function AsistenciaTable({
     estado: string,
   ): { label: string; className: string; icon: React.ElementType } => {
     const n = normalizeEstadoDia(estado);
-    // Estado solo 5 valores canónicos; JUSTIFICADO legacy se normaliza a AUSENTE para columna Estado
-    const s = n === "JUSTIFICADO" ? "AUSENTE" : n;
+    const s = n;
     const config: Record<
       string,
       { label: string; className: string; icon: React.ElementType }
@@ -309,6 +315,11 @@ export default function AsistenciaTable({
         label: "Descanso",
         className: "bg-slate-100 text-slate-600 border-slate-200",
         icon: Coffee,
+      },
+      JUSTIFICADO: {
+        label: "Justificado",
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+        icon: ShieldCheck,
       },
     };
     return (
@@ -420,9 +431,9 @@ export default function AsistenciaTable({
     r: AsistenciaDiariaResponse | undefined | null,
   ): Set<string> => {
     if (!r) return new Set();
-    const arr = ((r as any).situaciones as string[] | undefined) || [];
+    const arr = (r.situaciones as string[] | undefined) || [];
     const fromArray = arr.filter(Boolean);
-    const single = (r as any).situacion as string | undefined;
+    const single = r.situacion as string | undefined;
     const combined = fromArray.length > 0 ? fromArray : single ? [single] : [];
     return new Set(combined.filter((s) => s && s !== "NINGUNA"));
   };
@@ -471,11 +482,11 @@ export default function AsistenciaTable({
   };
 
   const getOpcionesJustificacion = () => {
-    return getOpcionesParaRegistro(selected);
+    return getOpcionesParaRegistro(selectedJustificar);
   };
 
-  const openJustificar = (idx: number) => {
-    const r = rawData[idx];
+  const openJustificar = (raw: AsistenciaDiariaResponse) => {
+    const r = raw;
     if (!r || !r.idAsistencia) {
       toast.error(
         "No se puede justificar: aún no existe registro (SIN_MARCAR). Registre primero o use permiso previo.",
@@ -493,7 +504,7 @@ export default function AsistenciaTable({
       );
       return;
     }
-    setSelected(r);
+    setSelectedJustificar(r);
     setMotivo("");
     setObservacion("");
     setHoraSalidaAnticipada("");
@@ -525,8 +536,8 @@ export default function AsistenciaTable({
     return normalizeEstadoDia(r.estadoDia) === "DESCANSO";
   };
 
-  const openEditar = (idx: number) => {
-    const r = rawData[idx];
+  const openEditar = (raw: AsistenciaDiariaResponse) => {
+    const r = raw;
     if (!r) return;
     if (isDescanso(r)) {
       toast.info("No se puede editar en día de descanso");
@@ -536,27 +547,27 @@ export default function AsistenciaTable({
       toast.info("No se puede editar una asistencia justificada");
       return;
     }
-    setSelected(r);
+    setSelectedEditar(r);
     setHoraEntrada(r.entradaReal ? r.entradaReal.substring(0, 5) : "");
     setHoraSalida(r.salidaReal ? r.salidaReal.substring(0, 5) : "");
     setEditarOpen(true);
   };
 
-  const openVer = (idx: number) => {
-    const r = rawData[idx];
+  const openVer = (raw: AsistenciaDiariaResponse) => {
+    const r = raw;
     if (!r) return;
     setVerData(r);
     setVerOpen(true);
   };
 
   const handleJustificar = async () => {
-    if (!selected?.idAsistencia) return;
+    if (!selectedJustificar?.idAsistencia) return;
     if (!motivo.trim()) {
       toast.error("El motivo es obligatorio");
       return;
     }
     if (tipoJust === "SALIDA_ANTICIPADA_JUSTIFICADA") {
-      if (!selected.entradaReal) {
+      if (!selectedJustificar.entradaReal) {
         toast.error(
           "No se puede registrar salida anticipada sin entrada registrada",
         );
@@ -567,10 +578,10 @@ export default function AsistenciaTable({
         return;
       }
     }
-    setSaving(true);
+    setSavingJustificar(true);
     try {
       await asistenciasApi.justificar(
-        selected.idAsistencia!,
+        selectedJustificar.idAsistencia!,
         motivo,
         observacion,
         tipoJust,
@@ -580,33 +591,37 @@ export default function AsistenciaTable({
       );
       toast.success("Justificación guardada");
       setJustificarOpen(false);
+      setSelectedJustificar(null);
       setHoraSalidaAnticipada("");
       onRefresh?.();
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al justificar";
+      toast.error(msg);
     } finally {
-      setSaving(false);
+      setSavingJustificar(false);
     }
   };
 
   const handleEditar = async () => {
-    if (!selected) return;
-    setSaving(true);
+    if (!selectedEditar) return;
+    setSavingEditar(true);
     try {
-      const fecha = selected.fecha;
+      const fecha = selectedEditar.fecha;
       await asistenciasApi.corregirManual(
-        selected.idPracticante,
+        selectedEditar.idPracticante,
         fecha,
         horaEntrada || null,
         horaSalida || null,
       );
       toast.success("Corrección guardada, estado recalculado");
       setEditarOpen(false);
+      setSelectedEditar(null);
       onRefresh?.();
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Error al corregir";
+      toast.error(msg);
     } finally {
-      setSaving(false);
+      setSavingEditar(false);
     }
   };
 
@@ -669,8 +684,7 @@ export default function AsistenciaTable({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  currentAsistencias.map((asistencia, index) => {
-                    const raw = currentRawData[index];
+                  currentFilas.map(({ ui: asistencia, raw }, index) => {
                     const estado = getEstadoBadge(asistencia.estado);
                     const justificado = isJustificado(raw);
                     const descanso = isDescanso(raw);
@@ -683,7 +697,7 @@ export default function AsistenciaTable({
                     const puedeVer = hasJustificacion(raw) && !descanso;
                     const editarDisabled = justificado || descanso;
                     const globalIndex = startIndex + index;
-                    const rowKey = raw?.idAsistencia ? String(raw.idAsistencia) : `${raw?.idPracticante ?? globalIndex}-${(raw as any)?.fecha ?? globalIndex}`;
+                    const rowKey = raw?.idAsistencia ? String(raw.idAsistencia) : `${raw?.idPracticante ?? globalIndex}-${raw?.fecha ?? globalIndex}`;
                     const avatarColor = getAvatarColor(raw?.idPracticante, asistencia.practicante);
                     const documento = asistencia.documento;
                     return (
@@ -752,10 +766,10 @@ export default function AsistenciaTable({
                         <TableCell className="text-center">
                           <div className="flex flex-col gap-1 items-center">
                             {(() => {
-                              const rawSit = (raw as any)?.situaciones as
+                              const rawSit = raw?.situaciones as
                                 | string[]
                                 | undefined;
-                              const rawSingle = (raw as any)?.situacion as
+                              const rawSingle = raw?.situacion as
                                 | string
                                 | undefined;
                               const list =
@@ -793,7 +807,7 @@ export default function AsistenciaTable({
                               disabled={!puedeVer}
                               title={!puedeVer ? "Sin justificación" : "Ver"}
                               aria-label="Ver"
-                              onClick={() => openVer(globalIndex)}
+                              onClick={() => openVer(raw)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -804,31 +818,31 @@ export default function AsistenciaTable({
                               disabled={editarDisabled}
                               title={descanso ? "No editable: descanso" : justificado ? "No editable: justificado" : "Corregir"}
                               aria-label="Corregir"
-                              onClick={() => openEditar(globalIndex)}
+                              onClick={() => openEditar(raw)}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger>
-                                <div className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 cursor-pointer text-slate-500" aria-label="Más acciones">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 cursor-pointer text-slate-500" aria-label="Más acciones" role="button" tabIndex={0}>
                                   <MoreHorizontal className="h-4 w-4" />
                                 </div>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-44">
                                 <DropdownMenuItem
-                                  onClick={() => openVer(globalIndex)}
+                                  onClick={() => openVer(raw)}
                                   disabled={!puedeVer}
                                 >
                                   <Eye className="h-4 w-4 mr-2" /> Ver detalle
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => openEditar(globalIndex)}
+                                  onClick={() => openEditar(raw)}
                                   disabled={editarDisabled}
                                 >
                                   <Pencil className="h-4 w-4 mr-2" /> Corregir
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => openJustificar(globalIndex)}
+                                  onClick={() => openJustificar(raw)}
                                   disabled={!puedeJustificar}
                                 >
                                   <FileCheck className="h-4 w-4 mr-2" /> Justificar
@@ -850,7 +864,7 @@ export default function AsistenciaTable({
       {/* ============================================================ */}
       {/* DIALOG 1: JUSTIFICAR ASISTENCIA (REDISEÑO PROFESIONAL)      */}
       {/* ============================================================ */}
-      <Dialog open={justificarOpen} onOpenChange={setJustificarOpen}>
+      <Dialog open={justificarOpen} onOpenChange={(open) => { setJustificarOpen(open); if (!open) setSelectedJustificar(null); }}>
         <DialogContent className="max-w-4xl sm:max-w-4xl p-0 overflow-hidden">
           {/* HEADER: más elegante, con etiqueta de módulo */}
           <DialogHeader className="border-b border-blue-5 bg-gradient-to-r from-blue-50/50 to-white px-8 pt-6 pb-4">
@@ -874,7 +888,7 @@ export default function AsistenciaTable({
             </div>
           </DialogHeader>
 
-          {selected && (
+          {selectedJustificar && (
             <div className="px-8 py-6 space-y-6 max-h-[80vh] overflow-y-auto">
               {/* ============================================================
             SECCIÓN: IDENTIFICACIÓN DEL PRACTICANTE (estilo imagen)
@@ -888,7 +902,7 @@ export default function AsistenciaTable({
                     </div>
                     <div>
                       <span className="text-xl font-bold text-slate-800">
-                        {selected.nombreCompleto}
+                        {selectedJustificar.nombreCompleto}
                       </span>
                       <div className="text-sm text-slate-500">
                         Practicante · Información del registro
@@ -904,7 +918,7 @@ export default function AsistenciaTable({
                         Fecha
                       </div>
                       <span className="text-base font-medium text-slate-800">
-                        {selected.fecha}
+                        {selectedJustificar.fecha}
                       </span>
                     </div>
                     <div>
@@ -913,19 +927,19 @@ export default function AsistenciaTable({
                         Estado actual
                       </div>
                       <Badge
-                        className={getEstadoBadge(selected.estadoDia).className}
+                        className={getEstadoBadge(selectedJustificar.estadoDia).className}
                       >
-                        {getEstadoBadge(selected.estadoDia).label}
+                        {getEstadoBadge(selectedJustificar.estadoDia).label}
                       </Badge>
                     </div>
-                    {selected.entradaReal && (
+                    {selectedJustificar.entradaReal && (
                       <div>
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase ">
                           <Clock className="h-3.5 w-3.5 text-blue-600" />
                           Entrada real
                         </div>
                         <span className="text-base font-mono font-medium text-slate-800">
-                          {selected.entradaReal.substring(0, 5)}
+                          {selectedJustificar.entradaReal.substring(0, 5)}
                         </span>
                       </div>
                     )}
@@ -966,7 +980,7 @@ export default function AsistenciaTable({
                         </Label>
                         <Select
                           value={tipoJust}
-                          onValueChange={(v: any) => setTipoJust(v)}
+                          onValueChange={(v) => setTipoJust((v as string) ?? "TARDANZA_JUSTIFICADA")}
                         >
                           <SelectTrigger
                             id="tipo-justificacion"
@@ -1050,7 +1064,7 @@ export default function AsistenciaTable({
                                   Entrada registrada
                                 </div>
                                 <span className="text-base font-mono font-medium text-slate-800">
-                                  {selected.entradaReal?.substring(0, 5) || "—"}
+                                  {selectedJustificar.entradaReal?.substring(0, 5) || "—"}
                                 </span>
                               </div>
                               <div>
@@ -1058,7 +1072,7 @@ export default function AsistenciaTable({
                                   Estado actual
                                 </div>
                                 <span className="text-sm font-medium text-slate-800">
-                                  {selected.estadoDia}
+                                  {selectedJustificar.estadoDia}
                                 </span>
                               </div>
                               <div>
@@ -1133,10 +1147,10 @@ export default function AsistenciaTable({
                 </Button>
                 <Button
                   onClick={handleJustificar}
-                  disabled={saving || !motivo.trim()}
+                  disabled={savingJustificar || !motivo.trim()}
                   className="gap-2 h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                 >
-                  {saving ? (
+                  {savingJustificar ? (
                     <>
                       <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
                       Guardando...
@@ -1156,7 +1170,7 @@ export default function AsistenciaTable({
       {/* ============================================================ */}
       {/* DIALOG 2: CORREGIR MARCACIÓN MANUAL   */}
       {/* ============================================================ */}
-      <Dialog open={editarOpen} onOpenChange={setEditarOpen}>
+      <Dialog open={editarOpen} onOpenChange={(open) => { setEditarOpen(open); if (!open) setSelectedEditar(null); }}>
         <DialogContent className="max-w-4xl sm:max-w-4xl p-0 overflow-hidden">
           {/* HEADER: con badge RH y fondo ámbar sutil */}
           <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-amber-50/50 to-white px-8 pt-6 pb-4">
@@ -1186,7 +1200,7 @@ export default function AsistenciaTable({
             </div>
           </DialogHeader>
 
-          {selected && (
+          {selectedEditar && (
             <div className="px-8 py-6 space-y-6 max-h-[80vh] overflow-y-auto">
               {/* ============================================================
             SECCIÓN: IDENTIFICACIÓN DEL PRACTICANTE (estilo imagen)
@@ -1200,7 +1214,7 @@ export default function AsistenciaTable({
                     </div>
                     <div>
                       <span className="text-xl font-bold text-slate-800">
-                        {selected.nombreCompleto}
+                        {selectedEditar.nombreCompleto}
                       </span>
                       <div className="text-sm text-slate-500">
                         Practicante · Información del registro
@@ -1216,7 +1230,7 @@ export default function AsistenciaTable({
                         Fecha
                       </div>
                       <span className="text-base text-[12px] font-medium text-slate-800">
-                        {selected.fecha}
+                        {selectedEditar.fecha}
                       </span>
                     </div>
                     <div>
@@ -1225,9 +1239,9 @@ export default function AsistenciaTable({
                         Estado
                       </div>
                       <Badge
-                        className={getEstadoBadge(selected.estadoDia).className}
+                        className={getEstadoBadge(selectedEditar.estadoDia).className}
                       >
-                        {getEstadoBadge(selected.estadoDia).label}
+                        {getEstadoBadge(selectedEditar.estadoDia).label}
                       </Badge>
                     </div>
                     <div>
@@ -1236,7 +1250,7 @@ export default function AsistenciaTable({
                         Entrada
                       </div>
                       <span className="text-[12px] font-mono font-medium bg-slate-50 px-2.5 py-0.5 rounded border border-slate-200 inline-block">
-                        {selected.entradaEsperada?.substring(0, 5) || "—"}
+                        {selectedEditar.entradaEsperada?.substring(0, 5) || "—"}
                       </span>
                     </div>
                     <div>
@@ -1245,7 +1259,7 @@ export default function AsistenciaTable({
                         Salida
                       </div>
                       <span className="text-[12px] font-mono  font-medium bg-slate-50 px-2.5 py-0.5 rounded border border-slate-200 inline-block">
-                        {selected.salidaEsperada?.substring(0, 5) || "—"}
+                        {selectedEditar.salidaEsperada?.substring(0, 5) || "—"}
                       </span>
                     </div>
                   </div>
@@ -1333,10 +1347,10 @@ export default function AsistenciaTable({
                 </Button>
                 <Button
                   onClick={handleEditar}
-                  disabled={saving}
+                  disabled={savingEditar}
                   className="gap-2 h-11 px-6 bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
                 >
-                  {saving ? (
+                  {savingEditar ? (
                     <>
                       <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
                       Guardando...
@@ -1474,10 +1488,10 @@ export default function AsistenciaTable({
                   ============================================================ */}
                     <div>
                       {(() => {
-                        const detalles = (verData as any).situacionesDetalle as
-                          | any[]
+                        const detalles = verData.situacionesDetalle as
+                          | SituacionDetalle[]
                           | undefined;
-                        const list =
+                        const list: SituacionDetalle[] =
                           detalles && detalles.length > 0
                             ? detalles
                             : [
@@ -1489,10 +1503,9 @@ export default function AsistenciaTable({
                                   motivo: verData.justificacionMotivo,
                                   observacion: verData.justificacionObservacion,
                                   horaEntradaRegistrada: verData.entradaReal,
-                                  horaSalidaAnticipada: (verData as any)
-                                    .horaSalidaAnticipadaAutorizada,
+                                  horaSalidaAnticipada: verData.horaSalidaAnticipadaAutorizada,
                                   fechaRegistro: verData.justificacionFecha,
-                                },
+                                } as SituacionDetalle,
                               ];
 
                         // Definimos el tipo para el mapa de colores
@@ -1567,7 +1580,7 @@ export default function AsistenciaTable({
                         return (
                           <>
                             <div className="space-y-3 mt-0">
-                              {list.map((d: any, idx: number) => {
+                              {list.map((d: SituacionDetalle, idx: number) => {
                                 const tipoKey = d.tipo?.toUpperCase() || "OTRO";
                                 const colors =
                                   tipoColorMap[tipoKey] || tipoColorMap["OTRO"];
@@ -1597,11 +1610,11 @@ export default function AsistenciaTable({
                                         {d.fechaRegistro
                                           ? new Date(
                                               d.fechaRegistro,
-                                            ).toLocaleString("es-PE")
+                                            ).toLocaleString("es-PE", { timeZone: "America/Lima" })
                                           : verData.justificacionFecha
                                             ? new Date(
                                                 verData.justificacionFecha,
-                                              ).toLocaleString("es-PE")
+                                              ).toLocaleString("es-PE", { timeZone: "America/Lima" })
                                             : "—"}
                                       </span>
                                     </div>
@@ -1621,9 +1634,8 @@ export default function AsistenciaTable({
                                     {/* Horarios: compactos, en línea */}
                                     {(() => {
                                       const horaSalidaAutorizada =
-                                        (d as any)
-                                          .horaSalidaAnticipadaAutorizada ??
-                                        (d as any).horaSalidaAnticipada;
+                                        d.horaSalidaAnticipadaAutorizada ??
+                                        d.horaSalidaAnticipada;
                                       const hasHoraSalida =
                                         Boolean(horaSalidaAutorizada);
                                       return d.horaEntradaRegistrada ||

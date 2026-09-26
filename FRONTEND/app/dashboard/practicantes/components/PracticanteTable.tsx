@@ -11,11 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -383,21 +378,24 @@ export function PracticanteTable({
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center gap-1 text-xs text-slate-600">
-                          <MapPinned className="h-3 w-3 text-blue-400 shrink-0" />
+                          <MapPinned className="h-3 w-3 text-slate-400 shrink-0" />
                           {practicante.sede || "—"}
                         </span>
                       </TableCell>
+                      {/* Oficina: texto simple con ícono, NO badge — es dato, no categoría */}
                       <TableCell>
-                        <span className="inline-flex -h6 items-center rounded-full bg-blue-50 border  border-blue-200 px-2 py-0.5 text-xs text-blue-600">
-                          <BriefcaseBusiness className="h-5 w-5 text-blue-400 shrink-0 pr-2 " />
-                          {practicante.nombreOficina ||
-                            practicante.oficina ||
-                            practicante.nombreOficina || practicante.oficina || "—"}
+                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+                          <BriefcaseBusiness className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate max-w-[180px]">
+                            {practicante.nombreOficina ||
+                              practicante.oficina ||
+                              "—"}
+                          </span>
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge className="bg-indigo-100  h-6 text-indigo-600 border-indigo-200 text-xs font-medium hover:bg-indigo-200">
-                          <UserRound className="h-10 w-10 text-blue-400 shrink-0 " />
+                        <Badge className="h-6 bg-slate-600 text-white border-0 text-xs font-medium gap-1 hover:bg-indigo-700">
+                          <UserRound className="h-3 w-3 shrink-0" />
                           {practicante.cargo}
                         </Badge>
                       </TableCell>
@@ -425,18 +423,6 @@ export function PracticanteTable({
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {onShowQR && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="group h-9 w-9 bg-slate-50 border-gray-200 text-orange-600 hover:text-orange-600 hover:bg-orange-50"
-                              onClick={() => onShowQR(practicante)}
-                              title="Ver QR"
-                              aria-label="Ver QR"
-                            >
-                              <QrCode className="h-4 w-4 transition-transform duration-500 ease-in-out group-hover:scale-115 pointer-events-none" />
-                            </Button>
-                          )}
                           <Button
                             variant="ghost"
                             size="icon"

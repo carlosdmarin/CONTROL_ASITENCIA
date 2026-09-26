@@ -5,33 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-
-function formatHora(hora?: string | null) {
-  if (!hora) return "—";
-  return hora.substring(0, 5);
-}
-function formatHoras(num?: number | null) {
-  if (num == null) return "—";
-  const h = Math.floor(num);
-  const m = Math.round((num - h) * 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-function formatFechaLarga(fechaStr: string) {
-  try {
-    const d = new Date(fechaStr + "T00:00:00");
-    return d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return fechaStr;
-  }
-}
-function formatFechaCorta(fechaStr: string) {
-  try {
-    const d = new Date(fechaStr + "T00:00:00");
-    const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    return `${dd}/${mm}/${d.getFullYear()}`;
-  } catch { return fechaStr; }
-}
+import { formatHora, formatHoras, formatFechaLarga, formatFechaCorta, formatFechaGeneracion } from "@/lib/utils/reportesDate";
 function getInitials(nombre: string) {
   if (!nombre) return "?";
   const p = nombre.split(" ");
@@ -58,9 +32,7 @@ function getSituacionLabel(s?: string | null) {
 export function ReporteMensualView({ reporte }: { reporte: ReporteMensualResponse }) {
   const p = reporte.practicante;
   const r = reporte.resumen;
-  const fechaGen = reporte.fechaGeneracion
-    ? new Date(reporte.fechaGeneracion).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
-    : new Date().toLocaleString("es-ES");
+  const fechaGen = formatFechaGeneracion(reporte.fechaGeneracion);
 
   const balanceText = (() => {
     if (r.estadoBalance === "FALTANTES") return `Horas faltantes: ${formatHoras(r.horasFaltantes)}`;

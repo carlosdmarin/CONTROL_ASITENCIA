@@ -1,3 +1,13 @@
+export type SituacionDetalle = {
+  tipo: string;
+  motivo?: string | null;
+  observacion?: string | null;
+  horaEntradaRegistrada?: string | null;
+  horaSalidaAnticipada?: string | null;
+  horaSalidaAnticipadaAutorizada?: string | null;
+  fechaRegistro?: string | null;
+};
+
 export type AsistenciaDiaria = {
   id: number;
   practicante: string;
@@ -30,7 +40,7 @@ export type AsistenciaDiariaResponse = {
   estadoVisual?: string | null; // DEPRECADO: usar situacion
   situacion?: string | null; // NINGUNA, TARDANZA_JUSTIFICADA, SALIDA_ANTICIPADA_JUSTIFICADA, INASISTENCIA_JUSTIFICADA
   situaciones?: string[] | null; // Múltiples situaciones
-  situacionesDetalle?: any[] | null;
+  situacionesDetalle?: SituacionDetalle[] | null;
   horaSalidaAnticipadaAutorizada?: string | null;
 };
 
@@ -61,7 +71,7 @@ export type ResumenAsistencia = {
 };
 
 export function normalizeEstadoDia(estado: string): string {
-  if (estado === "JUSTIFICADO") return "AUSENTE"; // legacy JUSTIFICADO → AUSENTE para columna Estado
+  // Preserva JUSTIFICADO como estado distinto; estado del día y situación/justificación son conceptos separados
   return estado;
 }
 export function isTardanza(estado: string): boolean {

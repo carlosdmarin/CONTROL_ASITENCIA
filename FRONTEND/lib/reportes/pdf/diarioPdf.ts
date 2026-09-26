@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { ReporteDiarioResponse } from "@/types/reporte";
+import { formatHora, formatHoras, formatFechaLarga, formatFechaGeneracion } from "@/lib/utils/reportesDate";
 
 // Paleta institucional OLAMSA + PractiQR
 const OLAMSA_GREEN = [14, 122, 76] as const;
@@ -9,25 +10,6 @@ const SLATE_900 = [15, 23, 42] as const;
 const SLATE_500 = [100, 116, 139] as const;
 const SLATE_200 = [226, 232, 240] as const;
 const SLATE_50 = [248, 250, 252] as const;
-
-function formatHora(hora?: string | null) {
-  if (!hora) return "—";
-  return hora.substring(0, 5);
-}
-function formatHoras(num?: number | null) {
-  if (num == null) return "—";
-  const h = Math.floor(num);
-  const m = Math.round((num - h) * 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-function formatFechaLarga(fechaStr: string) {
-  try {
-    const d = new Date(fechaStr + "T00:00:00");
-    return d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return fechaStr;
-  }
-}
 
 async function loadImageAsBase64(url: string): Promise<string | null> {
   try {
@@ -136,15 +118,7 @@ export async function generarPdfDiario(reporte: ReporteDiarioResponse): Promise<
   doc.text("Sistema PractiQR", textoX, centerY + 6);
 
   // Fecha de generación abajo a la derecha del header
-  const fechaGen = reporte.fechaGeneracion
-    ? new Date(reporte.fechaGeneracion).toLocaleString("es-ES", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : new Date().toLocaleString("es-ES");
+  const fechaGen = formatFechaGeneracion(reporte.fechaGeneracion);
   doc.setFontSize(6.5);
   doc.setTextColor(SLATE_500[0], SLATE_500[1], SLATE_500[2]);
   doc.text(`Generado: ${fechaGen} (America/Lima)`, pageWidth - margin, y + HEADER_H - 4, { align: "right" });

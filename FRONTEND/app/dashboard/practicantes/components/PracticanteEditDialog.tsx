@@ -296,13 +296,6 @@ export function PracticanteEditDialog({
     const idOficinaFinal = oficinaEncontrada?.idOficina ?? ((practicante as any).idOficina || (oficinas.length > 0 ? oficinas[0].idOficina : 0));
     const idTipoFinal = tipoEncontrado?.idTipoInstituto || (tiposInstituto.length > 0 ? tiposInstituto[0].idTipoInstituto : 0);
 
-    console.log("🔍 Búsqueda de IDs:", {
-      sede: { buscado: practicante.sede, encontrado: sedeEncontrada?.nombre, id: idSedeFinal },
-      cargo: { buscado: practicante.cargo, encontrado: cargoEncontrado?.nombre, id: idCargoFinal },
-      oficina: { buscado: (practicante as any).nombreOficina || (practicante as any).oficina, encontrado: oficinaEncontrada?.oficina, id: idOficinaFinal },
-      tipo: { buscado: practicante.tipoInstituto, encontrado: tipoEncontrado?.nombre, id: idTipoFinal },
-    });
-
     setFormData({
       nombre: nombre,
       apellido: apellido,
@@ -533,14 +526,14 @@ export function PracticanteEditDialog({
     ];
 
     return (
-      <div className="flex items-center justify-center mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-center mb-4 sm:mb-6 px-1">
+        <div className="flex items-center gap-2 sm:gap-4">
           {steps.map((step, index) => (
             <div key={step.num} className="flex items-center">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <div
                   className={`
-                    flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all shrink-0
+                    flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs sm:text-sm font-medium transition-all shrink-0
                     ${
                       currentStep === step.num
                         ? "bg-blue-600 text-white ring-4 ring-blue-100"
@@ -551,14 +544,14 @@ export function PracticanteEditDialog({
                   `}
                 >
                   {currentStep > step.num ? (
-                    <CheckCircle2 className="h-4 w-4" />
+                    <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   ) : (
                     step.num
                   )}
                 </div>
                 <span
                   className={`
-                  text-xs font-medium whitespace-nowrap
+                  text-[11px] sm:text-xs font-medium whitespace-nowrap
                   ${currentStep === step.num ? "text-blue-600 font-semibold" : "text-gray-400"}
                 `}
                 >
@@ -568,7 +561,7 @@ export function PracticanteEditDialog({
               {index < steps.length - 1 && (
                 <div
                   className={`
-                  w-10 h-0.5 mx-1 transition-colors
+                  w-6 sm:w-10 h-0.5 mx-1 transition-colors
                   ${currentStep > step.num ? "bg-green-500" : "bg-gray-200"}
                 `}
                 />
@@ -604,7 +597,7 @@ export function PracticanteEditDialog({
                 value={formData.documento}
                 onChange={handleDniChange}
                 placeholder="DNI del practicante"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   dniError
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.documento.length === 8
@@ -624,9 +617,9 @@ export function PracticanteEditDialog({
                 </>
               ) : formData.documento.length === 8 ? (
                 <>
-                  <CircleCheck className="h-4.5 w-4.5 text-green-500 shrink-0 pl-1" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0 pl-1" />
                   <span className="text-xs text-green-600 pl-1">DNI válido</span>
-                </> 
+                </>
               ) : (
                 <span className="text-xs text-gray-400">Ingresa 8 dígitos</span>
               )}
@@ -646,7 +639,7 @@ export function PracticanteEditDialog({
                 value={formData.nombre}
                 onChange={handleNombreChange}
                 placeholder="Nombre del practicante"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   formData.nombre.length > 0 && formData.nombre.length < 2
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.nombre.length >= 2
@@ -688,7 +681,7 @@ export function PracticanteEditDialog({
                 value={formData.apellido}
                 onChange={handleApellidoChange}
                 placeholder="Apellido del practicante"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   formData.apellido.length > 0 && formData.apellido.length < 2
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.apellido.length >= 2
@@ -708,7 +701,7 @@ export function PracticanteEditDialog({
                 </>
               ) : formData.apellido.length >= 2 ? (
                 <>
-                  <CircleCheck className="h-4.5 w-4.5 text-green-500 shrink-0 pl-1" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0 pl-1" />
                   <span className="text-xs text-green-600 pl-1">
                     Apellido válido
                   </span>
@@ -735,7 +728,7 @@ export function PracticanteEditDialog({
                 name="idSede"
                 value={formData.idSede}
                 onChange={handleSelectChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 <option value="0">Seleccionar sede</option>
@@ -760,7 +753,7 @@ export function PracticanteEditDialog({
                 name="idOficina"
                 value={formData.idOficina}
                 onChange={handleSelectChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 <option value="0">Seleccionar oficina</option>
@@ -785,7 +778,7 @@ export function PracticanteEditDialog({
                 name="idCargo"
                 value={formData.idCargo}
                 onChange={handleSelectChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 <option value="0">Seleccionar cargo</option>
@@ -810,7 +803,7 @@ export function PracticanteEditDialog({
                 name="idTipoInstituto"
                 value={formData.idTipoInstituto}
                 onChange={handleSelectChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 <option value="0">Seleccionar centro</option>
@@ -841,7 +834,7 @@ export function PracticanteEditDialog({
                 onChange={handleEmailChange}
                 placeholder="correo@empresa.com"
                 type="email"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   emailError
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.correoElectronico.length > 0 && !emailError
@@ -881,7 +874,7 @@ export function PracticanteEditDialog({
                 value={formData.telefono}
                 onChange={handleTelefonoChange}
                 placeholder="987654321"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   telefonoError
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.telefono.length >= 9
@@ -931,7 +924,7 @@ export function PracticanteEditDialog({
                 value={formData.fechaInicioPracticas}
                 onChange={handleInputChange}
                 type="date"
-                className="w-full pl-9 h-9 text-sm"
+                className="w-full pl-9 h-10 text-sm"
                 required
               />
             </div>
@@ -950,7 +943,7 @@ export function PracticanteEditDialog({
                 value={formData.fechaFinPracticas}
                 onChange={handleInputChange}
                 type="date"
-                className="w-full pl-9 h-9 text-sm"
+                className="w-full pl-9 h-10 text-sm"
               />
             </div>
           </div>
@@ -1136,7 +1129,7 @@ export function PracticanteEditDialog({
             calcula al instante.
           </p>
 
-          <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto min-h-0 pr-1">
+          <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto min-h-0 pr-1 overscroll-contain">
             {DIAS_SEMANA.map((dia) => {
               const diaData = horario[dia.key as keyof HorarioSemanal];
               const minutosDia = minutosDelDia(diaData);
@@ -1189,7 +1182,7 @@ export function PracticanteEditDialog({
                                     e.target.value,
                                   )
                                 }
-                                className={`w-full sm:w-28 h-10 sm:h-9 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                                className={`w-full sm:w-28 h-10 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                               />
                             </div>
                           </div>
@@ -1208,7 +1201,7 @@ export function PracticanteEditDialog({
                                     e.target.value,
                                   )
                                 }
-                                className={`w-full sm:w-28 h-10 sm:h-9 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                                className={`w-full sm:w-28 h-10 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                               />
                             </div>
                           </div>
@@ -1298,20 +1291,8 @@ export function PracticanteEditDialog({
       tipoFinal = encontrado?.nombre || practicante.tipoInstituto || "—";
     }
 
-    // Debug
-    console.log("📋 Step 3 - Mostrando:", {
-      sede: sedeFinal,
-      cargo: cargoFinal,
-      oficina: oficinaFinalConfirm,
-      tipo: tipoFinal,
-      idSede: formData.idSede,
-      idCargo: formData.idCargo,
-      idOficina: formData.idOficina,
-      idTipo: formData.idTipoInstituto,
-    });
-
     return (
-      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1">
+      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1 overscroll-contain">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-3">
           <p className="text-sm text-blue-700 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -1399,25 +1380,25 @@ export function PracticanteEditDialog({
     const isStep2Valid = validateStep2();
 
     return (
-      <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+      <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t sm:justify-between sm:items-center">
         {currentStep === 1 && (
           <Button
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="flex-1 sm:flex-none text-gray-500"
+            className="flex-1 sm:flex-none text-gray-500 h-10"
           >
             Cancelar
           </Button>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
           {currentStep > 1 && (
             <Button
               type="button"
               variant="outline"
               onClick={goToPreviousStep}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none h-10"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Atrás
@@ -1428,29 +1409,28 @@ export function PracticanteEditDialog({
             <Button
               type="button"
               onClick={handleSubmit}
-              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 h-10"
             >
               <SaveCheck className="h-4 w-4 mr-1" />
               Guardar cambios
             </Button>
           )}
-
-          {currentStep < 3 && (
-            <Button
-              type="button"
-              onClick={goToNextStep}
-              className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 ${
-                (currentStep === 1 ? !isStep1Valid : !isStep2Valid)
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
-              disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
-            >
-              Continuar
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          )}
         </div>
+        {currentStep < 3 && (
+          <Button
+            type="button"
+            onClick={goToNextStep}
+            className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 h-10 ${
+              (currentStep === 1 ? !isStep1Valid : !isStep2Valid)
+                ? "opacity-50 cursor-not-allowed"
+                : ""
+            }`}
+            disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
+          >
+            Continuar
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+        )}
       </DialogFooter>
     );
   };
@@ -1478,9 +1458,9 @@ export function PracticanteEditDialog({
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-3 sm:px-6 py-3 sm:py-5">
           {renderStepIndicator()}
           <div className="mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col overflow-hidden">
-            {currentStep === 1 && <div className="flex-1 overflow-y-auto pr-1">{renderStep1()}</div>}
+            {currentStep === 1 && <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">{renderStep1()}</div>}
             {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && <div className="flex-1 overflow-y-auto pr-1">{renderStep3()}</div>}
+            {currentStep === 3 && <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">{renderStep3()}</div>}
           </div>
         </div>
 

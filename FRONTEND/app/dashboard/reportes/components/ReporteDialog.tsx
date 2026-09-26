@@ -19,8 +19,7 @@ import { NotebookText, CheckCircle2, ArrowLeft, ArrowRight, FileCheck, FileDown,
 import { Practicante } from "@/types/practicante";
 import { ReporteDiarioResponse, ReporteSemanalResponse, ReporteMensualResponse } from "@/types/reporte";
 import { reportesApi } from "@/lib/api/reportes";
-import { startOfWeek, endOfWeek } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatFechaISO, formatFechaLargaFromDate, getWeekRange } from "@/lib/utils/reportesDate";
 import { ReporteStepTipo } from "./ReporteStepTipo";
 import { ReporteStepPeriodo } from "./ReporteStepPeriodo";
 import { ReporteStepConfirmacion } from "./ReporteStepConfirmacion";
@@ -46,30 +45,6 @@ function getInitials(nombre: string) {
   if (!nombre) return "?";
   const p = nombre.split(" ");
   return p.length >= 2 ? p[0][0] + p[1][0] : nombre[0];
-}
-
-function formatFechaLarga(date: Date) {
-  return date.toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function formatFechaISO(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function getWeekLabel(date: Date) {
-  const weekStart = startOfWeek(date, { weekStartsOn: 1, locale: es });
-  const weekEnd = endOfWeek(date, { weekStartsOn: 1, locale: es });
-  weekStart.setHours(0, 0, 0, 0);
-  weekEnd.setHours(0, 0, 0, 0);
-  const label = `${weekStart.getDate()} al ${weekEnd.getDate()} de ${weekEnd.toLocaleString("es-ES", { month: "long" })} de ${weekEnd.getFullYear()}`;
-  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialogProps) {
@@ -150,10 +125,11 @@ export function ReporteDialog({ open, onOpenChange, practicante }: ReporteDialog
 
   const periodoLabel = (() => {
     if (!tipoReporte) return "—";
-    if (tipoReporte === "DIARIO" && fechaDiaria) return formatFechaLarga(fechaDiaria);
-    if (tipoReporte === "SEMANAL" && semanaFecha) return getWeekLabel(semanaFecha);
+    if (tipoReporte === "DIARIO" && fechaDiaria) return formatFechaLargaFromDate(fechaDiaria);
+    if (tipoReporte === "SEMANAL" && semanaFecha) return getWeekRange(semanaFecha).label;
     if (tipoReporte === "MENSUAL" && mesFecha)
       return mesFecha.toLocaleString("es-ES", {
+        timeZone: "America/Lima",
         month: "long",
         year: "numeric",
       });

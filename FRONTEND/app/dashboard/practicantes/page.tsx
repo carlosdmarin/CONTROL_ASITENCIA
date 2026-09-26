@@ -8,7 +8,6 @@ import { PracticanteTable } from "./components/PracticanteTable";
 import { PracticanteDeleteDialog } from "./components/PracticanteDeleteDialog";
 import { PracticanteCreateDialog } from "./components/PracticanteCreateDialog";
 import { PracticanteEditDialog } from "./components/PracticanteEditDialog";
-import { PracticanteQRDialog } from "./components/PracticanteQRDialog";
 import { PracticanteDetailDialog } from "./components/PracticanteDetailDialog";
 import { practicantesApi } from "@/lib/api/practicantes";
 import { Practicante, NuevoPracticante, ActualizarPracticante, BloqueHorarioRequest } from "@/types/practicante";
@@ -286,12 +285,7 @@ export default function PracticantesPage() {
         onDelete={eliminarPracticante}
       />
 
-      <PracticanteQRDialog
-        open={dialogQRabierto}
-        onOpenChange={setDialogQRabierto}
-        practicante={practicanteAQR}
-      />
-
+     
       <PracticanteDetailDialog
         open={dialogDetalleAbierto}
         onOpenChange={setDialogDetalleAbierto}

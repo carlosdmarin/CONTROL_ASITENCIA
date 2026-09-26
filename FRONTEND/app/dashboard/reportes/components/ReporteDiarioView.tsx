@@ -5,27 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-
-function formatHora(hora?: string | null) {
-  if (!hora) return "—";
-  return hora.substring(0, 5);
-}
-
-function formatHoras(num?: number | null) {
-  if (num == null) return "—";
-  const h = Math.floor(num);
-  const m = Math.round((num - h) * 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-function formatFechaLarga(fechaStr: string) {
-  try {
-    const d = new Date(fechaStr + "T00:00:00");
-    return d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return fechaStr;
-  }
-}
+import { formatHora, formatHoras, formatFechaLarga, formatFechaGeneracion } from "@/lib/utils/reportesDate";
 
 function getInitials(nombre: string) {
   if (!nombre) return "?";
@@ -47,9 +27,7 @@ function estadoColor(estado?: string | null) {
 export function ReporteDiarioView({ reporte }: { reporte: ReporteDiarioResponse }) {
   const p = reporte.practicante;
   const a = reporte.asistencia;
-  const fechaGen = reporte.fechaGeneracion
-    ? new Date(reporte.fechaGeneracion).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
-    : new Date().toLocaleString("es-ES");
+  const fechaGen = formatFechaGeneracion(reporte.fechaGeneracion);
 
   const horasTrabajadas = a?.horasTrabajadas ?? 0;
   const horasEsperadas = reporte.horasEsperadas ?? 0;

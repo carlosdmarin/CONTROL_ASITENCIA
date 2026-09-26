@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping({"/api/sedes", "/api/agencias", "/sedes", "/agencias"})
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 public class SedeController {
     private final SedeRepository sedeRepository;
 

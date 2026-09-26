@@ -507,7 +507,7 @@ export function PracticanteCreateDialog({
               {index < steps.length - 1 && (
                 <div
                   className={`
-                  w-6 sm:w-10 h-0.5 mx-1 sm:mx-1 transition-colors
+                  w-6 sm:w-10 h-0.5 mx-1 transition-colors
                   ${currentStep > step.num ? "bg-green-500" : "bg-gray-200"}
                 `}
                 />
@@ -543,7 +543,7 @@ export function PracticanteCreateDialog({
                 value={formData.documento}
                 onChange={handleDniChange}
                 placeholder="DNI del practicante"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   dniError
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.documento.length === 8
@@ -586,7 +586,7 @@ export function PracticanteCreateDialog({
                 value={formData.nombre}
                 onChange={handleNombreChange}
                 placeholder="Nombre del practicante"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   formData.nombre.length > 0 && formData.nombre.length < 2
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.nombre.length >= 2
@@ -606,7 +606,7 @@ export function PracticanteCreateDialog({
                 </>
               ) : formData.nombre.length >= 2 ? (
                 <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 hrink-0" />
+                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
                   <span className="text-xs text-green-600">Nombre válido</span>
                 </>
               ) : (
@@ -628,7 +628,7 @@ export function PracticanteCreateDialog({
                 value={formData.apellido}
                 onChange={handleApellidoChange}
                 placeholder="Apellido del practicante"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   formData.apellido.length > 0 && formData.apellido.length < 2
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.apellido.length >= 2
@@ -675,7 +675,7 @@ export function PracticanteCreateDialog({
                 name="idSede"
                 value={formData.idSede}
                 onChange={handleChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 {loadingSelects ? (
@@ -703,7 +703,7 @@ export function PracticanteCreateDialog({
                 name="idOficina"
                 value={formData.idOficina}
                 onChange={handleChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 {loadingSelects ? (
@@ -732,7 +732,7 @@ export function PracticanteCreateDialog({
                 name="idCargo"
                 value={formData.idCargo}
                 onChange={handleChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 {loadingSelects ? (
@@ -760,7 +760,7 @@ export function PracticanteCreateDialog({
                 name="idTipoInstituto"
                 value={formData.idTipoInstituto}
                 onChange={handleChange}
-                className="w-full pl-9 rounded-md border border-gray-200 px-3 py-1.5 text-sm bg-white h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
                 disabled={loadingSelects}
               >
                 {loadingSelects ? (
@@ -797,7 +797,7 @@ export function PracticanteCreateDialog({
                 onChange={handleEmailChange}
                 placeholder="correo@empresa.com"
                 type="email"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   emailError
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.correoElectronico.length > 0 && !emailError
@@ -837,7 +837,7 @@ export function PracticanteCreateDialog({
                 value={formData.telefono}
                 onChange={handleTelefonoChange}
                 placeholder="987654321"
-                className={`w-full pl-9 h-9 text-sm ${
+                className={`w-full pl-9 h-10 text-sm ${
                   telefonoError
                     ? "border-red-500 focus-visible:ring-red-500"
                     : formData.telefono.length >= 9
@@ -887,7 +887,7 @@ export function PracticanteCreateDialog({
                 value={formData.fechaInicioPracticas}
                 onChange={handleChange}
                 type="date"
-                className="w-full pl-9 h-9 text-sm"
+                className="w-full pl-9 h-10 text-sm"
                 required
               />
             </div>
@@ -906,7 +906,7 @@ export function PracticanteCreateDialog({
                 value={formData.fechaFinPracticas}
                 onChange={handleChange}
                 type="date"
-                className="w-full pl-9 h-9 text-sm"
+                className="w-full pl-9 h-10 text-sm"
               />
             </div>
           </div>
@@ -1133,7 +1133,7 @@ export function PracticanteCreateDialog({
                                     e.target.value,
                                   )
                                 }
-                                className={`w-full sm:w-28 h-10 sm:h-9 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                                className={`w-full sm:w-28 h-10 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                               />
                             </div>
                           </div>
@@ -1152,7 +1152,7 @@ export function PracticanteCreateDialog({
                                     e.target.value,
                                   )
                                 }
-                                className={`w-full sm:w-28 h-10 sm:h-9 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
+                                className={`w-full sm:w-28 h-10 text-sm ${tieneError ? "border-red-300 focus-visible:ring-red-200" : ""}`}
                               />
                             </div>
                           </div>
@@ -1202,20 +1202,8 @@ export function PracticanteCreateDialog({
     const oficinaFinal = oficinaItem?.oficina || "—";
     const tipoFinal = tipoItem?.nombre || "—";
 
-    // Debug para ver qué se está mostrando
-    console.log("📋 Step 3 - Mostrando:", {
-      sede: sedeFinal,
-      cargo: cargoFinal,
-      oficina: oficinaFinal,
-      tipo: tipoFinal,
-      idSede: formData.idSede,
-      idCargo: formData.idCargo,
-      idOficina: formData.idOficina,
-      idTipo: formData.idTipoInstituto,
-    });
-
     return (
-      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1">
+      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1 overscroll-contain">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-3">
           <p className="text-sm text-blue-700 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -1309,18 +1297,18 @@ export function PracticanteCreateDialog({
             type="button"
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="flex-1 sm:flex-none text-gray-500"
+            className="flex-1 sm:flex-none text-gray-500 h-10"
           >
             Cancelar
           </Button>
         )}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
           {currentStep > 1 && (
             <Button
               type="button"
               variant="outline"
               onClick={goToPreviousStep}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none h-10"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Atrás
@@ -1331,7 +1319,7 @@ export function PracticanteCreateDialog({
             <Button
               type="button"
               onClick={handleSubmit}
-              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 h-10"
             >
               <SaveCheck className="h-4 w-4 mr-1" />
               Registrar practicante
@@ -1342,7 +1330,7 @@ export function PracticanteCreateDialog({
           <Button
             type="button"
             onClick={goToNextStep}
-            className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 ${(currentStep === 1 ? !isStep1Valid : !isStep2Valid) ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 h-10 ${(currentStep === 1 ? !isStep1Valid : !isStep2Valid) ? "opacity-50 cursor-not-allowed" : ""}`}
             disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
           >
             Continuar
@@ -1356,7 +1344,7 @@ export function PracticanteCreateDialog({
   // ====== MAIN RENDER ======
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-24px)] sm:w-full max-w-4xl! h-[85vh] sm:h-auto sm:max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="w-[calc(100vw-24px)] sm:w-full max-w-4xl! max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-2 shrink-0 pr-10 sm:pr-6">
           <div className="flex items-center gap-2 sm:gap-2">
             <UserPlus className="h-5 w-5 sm:h-6 sm:w-6 text-blue-700 shrink-0" />
@@ -1376,9 +1364,9 @@ export function PracticanteCreateDialog({
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-3 sm:px-6 py-3 sm:py-5">
           {renderStepIndicator()}
           <div className="mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col overflow-hidden">
-            {currentStep === 1 && <div className="flex-1 overflow-y-auto pr-1">{renderStep1()}</div>}
+            {currentStep === 1 && <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">{renderStep1()}</div>}
             {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && <div className="flex-1 overflow-y-auto pr-1">{renderStep3()}</div>}
+            {currentStep === 3 && <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">{renderStep3()}</div>}
           </div>
         </div>
 

@@ -42,11 +42,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000",
-                "https://gathered-glad-clara-sig.trycloudflare.com"));
+        // Orígenes permitidos: local + frontend público Cloudflare (temporal) + patrón para futuros tunnels
+        // Se usa allowedOriginPatterns para soportar URLs temporales *.trycloudflare.com
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:3000",
+                "https://starsmerchant-fisheries-pushing-stood.trycloudflare.com",
+                "https://*.trycloudflare.com"
+        ));
+        // Mantener allowedOrigins vacío cuando se usan patterns
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+        // Headers expuestos para que el frontend pueda leer Set-Cookie si fuera necesario (no HttpOnly)
+        config.setExposedHeaders(List.of("Set-Cookie", "Authorization"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { es } from "date-fns/locale";
 import { startOfWeek, endOfWeek } from "date-fns";
+import { formatFechaLargaFromDate, getWeekRange } from "@/lib/utils/reportesDate";
 
 type TipoReporte = "DIARIO" | "SEMANAL" | "MENSUAL";
 
@@ -21,17 +22,7 @@ interface ReporteStepPeriodoProps {
 
 function formatFechaLarga(date?: Date) {
   if (!date) return "—";
-  return date.toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
-}
-
-function getWeekRange(date: Date) {
-  const weekStart = startOfWeek(date, { weekStartsOn: 1, locale: es });
-  const weekEnd = endOfWeek(date, { weekStartsOn: 1, locale: es });
-  // Normalizar a medianoche para comparación estable
-  weekStart.setHours(0, 0, 0, 0);
-  weekEnd.setHours(0, 0, 0, 0);
-  const label = `${weekStart.getDate()} al ${weekEnd.getDate()} de ${weekEnd.toLocaleString("es-ES", { month: "long" })} de ${weekEnd.getFullYear()}`;
-  return { monday: weekStart, sunday: weekEnd, label: label.charAt(0).toUpperCase() + label.slice(1) };
+  return formatFechaLargaFromDate(date);
 }
 
 const MESES = [
@@ -141,9 +132,11 @@ export function ReporteStepPeriodo({
   const handleMesChange = (mesStr: string | null) => {
     if (mesStr == null) return;
     const mes = Number(mesStr);
+    if (Number.isNaN(mes) || mes < 0 || mes > 11) return;
     const nueva = mesFecha ? new Date(mesFecha) : new Date();
     nueva.setMonth(mes);
     nueva.setDate(1);
+    nueva.setHours(0, 0, 0, 0);
     if (!mesFecha) nueva.setFullYear(anioActual);
     onMesFechaChange(nueva);
   };
@@ -151,15 +144,28 @@ export function ReporteStepPeriodo({
   const handleAnioChange = (anioStr: string | null) => {
     if (anioStr == null) return;
     const anio = Number(anioStr);
+    if (Number.isNaN(anio)) return;
     const nueva = mesFecha ? new Date(mesFecha) : new Date();
     nueva.setFullYear(anio);
     nueva.setMonth(mesActual);
     nueva.setDate(1);
+    nueva.setHours(0, 0, 0, 0);
+    onMesFechaChange(nueva);
+  };
+
+  const handleMesCalendarSelect = (d?: Date) => {
+    if (!d) {
+      onMesFechaChange(undefined);
+      return;
+    }
+    const nueva = new Date(d);
+    nueva.setDate(1);
+    nueva.setHours(0, 0, 0, 0);
     onMesFechaChange(nueva);
   };
 
   // Si no hay mesFecha, sincroniza con selects
-  const mesLabel = mesFecha ? mesFecha.toLocaleString("es-ES", { month: "long", year: "numeric" }) : null;
+  const mesLabel = mesFecha ? mesFecha.toLocaleString("es-ES", { timeZone: "America/Lima", month: "long", year: "numeric" }) : null;
 
   return (
     <div className="space-y-4">
@@ -205,7 +211,7 @@ export function ReporteStepPeriodo({
         <Calendar
           mode="single"
           selected={mesFecha}
-          onSelect={onMesFechaChange}
+          onSelect={handleMesCalendarSelect}
           captionLayout="dropdown"
           locale={es}
           weekStartsOn={1}

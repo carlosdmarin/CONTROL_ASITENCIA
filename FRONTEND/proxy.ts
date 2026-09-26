@@ -16,11 +16,10 @@ export default function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // La cookie practiqr_token pertenece al dominio del backend
-  // (https://returning-funny-officers-halo.trycloudflare.com) y no es visible
-  // en el dominio del frontend. Por eso el proxy NO debe autenticar aquí.
-  // La fuente de verdad es useAuth() -> GET /api/auth/me (con credentials:include)
-  // y RoleGuard en cada layout privado.
+  // Con arquitectura SAME-ORIGIN (Next.js rewrites /api -> backend),
+  // la cookie practiqr_token es first-party (dominio del frontend) y viaja
+  // automáticamente con credentials:include. El proxy/middleware no autentica;
+  // la fuente de verdad es useAuth() -> GET /api/auth/me y RoleGuard.
   return NextResponse.next();
 }
 

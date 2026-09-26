@@ -273,6 +273,8 @@ export default function DashboardPage() {
     cargarDatos();
   }, []);
 
+  // Carga de datos para el gráfico semanal
+  // Obtiene el resumen por rango desde GET /api/asistencias/resumen/rango
   const cargarRango = async () => {
     try {
       setChartLoading(true);
@@ -323,9 +325,8 @@ export default function DashboardPage() {
   );
   const yAxisMax = Math.max(4, chartMax + 2);
 
-  // Estado de marcación hoy: Con asistencia vs Sin marcar (excluye AUSENTE/DESCANSO/JUSTIFICADO)
-  // Usa asistenciasHoy (GET /diaria?fecha, filtra INACTIVOS, respeta jornadaTerminada para SIN_MARCAR->AUSENTE)
-  // Con asistencia = PRESENTE+TARDANZA (no justificado), Sin marcar = SIN_MARCAR pendiente (jornada abierta)
+  // Preparación de datos del gráfico donut
+  // Calcula Con asistencia vs Sin marcar desde asistenciasHoy (GET /api/asistencias/diaria)
   const descansos = asistenciasHoy.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length;
   const conAsistencia = asistenciasHoy.filter((a) => {
     const n = normalizeEstadoDia(a.estadoDia);
@@ -348,6 +349,7 @@ export default function DashboardPage() {
     sinMarcar: { label: "Sin marcar", color: "hsl(220, 9%, 65%)" }, // gris neutro
   };
 
+  // Render principal del Dashboard
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -400,6 +402,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* KPIs principales - 5 indicadores del día con datos de resumenAsistencia y descansos */}
       {/* KPIs - lenguaje visual inspirado en AsistenciaStats */}
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
         {(() => {
@@ -514,8 +517,9 @@ export default function DashboardPage() {
         })()}
       </div>
 
-      {/* Gráfico semanal + Donut */}
+      {/* Gráfico de asistencia semanal - datos de chartData (GET /api/asistencias/resumen/rango) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Gráfico de líneas: Presentes vs Ausentes */}
         <Card className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -649,7 +653,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Donut Estado de marcación */}
+        {/* Distribución de asistencia del día - dona Con asistencia vs Sin marcar */}
+        {/* Datos de donutData: conAsistencia+sinMarcar desde asistenciasHoy */}
         <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-[15px] font-semibold text-slate-900">
@@ -721,8 +726,9 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Actividad + Requiere atención */}
+      {/* Actividad reciente - últimas marcaciones */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Actividad reciente */}
         <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-[15px] font-semibold text-slate-900">
@@ -812,7 +818,8 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-[15px] font-semibold text-slate-900">
+              {/* Practicantes que requieren atención - filtrado SIN_MARCAR/TARDANZA/AUSENTE no justificado */}
+          <CardTitle className="flex items-center gap-2 text-[15px] font-semibold text-slate-900">
                 <span className="p-1.5 bg-amber-50 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-amber-600" />
                 </span>

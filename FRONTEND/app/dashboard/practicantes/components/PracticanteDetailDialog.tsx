@@ -158,11 +158,6 @@ export function PracticanteDetailDialog({
       icon: Layers,
     },
     {
-      label: "Oficina",
-      value: practicante.nombreOficina || practicante.oficina || "—",
-      icon: FileText,
-    },
-    {
       label: "Cargo",
       value: practicante.cargo || "—",
       icon: BadgeCheck,
@@ -181,38 +176,38 @@ export function PracticanteDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-4xl max-h-[90vh] p-0 overflow-hidden gap-0">
+      <DialogContent className="w-[calc(100vw-24px)] sm:w-full !max-w-4xl max-h-[90vh] p-0 overflow-hidden gap-0">
         {/* HEADER - CON LÍNEA DE ACENTO LATERAL */}
-        <div className="border-b border-gray-200 bg-white p-6">
-          <div className="flex items-start gap-4">
+        <div className="border-b border-gray-200 bg-white p-4 sm:p-6">
+          <div className="flex items-start gap-3 sm:gap-4">
             {/* Línea de acento lateral */}
             <div
-              className={`w-1 h-16 rounded-full flex-shrink-0 ${isActivo ? "bg-blue-500" : "bg-rose-500"}`}
+              className={`w-1 h-12 sm:h-16 rounded-full flex-shrink-0 ${isActivo ? "bg-blue-500" : "bg-rose-500"}`}
             />
 
-            <div className="flex-1 flex items-start justify-between">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-14 w-14 border-2 border-gray-200">
-                  <AvatarFallback className="bg-gray-100 text-gray-700 text-lg font-semibold">
+            <div className="flex-1 flex items-start justify-between min-w-0">
+              <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-gray-200 shrink-0">
+                  <AvatarFallback className="bg-gray-100 text-gray-700 text-base sm:text-lg font-semibold">
                     {getInitials(practicante.nombreCompleto)}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base sm:text-xl font-semibold text-gray-900 break-words">
                     {practicante.nombreCompleto}
                   </h2>
-                  <div className="flex items-center gap-3 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
                     <Badge
                       variant="outline"
                       className={`text-xs font-normal ${isActivo ? "border-emerald-200 text-emerald-700 bg-emerald-50" : "border-rose-200 text-rose-700 bg-rose-50"}`}
                     >
                       {isActivo ? "Activo" : "Inactivo"}
                     </Badge>
-                    <span className="text-sm text-gray-400 font-mono">
+                    <span className="text-xs sm:text-sm text-gray-400 font-mono">
                       #{practicante.idPracticante}
                     </span>
-                    <span className="text-sm text-gray-300">•</span>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-xs sm:text-sm text-gray-300">•</span>
+                    <span className="text-xs sm:text-sm text-gray-400 break-all">
                       {practicante.documento}
                     </span>
                   </div>
@@ -223,7 +218,7 @@ export function PracticanteDetailDialog({
         </div>
 
         {/* CONTENIDO CON SCROLL */}
-        <ScrollArea className="flex-1 px-6 py-6 max-h-[calc(90vh-180px)]">
+        <ScrollArea className="flex-1 px-4 sm:px-6 py-4 sm:py-6 max-h-[calc(90vh-160px)] overscroll-contain">
           <div className="space-y-6">
             {/* ====== DATOS PERSONALES ====== */}
             <div>
@@ -235,18 +230,18 @@ export function PracticanteDetailDialog({
                   Datos personales
                 </h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {infoItems.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50/50 hover:bg-gray-50 transition-colors min-w-0"
                   >
-                    <div className="p-1.5 rounded-lg bg-white border">
+                    <div className="p-1.5 rounded-lg bg-white border shrink-0">
                       <item.icon className="h-4 w-4 text-gray-500" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs text-gray-500">{item.label}</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 break-words break-all">
                         {item.value}
                       </p>
                     </div>
@@ -267,18 +262,18 @@ export function PracticanteDetailDialog({
                   Información laboral
                 </h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {laboralItems.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-gray-50/50 hover:bg-gray-50 transition-colors min-w-0"
                   >
-                    <div className="p-1.5 rounded-lg bg-white border">
+                    <div className="p-1.5 rounded-lg bg-white border shrink-0">
                       <item.icon className="h-4 w-4 text-gray-500" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs text-gray-500">{item.label}</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 break-words">
                         {item.value}
                       </p>
                     </div>
@@ -299,14 +294,14 @@ export function PracticanteDetailDialog({
                   Fechas de contrato
                 </h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg border bg-emerald-50/50">
-                  <div className="p-1.5 rounded-lg bg-white border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 rounded-lg border bg-emerald-50/50 min-w-0">
+                  <div className="p-1.5 rounded-lg bg-white border shrink-0">
                     <CalendarDays className="h-4 w-4 text-emerald-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500">Fecha de inicio</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 break-words">
                       {practicante.fechaInicioPracticas
                         ? new Date(
                             practicante.fechaInicioPracticas,
@@ -319,13 +314,13 @@ export function PracticanteDetailDialog({
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg border bg-amber-50/50">
-                  <div className="p-1.5 rounded-lg bg-white border">
+                <div className="flex items-center gap-3 p-3 rounded-lg border bg-amber-50/50 min-w-0">
+                  <div className="p-1.5 rounded-lg bg-white border shrink-0">
                     <CalendarDays className="h-4 w-4 text-amber-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500">Fecha de fin</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 break-words">
                       {practicante.fechaFinPracticas
                         ? new Date(
                             practicante.fechaFinPracticas,
@@ -392,7 +387,7 @@ export function PracticanteDetailDialog({
                   ))}
                 </div>
               ) : horario.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {horario.map((bloque, index) => {
                     const diaKey = bloque.diaSemana;
                     const colorClass =

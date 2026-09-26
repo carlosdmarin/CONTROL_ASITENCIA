@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LogOut, ChevronDown, Info } from "lucide-react";
 import Link from "next/link";
-import { CarnetPracti } from "@/app/dashboard/practicantes/components/CarnetPracti";
-import { CarnetSkeleton } from "@/app/dashboard/practicantes/components/CarnetSkeleton";
+import { CarnetPracti } from "@/app/practicante/components/CarnetPracti";
+import { CarnetSkeleton } from "@/app/practicante/components/CarnetSkeleton";
 import { Practicante } from "@/types/practicante";
 
 export default function PracticantePage() {
