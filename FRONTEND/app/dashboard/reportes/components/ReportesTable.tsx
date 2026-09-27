@@ -249,8 +249,7 @@ export function ReportesPracticantesTable({
                 </span>
               </div>
               <p className="text-[12px] text-slate-500 mt-0.5">
-                Selecciona un practicante para generar su reporte · {totalItems}{" "}
-                {totalItems === 1 ? "registro" : "registros"}
+                Selecciona un practicante para generar su reporte
               </p>
             </div>
           </div>

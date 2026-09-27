@@ -250,8 +250,8 @@ export default function VigilantesTable({
                       ACTIVO
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 px-2.5 py-1 text-[10.5px] font-bold tracking-wide">
-                      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 border border-red-200 text-red-500 px-2.5 py-1 text-[10.5px] font-bold tracking-wide">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
                       INACTIVO
                     </span>
                   )}

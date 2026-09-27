@@ -474,8 +474,8 @@ export function PracticanteTable({
                             ACTIVO
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-500 px-2.5 py-1 text-[10.5px] font-bold tracking-wide">
-                            <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 border border-red-200 text-red-500 px-2.5 py-1 text-[10.5px] font-bold tracking-wide">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
                             INACTIVO
                           </span>
                         )}
@@ -521,27 +521,25 @@ export function PracticanteTable({
                               <MoreHorizontal className="h-3.5 w-3.5" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuGroup>
-                                <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-slate-400">
-                                  Acciones
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => onShowDetail?.(practicante)}
-                                  className="gap-2 text-[13px]"
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-slate-400" />
-                                  Ver detalles
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="gap-2 text-[13px]">
-                                  <History className="h-3.5 w-3.5 text-slate-400" />
-                                  Historial
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="gap-2 text-[13px]">
-                                  <FileBarChart className="h-3.5 w-3.5 text-slate-400" />
-                                  Reportes
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
+                              <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-slate-400">
+                                Acciones
+                              </DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => onShowDetail?.(practicante)}
+                                className="gap-2 text-[13px]"
+                              >
+                                <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                Ver detalles
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2 text-[13px]">
+                                <History className="h-3.5 w-3.5 text-slate-400" />
+                                Historial
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2 text-[13px]">
+                                <FileBarChart className="h-3.5 w-3.5 text-slate-400" />
+                                Reportes
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
