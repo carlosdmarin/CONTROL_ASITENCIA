@@ -1,6 +1,8 @@
 package com.asistencia.attendance_system.controller;
 
+import com.asistencia.attendance_system.model.dto.VigilanteChangePasswordRequest;
 import com.asistencia.attendance_system.model.dto.VigilanteCreateRequest;
+import com.asistencia.attendance_system.model.dto.VigilanteEstadoRequest;
 import com.asistencia.attendance_system.model.dto.VigilanteResponse;
 import com.asistencia.attendance_system.service.VigilanteService;
 import jakarta.validation.Valid;
@@ -31,5 +33,23 @@ public class VigilanteController {
     public ResponseEntity<VigilanteResponse> crear(@Valid @RequestBody VigilanteCreateRequest request) {
         VigilanteResponse creado = vigilanteService.crear(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @PutMapping("/{id}/password")
+    @PreAuthorize("hasRole('RRHH')")
+    public ResponseEntity<Void> cambiarContrasena(
+            @PathVariable Integer id,
+            @Valid @RequestBody VigilanteChangePasswordRequest request) {
+        vigilanteService.cambiarContrasena(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasRole('RRHH')")
+    public ResponseEntity<VigilanteResponse> cambiarEstado(
+            @PathVariable Integer id,
+            @Valid @RequestBody VigilanteEstadoRequest request) {
+        VigilanteResponse actualizado = vigilanteService.cambiarEstado(id, request);
+        return ResponseEntity.ok(actualizado);
     }
 }

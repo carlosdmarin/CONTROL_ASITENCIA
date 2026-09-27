@@ -21,7 +21,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -251,5 +253,342 @@ public class VigilanteControllerTest {
         assertFalse(resp.contains("contrasena"));
         assertFalse(resp.contains("password"));
         assertFalse(resp.contains("supersecret1"));
+    }
+
+    // ===== PUT /api/vigilantes/{id}/password =====
+
+    @Test
+    @Transactional
+    public void rrhhPuedeCambiarContrasena204() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        // Crear vigilante temporal para no afectar al id 1
+        String usuarioUnico = "test_pwd_" + UUID.randomUUID().toString().substring(0,6);
+        Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
+        Map<String, Object> createBody = Map.of(
+                "nombre", "Pwd", "apellido", "Test", "usuario", usuarioUnico,
+                "contrasena", "OldPass123!", "sedeId", sedeId);
+        MvcResult created = mockMvc.perform(post("/api/vigilantes").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createBody)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Integer newId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asInt();
+        String nombreAntes = objectMapper.readTree(created.getResponse().getContentAsString()).get("nombre").asText();
+        // Cambiar contraseña
+        Map<String, Object> pwdBody = Map.of(
+                "nuevaContrasena", "NuevaClave123!",
+                "confirmarContrasena", "NuevaClave123!");
+        MvcResult result = mockMvc.perform(put("/api/vigilantes/" + newId + "/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pwdBody)))
+                .andExpect(status().isNoContent())
+                .andReturn();
+        assertTrue(result.getResponse().getContentAsString().isEmpty() || result.getResponse().getContentAsString().equals(""), "204 debe tener body vacío");
+        String body = result.getResponse().getContentAsString().toLowerCase();
+        assertFalse(body.contains("contrasena"));
+        assertFalse(body.contains("password"));
+        // Verificar BCrypt y que otros campos no cambiaron
+        var opt = vigilanteRepository.findById(newId);
+        assertTrue(opt.isPresent());
+        String hash = opt.get().getContrasena();
+        assertNotEquals("NuevaClave123!", hash);
+        assertTrue(hash.startsWith("$2a$") || hash.startsWith("$2b$"), "Debe ser BCrypt " + hash);
+        assertTrue(passwordEncoder.matches("NuevaClave123!", hash));
+        assertEquals("Pwd", opt.get().getNombre());
+        assertEquals(nombreAntes, opt.get().getNombre());
+    }
+
+    @Test
+    public void cambiarContrasenaVigilanteInexistente404() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        Map<String, Object> body = Map.of(
+                "nuevaContrasena", "Pass123!", "confirmarContrasena", "Pass123!");
+        mockMvc.perform(put("/api/vigilantes/999999/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @Transactional
+    public void cambiarContrasenaDiferentes400() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        String usuarioUnico = "test_diff_" + UUID.randomUUID().toString().substring(0,6);
+        Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
+        Map<String, Object> createBody = Map.of(
+                "nombre", "Diff", "apellido", "Test", "usuario", usuarioUnico,
+                "contrasena", "OldPass1!", "sedeId", sedeId);
+        MvcResult created = mockMvc.perform(post("/api/vigilantes").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createBody)))
+                .andExpect(status().isCreated()).andReturn();
+        Integer newId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asInt();
+        String hashAntes = vigilanteRepository.findById(newId).get().getContrasena();
+        Map<String, Object> pwdBody = Map.of(
+                "nuevaContrasena", "Pass123!", "confirmarContrasena", "Otra456!");
+        mockMvc.perform(put("/api/vigilantes/" + newId + "/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pwdBody)))
+                .andExpect(status().isBadRequest());
+        // Verificar que no cambió
+        String hashDespues = vigilanteRepository.findById(newId).get().getContrasena();
+        assertEquals(hashAntes, hashDespues, "No debe haber cambiado con contraseñas diferentes");
+    }
+
+    @Test
+    public void cambiarContrasenaCamposInvalidos400() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        Map<String, Object> bodyVacio = Map.of(
+                "nuevaContrasena", "", "confirmarContrasena", "");
+        mockMvc.perform(put("/api/vigilantes/1/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(bodyVacio)))
+                .andExpect(status().isBadRequest());
+        Map<String, Object> bodySoloEspacios = Map.of(
+                "nuevaContrasena", "   ", "confirmarContrasena", "   ");
+        mockMvc.perform(put("/api/vigilantes/1/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(bodySoloEspacios)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void vigilanteNoPuedeCambiarContrasena403() throws Exception {
+        String token = jwtService.generateToken("1", "VIGILANTE", "vigilante:1");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        Map<String, Object> body = Map.of(
+                "nuevaContrasena", "Pass123!", "confirmarContrasena", "Pass123!");
+        mockMvc.perform(put("/api/vigilantes/1/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void practicanteNoPuedeCambiarContrasena403() throws Exception {
+        String token = jwtService.generateToken("1", "PRACTICANTE", "practicante:1");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        Map<String, Object> body = Map.of(
+                "nuevaContrasena", "Pass123!", "confirmarContrasena", "Pass123!");
+        mockMvc.perform(put("/api/vigilantes/1/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void sinAuthNoPuedeCambiarContrasena401() throws Exception {
+        Map<String, Object> body = Map.of(
+                "nuevaContrasena", "Pass123!", "confirmarContrasena", "Pass123!");
+        int status = mockMvc.perform(put("/api/vigilantes/1/password").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn().getResponse().getStatus();
+        assertTrue(status == 401 || status == 403, "Sin auth 401/403 fue " + status);
+    }
+
+    @Test
+    @Transactional
+    public void putNoExponeContrasena204() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        String usuarioUnico = "test_nopass2_" + UUID.randomUUID().toString().substring(0,6);
+        Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
+        Map<String, Object> createBody = Map.of(
+                "nombre", "NoExp", "apellido", "Test", "usuario", usuarioUnico,
+                "contrasena", "InitPass1!", "sedeId", sedeId);
+        MvcResult created = mockMvc.perform(post("/api/vigilantes").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createBody)))
+                .andExpect(status().isCreated()).andReturn();
+        Integer newId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asInt();
+        Map<String, Object> pwdBody = Map.of(
+                "nuevaContrasena", "OtraClave123!", "confirmarContrasena", "OtraClave123!");
+        MvcResult result = mockMvc.perform(put("/api/vigilantes/" + newId + "/password").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(pwdBody)))
+                .andExpect(status().isNoContent())
+                .andReturn();
+        String resp = result.getResponse().getContentAsString().toLowerCase();
+        assertFalse(resp.contains("contrasena"));
+        assertFalse(resp.contains("password"));
+        assertFalse(resp.contains("otraclave123!"));
+        assertTrue(resp.isEmpty());
+    }
+
+    // ===== PATCH /api/vigilantes/{id}/estado =====
+
+    @Test
+    @Transactional
+    public void rrhhPuedeDesactivarVigilante200() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        String usuarioUnico = "test_desact_" + UUID.randomUUID().toString().substring(0,6);
+        Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
+        Map<String, Object> createBody = Map.of(
+                "nombre", "Desact", "apellido", "Test", "usuario", usuarioUnico,
+                "contrasena", "Pass123!", "sedeId", sedeId);
+        MvcResult created = mockMvc.perform(post("/api/vigilantes").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createBody)))
+                .andExpect(status().isCreated()).andReturn();
+        Integer newId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asInt();
+        String hashAntes = vigilanteRepository.findById(newId).get().getContrasena();
+        String nombreAntes = vigilanteRepository.findById(newId).get().getNombre();
+        Map<String, Object> body = Map.of("estado", false);
+        MvcResult result = mockMvc.perform(patch("/api/vigilantes/" + newId + "/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value(false))
+                .andExpect(jsonPath("$.id").value(newId))
+                .andReturn();
+        String resp = result.getResponse().getContentAsString().toLowerCase();
+        assertFalse(resp.contains("contrasena"));
+        assertFalse(resp.contains("password"));
+        var opt = vigilanteRepository.findById(newId);
+        assertTrue(opt.isPresent());
+        assertEquals(false, opt.get().getEstado());
+        assertEquals(nombreAntes, opt.get().getNombre());
+        assertEquals(hashAntes, opt.get().getContrasena(), "Contraseña no debe cambiar al cambiar estado");
+    }
+
+    @Test
+    @Transactional
+    public void rrhhPuedeActivarVigilante200() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        String usuarioUnico = "test_act_" + UUID.randomUUID().toString().substring(0,6);
+        Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
+        Map<String, Object> createBody = Map.of(
+                "nombre", "Activ", "apellido", "Test", "usuario", usuarioUnico,
+                "contrasena", "Pass123!", "sedeId", sedeId);
+        MvcResult created = mockMvc.perform(post("/api/vigilantes").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createBody)))
+                .andExpect(status().isCreated()).andReturn();
+        Integer newId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asInt();
+        // Desactivar primero
+        mockMvc.perform(patch("/api/vigilantes/" + newId + "/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("estado", false))))
+                .andExpect(status().isOk());
+        // Activar
+        MvcResult result = mockMvc.perform(patch("/api/vigilantes/" + newId + "/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("estado", true))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value(true))
+                .andReturn();
+        assertFalse(result.getResponse().getContentAsString().toLowerCase().contains("contrasena"));
+        assertEquals(true, vigilanteRepository.findById(newId).get().getEstado());
+    }
+
+    @Test
+    public void cambiarEstadoVigilanteInexistente404() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        Map<String, Object> body = Map.of("estado", false);
+        mockMvc.perform(patch("/api/vigilantes/999999/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void cambiarEstadoInvalido400() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        // Sin campo
+        mockMvc.perform(patch("/api/vigilantes/1/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+        // null
+        mockMvc.perform(patch("/api/vigilantes/1/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\": null}"))
+                .andExpect(status().isBadRequest());
+        // tipo incorrecto string
+        String badJson = "{\"estado\": \"ACTIVO\"}";
+        mockMvc.perform(patch("/api/vigilantes/1/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(badJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void vigilanteNoPuedeCambiarEstado403() throws Exception {
+        String token = jwtService.generateToken("1", "VIGILANTE", "vigilante:1");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        Map<String, Object> body = Map.of("estado", false);
+        mockMvc.perform(patch("/api/vigilantes/1/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void practicanteNoPuedeCambiarEstado403() throws Exception {
+        String token = jwtService.generateToken("1", "PRACTICANTE", "practicante:1");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        Map<String, Object> body = Map.of("estado", true);
+        mockMvc.perform(patch("/api/vigilantes/1/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void sinAuthNoPuedeCambiarEstado401() throws Exception {
+        Map<String, Object> body = Map.of("estado", false);
+        int status = mockMvc.perform(patch("/api/vigilantes/1/estado").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andReturn().getResponse().getStatus();
+        assertTrue(status == 401 || status == 403, "Sin auth 401/403 fue " + status);
+    }
+
+    @Test
+    @Transactional
+    public void vigilanteInactivoNoPuedeLogearse() throws Exception {
+        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        Cookie cookie = new Cookie("practiqr_token", token);
+        String usuarioUnico = "test_inact_" + UUID.randomUUID().toString().substring(0,6);
+        String pass = "PassInact123!";
+        Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
+        Map<String, Object> createBody = Map.of(
+                "nombre", "Inact", "apellido", "Test", "usuario", usuarioUnico,
+                "contrasena", pass, "sedeId", sedeId);
+        MvcResult created = mockMvc.perform(post("/api/vigilantes").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createBody)))
+                .andExpect(status().isCreated()).andReturn();
+        Integer newId = objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asInt();
+        // Desactivar
+        mockMvc.perform(patch("/api/vigilantes/" + newId + "/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("estado", false))))
+                .andExpect(status().isOk());
+        // Intentar login como vigilante inactivo -> 401
+        String loginJson = objectMapper.writeValueAsString(Map.of("usuario", usuarioUnico, "contrasena", pass));
+        mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson))
+                .andExpect(status().isUnauthorized());
+        // Reactivar y login debe funcionar
+        mockMvc.perform(patch("/api/vigilantes/" + newId + "/estado").cookie(cookie).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("estado", true))))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/auth/login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.rol").value("VIGILANTE"));
     }
 }

@@ -6,6 +6,7 @@ import VigilantesHeader from "./components/VigilantesHeader";
 import VigilantesTable, { VigilanteMock } from "./components/VigilantesTable";
 import VigilanteDialog from "./components/VigilanteDialog";
 import CambiarContrasenaDialog from "./components/CambiarContrasenaDialog";
+import VigilanteEstadoDialog from "./components/VigilanteEstadoDialog";
 import { Input } from "@/components/ui/input";
 import { Search, AlertCircle } from "lucide-react";
 import { vigilantesApi, VigilanteResponse } from "@/lib/api/vigilantes";
@@ -31,6 +32,9 @@ export default function VigilantesPage() {
   const [dialogNuevoAbierto, setDialogNuevoAbierto] = useState(false);
   const [dialogPasswordAbierto, setDialogPasswordAbierto] = useState(false);
   const [vigilanteSeleccionado, setVigilanteSeleccionado] = useState<VigilanteMock | null>(null);
+  const [dialogEstadoAbierto, setDialogEstadoAbierto] = useState(false);
+  const [vigilanteEstado, setVigilanteEstado] = useState<VigilanteMock | null>(null);
+  const [isChangingEstado, setIsChangingEstado] = useState(false);
 
   const cargarVigilantes = async () => {
     try {
@@ -68,6 +72,35 @@ export default function VigilantesPage() {
     setDialogPasswordAbierto(true);
   };
 
+  const handleToggleEstado = (v: VigilanteMock) => {
+    setVigilanteEstado(v);
+    setDialogEstadoAbierto(true);
+  };
+
+  const handleConfirmEstado = async () => {
+    if (!vigilanteEstado) return;
+    const nuevoEstado = vigilanteEstado.estado === "ACTIVO" ? false : true;
+    try {
+      setIsChangingEstado(true);
+      await vigilantesApi.cambiarEstado(vigilanteEstado.id, nuevoEstado);
+      toast.success(nuevoEstado ? "Vigilante activado correctamente." : "Vigilante desactivado correctamente.");
+      setDialogEstadoAbierto(false);
+      setVigilanteEstado(null);
+      await cargarVigilantes();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "No se pudo actualizar el estado del vigilante. Intenta nuevamente.";
+      if (msg.toLowerCase().includes("no encontrado") || msg.includes("404")) {
+        toast.error("El vigilante ya no existe o no está disponible.");
+      } else if (msg.toLowerCase().includes("permisos") || msg.includes("403") || msg.toLowerCase().includes("forbidden")) {
+        toast.error("No tienes permisos para realizar esta acción.");
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setIsChangingEstado(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <VigilantesHeader onOpenCreate={() => setDialogNuevoAbierto(true)} />
@@ -97,6 +130,7 @@ export default function VigilantesPage() {
         loading={loading}
         busqueda={busqueda}
         onChangePassword={handleChangePassword}
+        onToggleEstado={handleToggleEstado}
         onCreate={() => setDialogNuevoAbierto(true)}
       />
 
@@ -110,6 +144,21 @@ export default function VigilantesPage() {
         open={dialogPasswordAbierto}
         onOpenChange={setDialogPasswordAbierto}
         vigilante={vigilanteSeleccionado}
+      />
+
+      <VigilanteEstadoDialog
+        open={dialogEstadoAbierto}
+        onOpenChange={(open) => {
+          if (!open && !isChangingEstado) {
+            setDialogEstadoAbierto(false);
+            setVigilanteEstado(null);
+          } else if (open) {
+            setDialogEstadoAbierto(true);
+          }
+        }}
+        vigilante={vigilanteEstado}
+        onConfirm={handleConfirmEstado}
+        isLoading={isChangingEstado}
       />
     </div>
   );

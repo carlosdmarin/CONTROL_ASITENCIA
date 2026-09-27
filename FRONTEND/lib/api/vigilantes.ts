@@ -28,4 +28,21 @@ export const vigilantesApi = {
       throw new Error(handleApiError(error));
     }
   },
+
+  cambiarContrasena: async (id: number, data: { nuevaContrasena: string; confirmarContrasena: string }): Promise<void> => {
+    try {
+      await api.put(`/vigilantes/${id}/password`, data);
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  cambiarEstado: async (id: number, estado: boolean): Promise<VigilanteResponse> => {
+    try {
+      const response = await api.patch(`/vigilantes/${id}/estado`, { estado });
+      return response.data;
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
 };

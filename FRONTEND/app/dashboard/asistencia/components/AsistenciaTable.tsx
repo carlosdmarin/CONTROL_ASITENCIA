@@ -84,7 +84,6 @@ import {
   Save, // 💾 Guardar
   FileSearchCorner, // 🔍 Buscar en documento
   X, // ❌ Cerrar/eliminar
-  SquareArrowRightEnter, // ➡️ Entrar/marcar entrada
   AlertTriangle, // ⚠️ Advertencia
   CheckCircle, // ✅ Éxito/confirmado
   FileText, // 📄 Documento/texto
@@ -94,8 +93,6 @@ import {
   CalendarDays, // 📆 Días del calendario
   BadgeCheck, // ✅ Verificado
   AlertCircle, // ⚠️ Alerta/círculo
-  Edit, // ✏️ Editar
-  ArrowLeftFromLine, // ⬅️ Volver
   EyeOff, // 👁️‍🗨️ Ocultar
   CheckCircle2, // ✅ Presente
   ClockAlert, // ⏰ Tardanza
@@ -110,6 +107,8 @@ import {
   MoreHorizontal as Ellipsis, // … Más opciones
   Search, // 🔍 Buscar
   MapPin, // 📍 Sede
+  Radio,
+  BriefcaseBusiness,
 } from "lucide-react";
 
 // ============================================
@@ -127,6 +126,8 @@ import {
 // 📡 API - COMUNICACIÓN CON BACKEND
 // ============================================
 import { asistenciasApi } from "@/lib/api/asistencias";
+import AsistenciaDetalleDialog from "./AsistenciaDetalleDialog";
+import AsistenciaCorregirDialog from "./AsistenciaCorregirDialog";
 
 // ============================================
 // 🔔 NOTIFICACIONES - SONNER
@@ -173,11 +174,7 @@ export default function AsistenciaTable({
   // ============================================
   const [selectedJustificar, setSelectedJustificar] = useState<AsistenciaDiariaResponse | null>(null);
   const [selectedEditar, setSelectedEditar] = useState<AsistenciaDiariaResponse | null>(null);
-
-  // → Guarda el registro que el usuario eligió para justificar o editar (estados separados)
-  const [verData, setVerData] = useState<AsistenciaDiariaResponse | null>(null);
-  // → Guarda el registro que el usuario eligió para ver detalles
-  // → null = no hay nada seleccionado
+  const [selectedVer, setSelectedVer] = useState<AsistenciaDiariaResponse | null>(null);
 
   // ============================================
   // ✏️ FORMULARIOS (lo que el usuario escribe)
@@ -185,11 +182,8 @@ export default function AsistenciaTable({
   const [motivo, setMotivo] = useState("");
   const [observacion, setObservacion] = useState("");
   const [tipoJust, setTipoJust] = useState("TARDANZA_JUSTIFICADA");
-  const [horaEntrada, setHoraEntrada] = useState("");
-  const [horaSalida, setHoraSalida] = useState("");
   const [horaSalidaAnticipada, setHoraSalidaAnticipada] = useState("");
   const [savingJustificar, setSavingJustificar] = useState(false);
-  const [savingEditar, setSavingEditar] = useState(false);
 
   // Paginación - mismo patrón que PracticanteTable (10 por página)
   const [currentPage, setCurrentPage] = useState(1);
@@ -389,20 +383,44 @@ export default function AsistenciaTable({
     return pages;
   }
 
-  const AVATAR_COLORS = [
-    "bg-blue-100 text-blue-700 border-blue-200",
-    "bg-emerald-100 text-emerald-700 border-emerald-200",
-    "bg-amber-100 text-amber-700 border-amber-200",
-    "bg-rose-100 text-rose-700 border-rose-200",
-    "bg-violet-100 text-violet-700 border-violet-200",
-    "bg-slate-100 text-slate-700 border-slate-200",
-  ];
-  function getAvatarColor(id: number | null | undefined, nombre: string) {
-    const str = `${id ?? 0}-${nombre}`;
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
-    return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+/** Normaliza el nombre a Title Case */
+function toTitleCase(texto: string) {
+  if (!texto) return "";
+  return texto
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1))
+    .join(" ");
+}
+
+/** Iniciales para el avatar */
+function getInitials(nombre: string) {
+  if (!nombre) return "?";
+  const partes = nombre.split(" ");
+  if (partes.length >= 2) {
+    return (partes[0]?.charAt(0) || "") + (partes[1]?.charAt(0) || "");
   }
+  return nombre.charAt(0) || "?";
+}
+
+/** Gradientes — mismo que las otras 3 tablas */
+const AVATAR_GRADIENTS = [
+  "from-blue-500 via-blue-600 to-indigo-700",
+  "from-emerald-500 via-teal-500 to-cyan-600",
+  "from-orange-400 via-amber-500 to-red-500",
+  "from-pink-500 via-rose-500 to-red-600",
+  "from-violet-500 via-purple-500 to-fuchsia-600",
+  "from-cyan-400 via-sky-500 to-blue-600",
+];
+
+function getAvatarGradient(id: number | null | undefined, nombre: string) {
+  const str = `${id ?? 0}-${nombre}`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++)
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
+}
 
   const TableSkeleton = () => (
     <>
@@ -548,15 +566,13 @@ export default function AsistenciaTable({
       return;
     }
     setSelectedEditar(r);
-    setHoraEntrada(r.entradaReal ? r.entradaReal.substring(0, 5) : "");
-    setHoraSalida(r.salidaReal ? r.salidaReal.substring(0, 5) : "");
     setEditarOpen(true);
   };
 
   const openVer = (raw: AsistenciaDiariaResponse) => {
     const r = raw;
     if (!r) return;
-    setVerData(r);
+    setSelectedVer(r);
     setVerOpen(true);
   };
 
@@ -602,68 +618,97 @@ export default function AsistenciaTable({
     }
   };
 
-  const handleEditar = async () => {
-    if (!selectedEditar) return;
-    setSavingEditar(true);
-    try {
-      const fecha = selectedEditar.fecha;
-      await asistenciasApi.corregirManual(
-        selectedEditar.idPracticante,
-        fecha,
-        horaEntrada || null,
-        horaSalida || null,
-      );
-      toast.success("Corrección guardada, estado recalculado");
-      setEditarOpen(false);
-      setSelectedEditar(null);
-      onRefresh?.();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Error al corregir";
-      toast.error(msg);
-    } finally {
-      setSavingEditar(false);
-    }
-  };
-
   return (
-    <>
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Registro de Asistencia
-            </CardTitle>
+      <>
+      <Card className="overflow-hidden border-slate-200 shadow-sm bg-white">
+        {/* ═══════════ HEADER TIPO CONSOLA ═══════════ */}
+        <div className="relative border-b border-slate-200">
+          <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-orange-500 to-blue-700" />
+
+          <div className="flex items-center justify-between gap-4 px-6 py-4">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="relative shrink-0">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-md shadow-blue-900/20">
+                  <Calendar className="h-5 w-5 text-white" strokeWidth={2.2} />
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 ring-2 ring-white" />
+                </span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[15px] font-bold text-slate-900 tracking-tight leading-tight uppercase">
+                    Registro de asistencia
+                  </h3>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                    <Radio className="h-2.5 w-2.5" />
+                    En vivo
+                  </span>
+                </div>
+                <p className="text-[12px] text-slate-500 mt-0.5">
+                  Marcaciones del día · {totalItems}{" "}
+                  {totalItems === 1 ? "registro" : "registros"}
+                </p>
+              </div>
+            </div>
+
             {loading ? (
-              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-7 w-28 rounded-full" />
             ) : (
-              <Badge variant="outline" className="gap-1">
-                <Users className="h-3 w-3" />
-                {totalItems} practicantes
+              <Badge
+                variant="outline"
+                className="gap-1.5 bg-white border-slate-200 text-slate-700 rounded-full px-2.5 py-1 text-[11px] font-medium shrink-0"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                {totalItems} {totalItems === 1 ? "practicante" : "practicantes"}
               </Badge>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="p-0 overflow-hidden">
+        </div>
+
+        {/* ═══════════ TABLE ═══════════ */}
+        <CardContent className="p-0 bg-white">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50 hover:bg-slate-50/80 border-b border-slate-200">
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider w-10 text-center">#</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider min-w-45">Practicante</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Sede</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider">Área</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center whitespace-nowrap">Jornada</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center" title="Hora programada de entrada">
-                    Hora prog.
+                <TableRow className="bg-slate-50/60 hover:bg-slate-50/60 border-b border-slate-200">
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 w-12 text-center">
+                    #
                   </TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Entrada</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Tardanza</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Salida</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center" title="Tiempo trabajado">Tiempo trab.</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Estado</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Situación</TableHead>
-                  <TableHead className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider text-center">Acciones</TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 min-w-[240px]">
+                    Practicante
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+                    Sede
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+                    Área
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center whitespace-nowrap">
+                    Jornada
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center whitespace-nowrap">
+                    Entrada
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center">
+                    Tardanza
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center">
+                    Salida
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center whitespace-nowrap">
+                    Tiempo trab.
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center">
+                    Estado
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center">
+                    Situación
+                  </TableHead>
+                  <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-right pr-5">
+                    Acciones
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -671,14 +716,16 @@ export default function AsistenciaTable({
                   <TableSkeleton />
                 ) : currentAsistencias.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={13} className="h-48 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <Search className="h-10 w-10 text-gray-500 mb-3" />
-                        <p className="text-sm font-medium text-gray-400">
-                          No hay registros para mostrar
+                    <TableCell colSpan={12} className="h-72 text-center">
+                      <div className="flex flex-col items-center justify-center px-4 py-8">
+                        <div className="h-14 w-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mb-4">
+                          <Search className="h-6 w-6 text-slate-400" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-800">
+                          Sin registros para mostrar
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Intenta ajustar los filtros de búsqueda
+                        <p className="text-xs text-slate-500 mt-1 max-w-xs">
+                          Intenta ajustar los filtros de búsqueda o la fecha seleccionada.
                         </p>
                       </div>
                     </TableCell>
@@ -697,72 +744,123 @@ export default function AsistenciaTable({
                     const puedeVer = hasJustificacion(raw) && !descanso;
                     const editarDisabled = justificado || descanso;
                     const globalIndex = startIndex + index;
-                    const rowKey = raw?.idAsistencia ? String(raw.idAsistencia) : `${raw?.idPracticante ?? globalIndex}-${raw?.fecha ?? globalIndex}`;
-                    const avatarColor = getAvatarColor(raw?.idPracticante, asistencia.practicante);
+                    const rowKey = raw?.idAsistencia
+                      ? String(raw.idAsistencia)
+                      : `${raw?.idPracticante ?? globalIndex}-${raw?.fecha ?? globalIndex}`;
+                    const gradient = getAvatarGradient(
+                      raw?.idPracticante,
+                      asistencia.practicante,
+                    );
                     const documento = asistencia.documento;
+                    const nombreDisplay = toTitleCase(asistencia.practicante);
+
                     return (
                       <TableRow
                         key={rowKey}
-                        className="hover:bg-slate-50  h-16"
+                        className="h-[68px] border-b border-slate-100 hover:bg-slate-50/80 transition-colors duration-150"
                       >
-                        <TableCell className="font-medium text-xs pl-7">
-                          {globalIndex + 1}
+                        {/* Nº */}
+                        <TableCell className="text-center">
+                          <span className="text-[11px] font-medium text-slate-400 tabular-nums">
+                            {String(globalIndex + 1).padStart(2, "0")}
+                          </span>
                         </TableCell>
+
+                        {/* Practicante */}
                         <TableCell>
-                          <div className="flex items-center gap-2.5 pl-4">
-                            <div className={`h-8 w-8  rounded-full border flex items-center justify-center text-[11px] font-medium shrink-0 ${avatarColor}`}>
-                              {(asistencia.practicante || "?").split(" ").map((p: string) => p[0]).slice(0,2).join("").toUpperCase()}
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`h-11 w-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-[13px] font-bold shadow-sm shrink-0`}
+                            >
+                              {getInitials(nombreDisplay)}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">{asistencia.practicante}</p>
-                              <p className="text-xs text-slate-500 font-mono">DNI: {documento && documento.trim() ? documento : "—"}</p>
+                              <p className="text-[14px] font-semibold text-slate-900 truncate leading-tight tracking-tight">
+                                {nombreDisplay}
+                              </p>
+                              <p className="text-[11px] text-slate-500 mt-0.5 font-mono truncate">
+                                DNI: {documento && documento.trim() ? documento : "—"}
+                              </p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs">
-                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-600">
-                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                            {asistencia.sede || "—"}
+
+                        {/* Sede — mini-card azul */}
+                        <TableCell>
+                          <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
+                            <div className="h-6 w-6 rounded-md bg-blue-100 border border-blue-200 flex items-center justify-center shrink-0">
+                              <MapPin className="h-3 w-3 text-blue-700" strokeWidth={2.4} />
+                            </div>
+                            <span className="text-[12px] font-medium text-slate-700 truncate max-w-[130px]">
+                              {asistencia.sede || "—"}
+                            </span>
+                          </div>
+                        </TableCell>
+
+                        {/* Área — chip sutil */}
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-slate-700 bg-slate-100 border border-slate-200/70 rounded-md px-2 py-1">
+                            <BriefcaseBusiness className="h-3 w-3 text-slate-500 shrink-0" />
+                            <span className="truncate max-w-[140px]">
+                              {asistencia.area || "—"}
+                            </span>
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs">
-                          <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-xs text-slate-600">
-                            {asistencia.area || "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center font-mono text-xs whitespace-nowrap" title={raw?.salidaEsperada ? `Jornada hasta ${raw.salidaEsperada.substring(0,5)}` : undefined}>
-                          <span className="inline-flex items-center gap-1">
+
+                        {/* Jornada */}
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-slate-700 tabular-nums whitespace-nowrap">
                             <Clock className="h-3 w-3 text-slate-400 shrink-0" />
-                            {asistencia.jornada || (raw?.entradaEsperada && raw?.salidaEsperada ? `${raw.entradaEsperada.substring(0,5)} – ${raw.salidaEsperada.substring(0,5)}` : "—")}
+                            {asistencia.jornada ||
+                              (raw?.entradaEsperada && raw?.salidaEsperada
+                                ? `${raw.entradaEsperada.substring(0, 5)} – ${raw.salidaEsperada.substring(0, 5)}`
+                                : "—")}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center font-mono text-sm">
-                          {raw?.entradaEsperada?.substring(0,5) || "—"}
+
+                        {/* Entrada */}
+                        <TableCell className="text-center">
+                          <span className="font-mono text-[12.5px] font-semibold text-slate-800 tabular-nums">
+                            {asistencia.entrada || "—"}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-center font-mono text-sm">
-                          {asistencia.entrada || "—"}
-                        </TableCell>
+
+                        {/* Tardanza */}
                         <TableCell className="text-center">
                           {raw?.minutosTardanza && raw.minutosTardanza > 0 ? (
-                            <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 text-xs font-medium">+{raw.minutosTardanza} min</span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 px-2.5 py-1 text-[10.5px] font-bold tracking-wide">
+                              +{raw.minutosTardanza} MIN
+                            </span>
                           ) : (
-                            <span className="text-slate-400 text-sm">—</span>
+                            <span className="text-slate-300 text-[12px]">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center font-mono text-sm">
-                          {asistencia.salida || "—"}
+
+                        {/* Salida */}
+                        <TableCell className="text-center">
+                          <span className="font-mono text-[12.5px] font-semibold text-slate-800 tabular-nums">
+                            {asistencia.salida || "—"}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-center font-mono text-sm">
-                          {asistencia.horas || "—"}
+
+                        {/* Tiempo trabajado */}
+                        <TableCell className="text-center">
+                          <span className="font-mono text-[12.5px] text-slate-700 tabular-nums">
+                            {asistencia.horas || "—"}
+                          </span>
                         </TableCell>
+
+                        {/* Estado */}
                         <TableCell className="text-center">
                           <Badge
-                            className={`${estado.className} inline-flex items-center gap-1`}
+                            className={`${estado.className} inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-bold tracking-wide rounded-full`}
                           >
-                            <estado.icon className="h-3 w-3" />
-                            {estado.label}
+                            <estado.icon className="h-3 w-3" strokeWidth={2.4} />
+                            {estado.label.toUpperCase()}
                           </Badge>
                         </TableCell>
+
+                        {/* Situación */}
                         <TableCell className="text-center">
                           <div className="flex flex-col gap-1 items-center">
                             {(() => {
@@ -788,64 +886,78 @@ export default function AsistenciaTable({
                                 return (
                                   <Badge
                                     key={i}
-                                    className={`${sit.className} inline-flex items-center gap-1`}
+                                    className={`${sit.className} inline-flex items-center gap-1 px-2.5 py-1 text-[10.5px] font-bold tracking-wide rounded-full`}
                                   >
-                                    <sit.icon className="h-3 w-3" />
-                                    {sit.label}
+                                    <sit.icon className="h-3 w-3" strokeWidth={2.4} />
+                                    {sit.label.toUpperCase()}
                                   </Badge>
                                 );
                               });
                             })()}
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+
+                        {/* Acciones */}
+                        <TableCell className="text-right pr-5">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
                               disabled={!puedeVer}
-                              title={!puedeVer ? "Sin justificación" : "Ver"}
-                              aria-label="Ver"
+                              title={!puedeVer ? "Sin justificación" : "Ver detalle"}
+                              aria-label="Ver detalle"
                               onClick={() => openVer(raw)}
+                              className="h-9 w-9 rounded-lg flex items-center justify-center bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-50 disabled:hover:text-slate-500 transition-all"
                             >
                               <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-blue-500 hover:text-blue-900 hover:bg-blue-100"
+                            </button>
+
+                            <button
                               disabled={editarDisabled}
-                              title={descanso ? "No editable: descanso" : justificado ? "No editable: justificado" : "Corregir"}
+                              title={
+                                descanso
+                                  ? "No editable: descanso"
+                                  : justificado
+                                    ? "No editable: justificado"
+                                    : "Corregir"
+                              }
                               aria-label="Corregir"
                               onClick={() => openEditar(raw)}
+                              className="h-9 w-9 rounded-lg flex items-center justify-center bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 hover:border-blue-200 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-50 disabled:hover:border-blue-100 disabled:hover:text-blue-600 transition-all"
                             >
                               <Pencil className="h-4 w-4" />
-                            </Button>
+                            </button>
+
                             <DropdownMenu>
                               <DropdownMenuTrigger>
-                                <div className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-slate-100 cursor-pointer text-slate-500" aria-label="Más acciones" role="button" tabIndex={0}>
+                                <div
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 cursor-pointer text-slate-500 hover:text-slate-700 transition-all"
+                                  aria-label="Más acciones"
+                                  role="button"
+                                  tabIndex={0}
+                                >
                                   <MoreHorizontal className="h-4 w-4" />
                                 </div>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuContent align="end" className="w-48">
                                 <DropdownMenuItem
                                   onClick={() => openVer(raw)}
                                   disabled={!puedeVer}
+                                  className="gap-2 text-[13px]"
                                 >
-                                  <Eye className="h-4 w-4 mr-2" /> Ver detalle
+                                  <Eye className="h-3.5 w-3.5 text-slate-400" /> Ver detalle
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => openEditar(raw)}
                                   disabled={editarDisabled}
+                                  className="gap-2 text-[13px]"
                                 >
-                                  <Pencil className="h-4 w-4 mr-2" /> Corregir
+                                  <Pencil className="h-3.5 w-3.5 text-slate-400" /> Corregir
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => openJustificar(raw)}
                                   disabled={!puedeJustificar}
+                                  className="gap-2 text-[13px]"
                                 >
-                                  <FileCheck className="h-4 w-4 mr-2" /> Justificar
+                                  <FileCheck className="h-3.5 w-3.5 text-slate-400" /> Justificar
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -858,9 +970,30 @@ export default function AsistenciaTable({
               </TableBody>
             </Table>
           </div>
+
           {!loading && renderPagination()}
+
+          {/* ═══════════ FOOTER ═══════════ */}
+          {!loading && totalItems > 0 && (
+            <div className="flex items-center justify-between bg-slate-50/60 border-t border-slate-100 px-6 py-2.5">
+              <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                <Users className="h-3.5 w-3.5" />
+                <span>
+                  <span className="font-semibold text-slate-700">
+                    {totalItems}
+                  </span>{" "}
+                  {totalItems === 1 ? "registro" : "registros"} en total
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Actualizado ahora
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
       {/* ============================================================ */}
       {/* DIALOG 1: JUSTIFICAR ASISTENCIA (REDISEÑO PROFESIONAL)      */}
       {/* ============================================================ */}
@@ -1167,589 +1300,8 @@ export default function AsistenciaTable({
           )}
         </DialogContent>
       </Dialog>
-      {/* ============================================================ */}
-      {/* DIALOG 2: CORREGIR MARCACIÓN MANUAL   */}
-      {/* ============================================================ */}
-      <Dialog open={editarOpen} onOpenChange={(open) => { setEditarOpen(open); if (!open) setSelectedEditar(null); }}>
-        <DialogContent className="max-w-4xl sm:max-w-4xl p-0 overflow-hidden">
-          {/* HEADER: con badge RH y fondo ámbar sutil */}
-          <DialogHeader className="border-b border-slate-200 bg-gradient-to-r from-amber-50/50 to-white px-8 pt-6 pb-4">
-            <div className="flex items-start gap-4">
-              <div className="p-2.5 rounded-xl w-20 h-20 bg-orange-400 text-white shadow-sm flex items-center justify-center">
-                <Edit className="h-13 w-13" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-amber-700 uppercase tracking-wider">
-                    Gestión de asistencia
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] font-mono uppercase px-2 py-0"
-                  >
-                    RH
-                  </Badge>
-                </div>
-                <DialogTitle className="text-2xl font-bold tracking-tight text-slate-800 mt-0.5">
-                  Corregir marcación manual
-                </DialogTitle>
-                <DialogDescription className="text-sm text-slate-500 mt-0.5">
-                  Ajuste manual de la marcación de asistencia del practicante.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {selectedEditar && (
-            <div className="px-8 py-6 space-y-6 max-h-[80vh] overflow-y-auto">
-              {/* ============================================================
-            SECCIÓN: IDENTIFICACIÓN DEL PRACTICANTE (estilo imagen)
-            ============================================================ */}
-              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  {/* Lado izquierdo: avatar + nombre + subtítulo */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-20 h-20 rounded-full bg-blue-100 text-blue-900 flex items-center justify-center">
-                      <User className="h-12 w-12" />
-                    </div>
-                    <div>
-                      <span className="text-xl font-bold text-slate-800">
-                        {selectedEditar.nombreCompleto}
-                      </span>
-                      <div className="text-sm text-slate-500">
-                        Practicante · Información del registro
-                      </div>
-                    </div>
-                  </div>
-                  <Separator orientation="vertical" />
-                  {/* Lado derecho: datos en grid de 4 columnas */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-2 text-[10px] font-semibold text-slate-500 uppercase ">
-                        <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
-                        Fecha
-                      </div>
-                      <span className="text-base text-[12px] font-medium text-slate-800">
-                        {selectedEditar.fecha}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="flex items-center mb-2 gap-1.5 text-[10px] font-semibold text-slate-500 uppercase ">
-                        <BadgeCheck className="h-3.5 w-3.5 text-[10px] text-indigo-600" />
-                        Estado
-                      </div>
-                      <Badge
-                        className={getEstadoBadge(selectedEditar.estadoDia).className}
-                      >
-                        {getEstadoBadge(selectedEditar.estadoDia).label}
-                      </Badge>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5 text-[10px] mb-2 font-semibold text-slate-500 uppercase ">
-                        <Clock className="h-3.5 w-3.5 text-blue-600" />
-                        Entrada
-                      </div>
-                      <span className="text-[12px] font-mono font-medium bg-slate-50 px-2.5 py-0.5 rounded border border-slate-200 inline-block">
-                        {selectedEditar.entradaEsperada?.substring(0, 5) || "—"}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5 text-[10px] mb-2 font-semibold text-slate-500 uppercase tracking-wider">
-                        <Clock className="h-3.5 w-3.5 text-red-600" />
-                        Salida
-                      </div>
-                      <span className="text-[12px] font-mono  font-medium bg-slate-50 px-2.5 py-0.5 rounded border border-slate-200 inline-block">
-                        {selectedEditar.salidaEsperada?.substring(0, 5) || "—"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ============================================================
-            SECCIÓN: REGISTRO DE MARCACIÓN (con valores actuales)
-            ============================================================ */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                  Registro de marcación
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Entrada */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center  mb-2">
-                      <SquareArrowRightEnter className="h-4 w-4 text-blue-500"></SquareArrowRightEnter>
-                      <Label
-                        htmlFor="hora-entrada"
-                        className="text-xs font-semibold pl-2 text-blue-500 uppercase tracking-wider"
-                      >
-                        Entrada
-                      </Label>
-                    </div>
-                    <Input
-                      id="hora-entrada"
-                      type="time"
-                      value={horaEntrada}
-                      onChange={(e) => setHoraEntrada(e.target.value)}
-                      className="w-full h-11 font-mono border-slate-300 focus:border-amber-500 focus:ring-amber-200"
-                      placeholder="--:--"
-                    />
-                  </div>
-
-                  {/* Salida */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center  mb-2">
-                      <ArrowLeftFromLine className="h-4 w-4 text-red-500"></ArrowLeftFromLine>
-                      <Label
-                        htmlFor="hora-salida"
-                        className="text-xs font-semibold pl-2 text-red-500 uppercase tracking-wider"
-                      >
-                        Salida
-                      </Label>
-                    </div>
-                    <Input
-                      id="hora-salida"
-                      type="time"
-                      value={horaSalida}
-                      onChange={(e) => setHoraSalida(e.target.value)}
-                      className="w-full h-11 font-mono border-slate-300 focus:border-amber-500 focus:ring-amber-200"
-                      placeholder="--:--"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* ============================================================
-            SECCIÓN: OBSERVACIONES (opcional)
-            ============================================================ */}
-
-              {/* ============================================================
-            NOTA INFORMATIVA (estilo imagen)
-            ============================================================ */}
-              <div className="flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-xl p-4">
-                <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  Esta acción será registrada en el historial del sistema.
-                </p>
-              </div>
-
-              {/* ============================================================
-            FOOTER: con botón principal específico
-            ============================================================ */}
-              <div className="flex items-center justify-end gap-4 pt-4 border-t border-slate-200">
-                <Button
-                  variant="outline"
-                  onClick={() => setEditarOpen(false)}
-                  className="gap-2 h-11 px-6"
-                >
-                  <X className="h-4 w-4" />
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleEditar}
-                  disabled={savingEditar}
-                  className="gap-2 h-11 px-6 bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
-                >
-                  {savingEditar ? (
-                    <>
-                      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Guardar corrección
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-      {/* ============================================================ */}
-      {/* DIALOG 3: VER JUSTIFICACIÓN     */}
-      {/* ============================================================ */}
-      <Dialog open={verOpen} onOpenChange={setVerOpen}>
-        <DialogContent className="max-w-4xl sm:max-w-6xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
-          {/* HEADER */}
-          <DialogHeader className="relative border-b border-slate-200 px-6 sm:px-8 pt-6 pb-5 shrink-0">
-            <div className="flex items-start gap-3.5">
-              <div className="w-20 h-20 rounded-lg bg-blue-900 flex items-center justify-center text-white shrink-0">
-                <FileSearchCorner className="h-15 w-15" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-xs font-medium text-blue-900">
-                  Gestión de asistencia
-                </span>
-                <DialogTitle className="text-xl font-semibold text-slate-900 leading-tight mt-0.5">
-                  Detalle de justificación
-                </DialogTitle>
-                <DialogDescription className="text-sm text-slate-500 mt-0.5">
-                  Detalle completo de las justificaciones y marcaciones del día.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {verData ? (
-            hasJustificacion(verData) ? (
-              <>
-                {/* CONTENIDO SCROLLEABLE */}
-                <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,0.85fr)_minmax(0,1.5fr)] gap-6 items-start">
-                    {/* ============================================================
-                  COLUMNA IZQUIERDA: panel único (practicante + marcación)
-                  ============================================================ */}
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 overflow-hidden">
-                      {/* Practicante */}
-                      <div className="p-5">
-                        <span className="text-xs font-medium text-slate-500">
-                          Información del practicante
-                        </span>
-
-                        <div className="flex items-center gap-3 mt-3 mb-4">
-                          <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                            <User className="h-6 w-6" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-base font-semibold text-slate-900 break-words leading-snug">
-                              {verData.nombreCompleto}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              Practicante
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2.5 text-sm">
-                          <div className="flex items-center gap-2">
-                            <CalendarDays className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span className="text-slate-500">Fecha</span>
-                            <span className="text-slate-800 font-medium ml-auto">
-                              {verData.fecha}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <BadgeCheck className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                            <span className="text-slate-500">
-                              Estado del día
-                            </span>
-                            <Badge
-                              className={`ml-auto ${getEstadoBadge(verData.estadoDia).className}`}
-                            >
-                              {getEstadoBadge(verData.estadoDia).label}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Registro de marcación */}
-                      {(verData.entradaReal || verData.salidaReal) && (
-                        <div className="border-t border-slate-200 bg-white p-5">
-                          <span className="text-xs font-medium text-slate-500">
-                            Registro de marcación
-                          </span>
-
-                          <div className="grid grid-cols-2 gap-4 mt-3 mb-4">
-                            <div>
-                              <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                                <Clock className="h-3.5 w-3.5 text-green-600" />
-                                Entrada real
-                              </div>
-                              <div className="text-lg font-mono font-semibold text-slate-900">
-                                {verData.entradaReal?.substring(0, 5) || "—"}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                                <Clock className="h-3.5 w-3.5 text-red-500" />
-                                Salida real
-                              </div>
-                              <div className="text-lg font-mono font-semibold text-slate-900">
-                                {verData.salidaReal?.substring(0, 5) || "—"}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start gap-2 pt-3 border-t border-slate-100">
-                            <Info className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
-                            <p className="text-xs text-slate-500 leading-relaxed">
-                              El horario mostrado corresponde a la marcación del
-                              lector QR
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ============================================================
-                  COLUMNA DERECHA: JUSTIFICACIONES REGISTRADAS
-                  ============================================================ */}
-                    <div>
-                      {(() => {
-                        const detalles = verData.situacionesDetalle as
-                          | SituacionDetalle[]
-                          | undefined;
-                        const list: SituacionDetalle[] =
-                          detalles && detalles.length > 0
-                            ? detalles
-                            : [
-                                {
-                                  tipo:
-                                    verData.justificacionTipo ||
-                                    verData.situacion ||
-                                    "OTRO",
-                                  motivo: verData.justificacionMotivo,
-                                  observacion: verData.justificacionObservacion,
-                                  horaEntradaRegistrada: verData.entradaReal,
-                                  horaSalidaAnticipada: verData.horaSalidaAnticipadaAutorizada,
-                                  fechaRegistro: verData.justificacionFecha,
-                                } as SituacionDetalle,
-                              ];
-
-                        // Definimos el tipo para el mapa de colores
-                        type TipoColorMap = {
-                          [key: string]: {
-                            bg: string;
-                            text: string;
-                            border: string;
-                            iconLarge: React.ReactNode;
-                            iconBg: string;
-                            iconText: string;
-                          };
-                        };
-
-                        const tipoColorMap: TipoColorMap = {
-                          SALIDA_ANTICIPADA_JUSTIFICADA: {
-                            bg: "bg-green-100",
-                            text: "text-green-700",
-                            border: "border-green-200",
-                            iconLarge: (
-                              <ArrowLeftFromLine className="h-8 w-8" />
-                            ),
-                            iconBg: "bg-green-100",
-                            iconText: "text-green-700",
-                          },
-                          JUSTIFICACION_FALTA: {
-                            bg: "bg-red-100",
-                            text: "text-red-700",
-                            border: "border-red-200",
-                            iconLarge: <XCircle className="h-6 w-6" />,
-                            iconBg: "bg-red-100",
-                            iconText: "text-red-700",
-                          },
-                          JUSTIFICACION_TARDANZA: {
-                            bg: "bg-amber-100",
-                            text: "text-amber-700",
-                            border: "border-amber-200",
-                            iconLarge: <AlertTriangle className="h-6 w-6" />,
-                            iconBg: "bg-amber-100",
-                            iconText: "text-amber-700",
-                          },
-                          JUSTIFICACION_ASISTENCIA: {
-                            bg: "bg-green-100",
-                            text: "text-green-700",
-                            border: "border-green-200",
-                            iconLarge: <CheckCircle className="h-6 w-6" />,
-                            iconBg: "bg-green-100",
-                            iconText: "text-green-700",
-                          },
-                          OTRO: {
-                            bg: "bg-blue-100",
-                            text: "text-blue-700",
-                            border: "border-blue-200",
-                            iconLarge: <FileText className="h-6 w-6" />,
-                            iconBg: "bg-blue-100",
-                            iconText: "text-blue-700",
-                          },
-                        };
-
-                        const getTipoLabel = (tipo: string) => {
-                          if (tipo === "JUSTIFICACION_TARDANZA")
-                            return "Tardanza justificada";
-                          if (tipo === "SALIDA_ANTICIPADA_JUSTIFICADA")
-                            return "Salida anticipada justificada";
-                          if (tipo === "JUSTIFICACION_FALTA")
-                            return "Falta justificada";
-                          if (tipo === "JUSTIFICACION_ASISTENCIA")
-                            return "Asistencia justificada";
-                          return tipo || "Otro";
-                        };
-
-                        return (
-                          <>
-                            <div className="space-y-3 mt-0">
-                              {list.map((d: SituacionDetalle, idx: number) => {
-                                const tipoKey = d.tipo?.toUpperCase() || "OTRO";
-                                const colors =
-                                  tipoColorMap[tipoKey] || tipoColorMap["OTRO"];
-                                const tipoLabel = getTipoLabel(d.tipo);
-
-                                return (
-                                  <div
-                                    key={idx}
-                                    className="rounded-xl border border-slate-200 p-5"
-                                  >
-                                    {/* Fila superior: tipo + fecha */}
-                                    <div className="flex items-start justify-between gap-3 mb-3">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span
-                                          className={`shrink-0 ${colors.iconText}`}
-                                        >
-                                          {colors.iconLarge}
-                                        </span>
-                                        <Badge
-                                          variant="outline"
-                                          className={`${colors.bg} ${colors.text} ${colors.border} text-xs font-medium px-2.5 py-0.5 whitespace-normal text-left border`}
-                                        >
-                                          {tipoLabel}
-                                        </Badge>
-                                      </div>
-                                      <span className="text-xs text-slate-400 whitespace-nowrap shrink-0 mt-0.5">
-                                        {d.fechaRegistro
-                                          ? new Date(
-                                              d.fechaRegistro,
-                                            ).toLocaleString("es-PE", { timeZone: "America/Lima" })
-                                          : verData.justificacionFecha
-                                            ? new Date(
-                                                verData.justificacionFecha,
-                                              ).toLocaleString("es-PE", { timeZone: "America/Lima" })
-                                            : "—"}
-                                      </span>
-                                    </div>
-
-                                    {/* Motivo: dato protagonista */}
-                                    {d.motivo && (
-                                      <div className="mb-3">
-                                        <div className="text-xs text-slate-400 mb-0.5">
-                                          Motivo
-                                        </div>
-                                        <p className="text-[15px] font-medium text-slate-900 break-words leading-snug">
-                                          {d.motivo}
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {/* Horarios: compactos, en línea */}
-                                    {(() => {
-                                      const horaSalidaAutorizada =
-                                        d.horaSalidaAnticipadaAutorizada ??
-                                        d.horaSalidaAnticipada;
-                                      const hasHoraSalida =
-                                        Boolean(horaSalidaAutorizada);
-                                      return d.horaEntradaRegistrada ||
-                                        hasHoraSalida ? (
-                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm mb-3">
-                                          {d.horaEntradaRegistrada && (
-                                            <div className="flex items-baseline gap-1.5">
-                                              <span className="text-xs text-slate-400">
-                                                Entrada registrada
-                                              </span>
-                                              <span className="font-mono font-medium text-slate-800">
-                                                {String(
-                                                  d.horaEntradaRegistrada,
-                                                ).substring(0, 5)}
-                                              </span>
-                                            </div>
-                                          )}
-                                          {hasHoraSalida && (
-                                            <div className="flex items-baseline gap-1.5">
-                                              <span className="text-xs text-slate-400">
-                                                Salida autorizada
-                                              </span>
-                                              <span className="font-mono font-medium text-blue-700">
-                                                {String(
-                                                  horaSalidaAutorizada,
-                                                ).substring(0, 5)}
-                                              </span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ) : null;
-                                    })()}
-
-                                    {/* Observación: secundaria, separada por hairline */}
-                                    {d.observacion && (
-                                      <div className="pt-3 border-t border-slate-100">
-                                        <div className="text-xs text-slate-400 mb-0.5">
-                                          Observaciones
-                                        </div>
-                                        <p className="text-sm text-slate-600 break-words leading-relaxed">
-                                          {d.observacion}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* FOOTER */}
-                <div className="flex justify-end px-6 sm:px-8 py-4 border-t border-slate-200 bg-white shrink-0">
-                  <Button
-                    variant="outline"
-                    onClick={() => setVerOpen(false)}
-                    className="gap-2 h-10 px-6"
-                  >
-                    <X className="h-4 w-4" />
-                    Cerrar
-                  </Button>
-                </div>
-              </>
-            ) : (
-              // Sin justificación
-              <div className="px-8 py-12 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
-                  <EyeOff className="h-8 w-8" />
-                </div>
-                <p className="text-base font-medium text-slate-700">
-                  No existe justificación para esta asistencia.
-                </p>
-                <p className="text-sm text-slate-500 mt-1">
-                  El registro de asistencia no cuenta con una justificación
-                  asociada.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setVerOpen(false)}
-                  className="mt-6 gap-2 h-10 px-6"
-                >
-                  <X className="h-4 w-4" />
-                  Cerrar
-                </Button>
-              </div>
-            )
-          ) : (
-            // Sin datos
-            <div className="px-8 py-12 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
-                <AlertCircle className="h-8 w-8" />
-              </div>
-              <p className="text-base font-medium text-slate-700">
-                Sin datos disponibles
-              </p>
-              <p className="text-sm text-slate-500 mt-1">
-                No se pudo cargar la información de la justificación.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => setVerOpen(false)}
-                className="mt-6 gap-2 h-10 px-6"
-              >
-                <X className="h-4 w-4" />
-                Cerrar
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AsistenciaCorregirDialog open={editarOpen} onOpenChange={setEditarOpen} asistencia={selectedEditar} onSuccess={onRefresh} />
+      <AsistenciaDetalleDialog open={verOpen} onOpenChange={setVerOpen} asistencia={selectedVer} />
     </>
   );
 }

@@ -89,10 +89,6 @@ export default function AsistenciaFilters({
                   <SelectItem value="justificado">Justificado</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="sm" className="h-10 rounded-xl border-slate-200 bg-white hidden sm:inline-flex" disabled aria-label="Exportar" title="Exportación próximamente">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
             </>
           )}
         </div>

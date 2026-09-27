@@ -1,7 +1,9 @@
 package com.asistencia.attendance_system.service.impl;
 
 import com.asistencia.attendance_system.excepcion.BusinessException;
+import com.asistencia.attendance_system.model.dto.VigilanteChangePasswordRequest;
 import com.asistencia.attendance_system.model.dto.VigilanteCreateRequest;
+import com.asistencia.attendance_system.model.dto.VigilanteEstadoRequest;
 import com.asistencia.attendance_system.model.dto.VigilanteResponse;
 import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.entity.Vigilante;
@@ -71,6 +73,44 @@ public class VigilanteServiceImpl implements VigilanteService {
         vigilante.setEstado(true);
         vigilante.setSede(sede);
 
+        Vigilante guardado = vigilanteRepository.save(vigilante);
+        return toResponse(guardado);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarContrasena(Integer id, VigilanteChangePasswordRequest request) {
+        String nueva = request.getNuevaContrasena();
+        String confirmar = request.getConfirmarContrasena();
+
+        if (nueva == null || nueva.isBlank()) {
+            throw new BusinessException("La nueva contraseña es obligatoria", HttpStatus.BAD_REQUEST);
+        }
+        if (confirmar == null || confirmar.isBlank()) {
+            throw new BusinessException("La confirmación es obligatoria", HttpStatus.BAD_REQUEST);
+        }
+        if (!nueva.equals(confirmar)) {
+            throw new BusinessException("Las contraseñas no coinciden", HttpStatus.BAD_REQUEST);
+        }
+
+        Vigilante vigilante = vigilanteRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Vigilante no encontrado", HttpStatus.NOT_FOUND));
+
+        vigilante.setContrasena(passwordEncoder.encode(nueva));
+        vigilanteRepository.save(vigilante);
+    }
+
+    @Override
+    @Transactional
+    public VigilanteResponse cambiarEstado(Integer id, VigilanteEstadoRequest request) {
+        if (request.getEstado() == null) {
+            throw new BusinessException("El estado es obligatorio", HttpStatus.BAD_REQUEST);
+        }
+
+        Vigilante vigilante = vigilanteRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Vigilante no encontrado", HttpStatus.NOT_FOUND));
+
+        vigilante.setEstado(request.getEstado());
         Vigilante guardado = vigilanteRepository.save(vigilante);
         return toResponse(guardado);
     }
