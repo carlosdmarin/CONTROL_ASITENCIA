@@ -908,4 +908,75 @@ CREATE TABLE IF NOT EXISTS `Asistencia_Diaria` (
 CREATE TABLE IF NOT EXISTS `asistencia_situacion` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `id_asistencia` BIGINT NOT NULL,
-  `t
+  `tipo` VARCHAR(35) NOT NULL,
+  `motivo` TEXT NULL,
+  `observacion` TEXT NULL,
+  `hora_salida_anticipada` TIME NULL,
+  `hora_entrada_registrada` TIME NULL,
+  `fecha_registro` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_asistencia_situacion` (`id_asistencia`, `tipo`),
+  CONSTRAINT `fk_situacion_asistencia` FOREIGN KEY (`id_asistencia`)
+    REFERENCES `Asistencia_Diaria` (`id_asistencia`)
+    ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+```
+
+---
+
+## APÉNDICE — Plantilla de variables de entorno
+
+```
+═══════════════════════════════════════════════════════════
+VARIABLES DE ENTORNO — PractiQR
+═══════════════════════════════════════════════════════════
+
+⚠️ INSTRUCCIONES:
+- Estos valores van en el panel "Environment" de NSSM.
+- NO se copian al código fuente.
+- Rellenar los valores entre < > con los reales.
+
+─────────────────────────────────────────────────────────────
+BACKEND (servicio NSSM: PractiqrBackend)
+─────────────────────────────────────────────────────────────
+
+SPRING_PROFILES_ACTIVE=prod
+JWT_SECRET=<GENERAR CON POWERSHELL: comando en FASE B.2>
+JWT_COOKIE_SECURE=true
+
+DB_URL=jdbc:mysql://127.0.0.1:3306/one_db?useSSL=false&serverTimezone=America/Lima&allowPublicKeyRetrieval=true&zeroDateTimeBehavior=convertToNull
+DB_USERNAME=practiqr_app
+DB_PASSWORD=<PASSWORD FUERTE PARA USUARIO MYSQL>
+
+CORS_ALLOWED_ORIGINS=https://practiqr.olamsa.pe.com
+
+practiqr.auth.rrhh-worker-ids=87
+
+─────────────────────────────────────────────────────────────
+FRONTEND (servicio NSSM: PractiqrFrontend)
+─────────────────────────────────────────────────────────────
+
+NODE_ENV=production
+PORT=3000
+BACKEND_URL=http://127.0.0.1:8080
+
+─────────────────────────────────────────────────────────────
+NOTAS
+─────────────────────────────────────────────────────────────
+
+1. JWT_SECRET: generar en el servidor con el comando PowerShell de FASE B.2.
+   NO reutilizar el de desarrollo. NO compartir por chat.
+
+2. DB_PASSWORD: crear usuario MySQL dedicado `practiqr_app` (ver FASE A.2).
+
+3. CORS_ALLOWED_ORIGINS: debe coincidir EXACTAMENTE con el dominio del frontend.
+   Si el subdominio final cambia, actualizar esta variable y reiniciar el backend.
+
+4. practiqr.auth.rrhh-worker-ids: IDs reales de trabajadores RRHH (separados por coma).
+
+═══════════════════════════════════════════════════════════
+```
+
+---
+
+**Fin del documento.**
