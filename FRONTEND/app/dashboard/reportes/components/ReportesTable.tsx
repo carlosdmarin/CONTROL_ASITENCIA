@@ -225,7 +225,6 @@ export function ReportesPracticantesTable({
     <Card className="overflow-hidden border-slate-200 shadow-sm bg-white">
       {/* ═══════════ HEADER TIPO CONSOLA ═══════════ */}
       <div className="relative border-b border-slate-200">
-        <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-orange-500 to-blue-700" />
 
         <div className="flex items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3.5 min-w-0">

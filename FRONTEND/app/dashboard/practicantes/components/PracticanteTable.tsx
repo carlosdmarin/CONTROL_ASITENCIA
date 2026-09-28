@@ -248,13 +248,14 @@ export function PracticanteTable({
     <Card className="overflow-hidden border-slate-200 shadow-sm bg-white">
       {/* ═══════════ HEADER TIPO CONSOLA ═══════════ */}
       <div className="relative border-b border-slate-200">
-        <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-orange-500 to-blue-700" />
-
         <div className="flex items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="relative shrink-0">
               <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-md shadow-blue-900/20">
-                <ClipboardList className="h-5 w-5 text-white" strokeWidth={2.2} />
+                <ClipboardList
+                  className="h-5 w-5 text-white"
+                  strokeWidth={2.2}
+                />
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
@@ -421,7 +422,10 @@ export function PracticanteTable({
                       <TableCell>
                         <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
                           <div className="h-6 w-6 rounded-md bg-blue-100 border border-blue-200 flex items-center justify-center shrink-0">
-                            <MapPin className="h-3 w-3 text-blue-700" strokeWidth={2.4} />
+                            <MapPin
+                              className="h-3 w-3 text-blue-700"
+                              strokeWidth={2.4}
+                            />
                           </div>
                           <span className="text-[12px] font-medium text-slate-700 truncate max-w-[130px]">
                             {practicante.sede || "—"}
@@ -433,7 +437,10 @@ export function PracticanteTable({
                       <TableCell>
                         <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200">
                           <div className="h-6 w-6 rounded-md bg-violet-100 border border-violet-200 flex items-center justify-center shrink-0">
-                            <BriefcaseBusiness className="h-3 w-3 text-violet-700" strokeWidth={2.4} />
+                            <BriefcaseBusiness
+                              className="h-3 w-3 text-violet-700"
+                              strokeWidth={2.4}
+                            />
                           </div>
                           <span className="text-[12px] font-medium text-slate-700 truncate max-w-[170px]">
                             {practicante.nombreOficina ||
@@ -521,25 +528,27 @@ export function PracticanteTable({
                               <MoreHorizontal className="h-3.5 w-3.5" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-slate-400">
-                                Acciones
-                              </DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => onShowDetail?.(practicante)}
-                                className="gap-2 text-[13px]"
-                              >
-                                <Eye className="h-3.5 w-3.5 text-slate-400" />
-                                Ver detalles
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-[13px]">
-                                <History className="h-3.5 w-3.5 text-slate-400" />
-                                Historial
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-[13px]">
-                                <FileBarChart className="h-3.5 w-3.5 text-slate-400" />
-                                Reportes
-                              </DropdownMenuItem>
+                              <DropdownMenuGroup>
+                                <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-slate-400">
+                                  Acciones
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => onShowDetail?.(practicante)}
+                                  className="gap-2 text-[13px]"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                  Ver detalles
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-2 text-[13px]">
+                                  <History className="h-3.5 w-3.5 text-slate-400" />
+                                  Historial
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-2 text-[13px]">
+                                  <FileBarChart className="h-3.5 w-3.5 text-slate-400" />
+                                  Reportes
+                                </DropdownMenuItem>
+                              </DropdownMenuGroup>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -563,7 +572,8 @@ export function PracticanteTable({
                 <span className="font-semibold text-slate-700">
                   {totalItems}
                 </span>{" "}
-                {totalItems === 1 ? "practicante" : "practicantes"} en el sistema
+                {totalItems === 1 ? "practicante" : "practicantes"} en el
+                sistema
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono uppercase tracking-wider">

@@ -112,7 +112,6 @@ export default function VigilantesTable({
       {/* Fix #1: fondo propio (slate-50) + borde más marcado para que
           se lea claramente como encabezado y no como una fila más */}
       <div className="relative border-b border-slate-200">
-        <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-orange-500 to-blue-700" />
 
         <div className="flex items-center justify-between gap-4 px-6 py-4 bg-slate-50/70">
           <div className="flex items-center gap-3.5 min-w-0">
@@ -136,8 +135,7 @@ export default function VigilantesTable({
                 </span>
               </div>
               <p className="text-[12px] text-slate-500 mt-0.5">
-                Control de acceso y asistencia · {vigilantes.length}{" "}
-                {vigilantes.length === 1 ? "operador" : "operadores"}
+                Control de acceso a los usarios de vigilancia
               </p>
             </div>
           </div>

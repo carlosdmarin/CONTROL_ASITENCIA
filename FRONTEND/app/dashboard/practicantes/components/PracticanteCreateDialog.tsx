@@ -107,8 +107,6 @@ const minutosDelDia = (dia: DiaHorario): number => {
   return calcularMinutosTrabajados(dia.entrada, dia.salida);
 };
 
-
-
 export function PracticanteCreateDialog({
   open,
   onOpenChange,
@@ -121,8 +119,7 @@ export function PracticanteCreateDialog({
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [cargos, setCargos] = useState<Cargo[]>([]);
   const [oficinas, setOficinas] = useState<Oficina[]>([]);
-  const [tiposInstituto, setTiposInstituto] =
-    useState<TipoInstituto[]>([]);
+  const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>([]);
   const [loadingSelects, setLoadingSelects] = useState(false);
 
   // Datos del practicante (SIN código de trabajador)
@@ -241,7 +238,10 @@ export function PracticanteCreateDialog({
           setFormData((prev) => ({ ...prev, idCargo: cargosData[0].idCargo }));
         }
         if (oficinasData.length > 0) {
-          setFormData((prev) => ({ ...prev, idOficina: oficinasData[0].idOficina }));
+          setFormData((prev) => ({
+            ...prev,
+            idOficina: oficinasData[0].idOficina,
+          }));
         }
         if (tiposData.length > 0) {
           setFormData((prev) => ({
@@ -466,54 +466,100 @@ export function PracticanteCreateDialog({
   // ====== RENDER STEP INDICATOR ======
   const renderStepIndicator = () => {
     const steps = [
-      { num: 1, label: "Datos" },
-      { num: 2, label: "Horario" },
-      { num: 3, label: "Confirmar" },
+      { num: 1, label: "Datos", icon: User },
+      { num: 2, label: "Horario", icon: Clock },
+      { num: 3, label: "Confirmar", icon: CheckCircle2 },
     ];
 
     return (
-      <div className="flex items-center justify-center mb-4 sm:mb-6 px-1">
-        <div className="flex items-center gap-2 sm:gap-4">
-          {steps.map((step, index) => (
-            <div key={step.num} className="flex items-center">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <div
-                  className={`
-                    flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs sm:text-sm font-medium transition-all shrink-0
+      <div className="flex items-center justify-center mb-4 sm:mb-5 px-1">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {steps.map((step, index) => {
+            const isActive = currentStep === step.num;
+            const isDone = currentStep > step.num;
+            const Icon = step.icon;
+
+            return (
+              <div key={step.num} className="flex items-center">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* ─── Círculo del step ─── */}
+                  <div className="relative shrink-0">
+                    {/* Glow pulsante cuando está activo */}
+                    {isActive && (
+                      <span className="absolute inset-0 rounded-full bg-blue-400/40 animate-ping" />
+                    )}
+
+                    {/* Anillo suave de fondo cuando está activo */}
+                    {isActive && (
+                      <span className="absolute -inset-1 rounded-full bg-blue-100/60 blur-sm" />
+                    )}
+
+                    <div
+                      className={`
+                      relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full text-[12px] sm:text-[13px] font-bold transition-all duration-500 shrink-0 cursor-default hover:scale-105
+                      ${
+                        isActive
+                          ? "bg-gradient-to-br from-blue-600 to-blue-800 text-white ring-4 ring-blue-100 shadow-md shadow-blue-900/20"
+                          : isDone
+                            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm"
+                            : "bg-slate-100 text-slate-400 border border-slate-200"
+                      }
+                    `}
+                    >
+                      {isDone ? (
+                        <CheckCircle2
+                          className="h-4 w-4 sm:h-4.5 sm:w-4.5 animate-in zoom-in duration-300"
+                          strokeWidth={2.5}
+                        />
+                      ) : (
+                        <Icon
+                          className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-300 ${
+                            isActive ? "scale-110" : ""
+                          }`}
+                          strokeWidth={2.5}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ─── Label ─── */}
+                  <span
+                    className={`
+                    text-[11px] sm:text-[12px] font-semibold whitespace-nowrap transition-all duration-300
                     ${
-                      currentStep === step.num
-                        ? "bg-blue-600 text-white ring-4 ring-blue-100"
-                        : currentStep > step.num
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-100 text-gray-400"
+                      isActive
+                        ? "text-blue-700"
+                        : isDone
+                          ? "text-emerald-700"
+                          : "text-slate-400"
                     }
                   `}
-                >
-                  {currentStep > step.num ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  ) : (
-                    step.num
-                  )}
+                  >
+                    {step.label}
+                  </span>
                 </div>
-                <span
-                  className={`
-                  text-[11px] sm:text-xs font-medium whitespace-nowrap
-                  ${currentStep === step.num ? "text-blue-600 font-semibold" : "text-gray-400"}
-                `}
-                >
-                  {step.label}
-                </span>
+
+                {/* ─── Línea conectora ─── */}
+                {index < steps.length - 1 && (
+                  <div className="relative w-6 sm:w-12 h-[2px] mx-1.5 sm:mx-2 rounded-full overflow-hidden bg-slate-200">
+                    {/* Relleno animado */}
+                    <div
+                      className={`
+                      absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out
+                      ${
+                        isDone
+                          ? "w-full bg-gradient-to-r from-emerald-400 to-emerald-500"
+                          : isActive
+                            ? "w-1/2 bg-gradient-to-r from-blue-400 to-blue-500 animate-pulse"
+                            : "w-0 bg-transparent"
+                      }
+                    `}
+                    />
+                  </div>
+                )}
               </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={`
-                  w-6 sm:w-10 h-0.5 mx-1 transition-colors
-                  ${currentStep > step.num ? "bg-green-500" : "bg-gray-200"}
-                `}
-                />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -522,405 +568,528 @@ export function PracticanteCreateDialog({
   // ====== RENDER STEP 1: DATOS DEL PRACTICANTE ======
   const renderStep1 = () => {
     return (
-      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Documento */}
-          <div className="grid gap-1.5">
-            <Label
-              htmlFor="documento"
-              className="text-xs font-medium flex pl-1 items-center gap-1"
-            >
-              Documento / DNI *
-              <span className="text-xs pl-1 text-gray-400 font-normal">
-                (8 dígitos)
-              </span>
-            </Label>
-            <div className="relative pl-1">
-              <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="documento"
-                name="documento"
-                value={formData.documento}
-                onChange={handleDniChange}
-                placeholder="DNI del practicante"
-                className={`w-full pl-9 h-10 text-sm ${
-                  dniError
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : formData.documento.length === 8
-                      ? "border-green-500 focus-visible:ring-green-500"
-                      : ""
-                }`}
-                maxLength={8}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                required
-              />
+      <div className="space-y-3 pr-0 sm:pr-1">
+        {/* ═══════════ SECCIÓN: DATOS PERSONALES ═══════════ */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+          {/* Header de sección */}
+          <div className="flex items-start gap-3 pb-5 mb-5 border-b border-slate-100">
+            <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
+              <User className="h-4.5 w-4.5 text-blue-700" strokeWidth={2.2} />
             </div>
-            <div className="h-5 flex items-center gap-1 mt-0.5">
-              {dniError ? (
-                <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                  <span className="text-xs text-red-600">{dniError}</span>
-                </>
-              ) : formData.documento.length === 8 ? (
-                <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span className="text-xs text-green-600">DNI válido</span>
-                </>
-              ) : (
-                <span className="text-xs pl-1 text-gray-400">Ingresa 8 dígitos</span>
-              )}
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight">
+                Datos personales
+              </h3>
+              <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">
+                Completá la identificación y los datos de contacto del
+                practicante
+              </p>
             </div>
           </div>
 
-          {/* Nombre */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="nombre" className="text-xs font-medium">
-              Nombre *
-            </Label>
-            <div className="relative">
-              <BookUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="nombre"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleNombreChange}
-                placeholder="Nombre del practicante"
-                className={`w-full pl-9 h-10 text-sm ${
-                  formData.nombre.length > 0 && formData.nombre.length < 2
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : formData.nombre.length >= 2
-                      ? "border-green-500 focus-visible:ring-green-500"
-                      : ""
-                }`}
-                required
-              />
-            </div>
-            <div className="h-5 flex items-center gap-1">
-              {formData.nombre.length > 0 && formData.nombre.length < 2 ? (
-                <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                  <span className="text-xs text-red-600">
-                    Mínimo 2 caracteres
+          {/* Contenido */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
+            {/* Documento */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Documento / DNI
+                <span className="text-red-500">*</span>
+                <span className="text-[11px] text-slate-400 font-normal ml-1">
+                  8 dígitos
+                </span>
+              </Label>
+              <div className="relative">
+                <IdCard
+                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors ${
+                    dniError
+                      ? "text-red-500"
+                      : formData.documento.length === 8
+                        ? "text-emerald-500"
+                        : "text-slate-400"
+                  }`}
+                  strokeWidth={2}
+                />
+                <Input
+                  id="documento"
+                  name="documento"
+                  value={formData.documento}
+                  onChange={handleDniChange}
+                  placeholder="60563764"
+                  className={`w-full pl-10 h-10 text-[13.5px] bg-white border-slate-200 rounded-xl transition-all ${
+                    dniError
+                      ? "border-red-300 focus-visible:ring-red-400/20 focus-visible:border-red-400"
+                      : formData.documento.length === 8
+                        ? "border-emerald-300 focus-visible:ring-emerald-400/20 focus-visible:border-emerald-400"
+                        : "focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+                  }`}
+                  maxLength={8}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  required
+                />
+              </div>
+              <div className="h-4 flex items-center gap-1.5">
+                {dniError ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                    <span className="text-[11.5px] text-red-600">
+                      {dniError}
+                    </span>
+                  </>
+                ) : formData.documento.length === 8 ? (
+                  <>
+                    <CircleCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span className="text-[11.5px] text-emerald-600">
+                      Documento válido
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11.5px] text-slate-400">
+                    Ingresá el número de documento
                   </span>
-                </>
-              ) : formData.nombre.length >= 2 ? (
-                <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span className="text-xs text-green-600">Nombre válido</span>
-                </>
-              ) : (
-                <span className="text-xs text-gray-400">Obligatorio</span>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Apellido */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="apellido" className="text-xs  pl-1 font-medium">
-              Apellido *
-            </Label>
-            <div className="relative pl-1">
-              <BookUser className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="apellido"
-                name="apellido"
-                value={formData.apellido}
-                onChange={handleApellidoChange}
-                placeholder="Apellido del practicante"
-                className={`w-full pl-9 h-10 text-sm ${
-                  formData.apellido.length > 0 && formData.apellido.length < 2
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : formData.apellido.length >= 2
-                      ? "border-green-500 focus-visible:ring-green-500"
-                      : ""
-                }`}
-                required
-              />
+            {/* Nombre */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Nombre
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <BookUser
+                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors ${
+                    formData.nombre.length > 0 && formData.nombre.length < 2
+                      ? "text-red-500"
+                      : formData.nombre.length >= 2
+                        ? "text-emerald-500"
+                        : "text-slate-400"
+                  }`}
+                  strokeWidth={2}
+                />
+                <Input
+                  id="nombre"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleNombreChange}
+                  placeholder="Carlos Daniel"
+                  className={`w-full pl-10 h-10 text-[13.5px] bg-white border-slate-200 rounded-xl transition-all ${
+                    formData.nombre.length > 0 && formData.nombre.length < 2
+                      ? "border-red-300 focus-visible:ring-red-400/20 focus-visible:border-red-400"
+                      : formData.nombre.length >= 2
+                        ? "border-emerald-300 focus-visible:ring-emerald-400/20 focus-visible:border-emerald-400"
+                        : "focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+                  }`}
+                  required
+                />
+              </div>
+              <div className="h-4 flex items-center gap-1.5">
+                {formData.nombre.length > 0 && formData.nombre.length < 2 ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                    <span className="text-[11.5px] text-red-600">
+                      Mínimo 2 caracteres
+                    </span>
+                  </>
+                ) : formData.nombre.length >= 2 ? (
+                  <>
+                    <CircleCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span className="text-[11.5px] text-emerald-600">
+                      Nombre válido
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11.5px] text-slate-400">
+                    Campo obligatorio
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="h-5 flex items-center gap-1">
-              {formData.apellido.length > 0 && formData.apellido.length < 2 ? (
-                <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                  <span className="text-xs text-red-600">
-                    Mínimo 2 caracteres
+
+            {/* Apellido */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Apellido
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <BookUser
+                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors ${
+                    formData.apellido.length > 0 && formData.apellido.length < 2
+                      ? "text-red-500"
+                      : formData.apellido.length >= 2
+                        ? "text-emerald-500"
+                        : "text-slate-400"
+                  }`}
+                  strokeWidth={2}
+                />
+                <Input
+                  id="apellido"
+                  name="apellido"
+                  value={formData.apellido}
+                  onChange={handleApellidoChange}
+                  placeholder="Marín Panduro"
+                  className={`w-full pl-10 h-10 text-[13.5px] bg-white border-slate-200 rounded-xl transition-all ${
+                    formData.apellido.length > 0 && formData.apellido.length < 2
+                      ? "border-red-300 focus-visible:ring-red-400/20 focus-visible:border-red-400"
+                      : formData.apellido.length >= 2
+                        ? "border-emerald-300 focus-visible:ring-emerald-400/20 focus-visible:border-emerald-400"
+                        : "focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+                  }`}
+                  required
+                />
+              </div>
+              <div className="h-4 flex items-center gap-1.5">
+                {formData.apellido.length > 0 &&
+                formData.apellido.length < 2 ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                    <span className="text-[11.5px] text-red-600">
+                      Mínimo 2 caracteres
+                    </span>
+                  </>
+                ) : formData.apellido.length >= 2 ? (
+                  <>
+                    <CircleCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span className="text-[11.5px] text-emerald-600">
+                      Apellido válido
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11.5px] text-slate-400">
+                    Campo obligatorio
                   </span>
-                </>
-              ) : formData.apellido.length >= 2 ? (
-                <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span className="text-xs text-green-600">
-                    Apellido válido
+                )}
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Email
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Mail
+                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors ${
+                    emailError
+                      ? "text-red-500"
+                      : formData.correoElectronico.length > 0 && !emailError
+                        ? "text-emerald-500"
+                        : "text-slate-400"
+                  }`}
+                  strokeWidth={2}
+                />
+                <Input
+                  id="correoElectronico"
+                  name="correoElectronico"
+                  value={formData.correoElectronico}
+                  onChange={handleEmailChange}
+                  placeholder="correo@empresa.com"
+                  type="email"
+                  className={`w-full pl-10 h-10 text-[13.5px] bg-white border-slate-200 rounded-xl transition-all ${
+                    emailError
+                      ? "border-red-300 focus-visible:ring-red-400/20 focus-visible:border-red-400"
+                      : formData.correoElectronico.length > 0 && !emailError
+                        ? "border-emerald-300 focus-visible:ring-emerald-400/20 focus-visible:border-emerald-400"
+                        : "focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+                  }`}
+                  required
+                />
+              </div>
+              <div className="h-4 flex items-center gap-1.5">
+                {emailError ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                    <span className="text-[11.5px] text-red-600">
+                      {emailError}
+                    </span>
+                  </>
+                ) : formData.correoElectronico.length > 0 && !emailError ? (
+                  <>
+                    <CircleCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span className="text-[11.5px] text-emerald-600">
+                      Email válido
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11.5px] text-slate-400">
+                    Campo obligatorio
                   </span>
-                </>
-              ) : (
-                <span className="text-xs pl-1 text-gray-400">Obligatorio</span>
-              )}
+                )}
+              </div>
+            </div>
+
+            {/* Teléfono */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Teléfono
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Phone
+                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors ${
+                    telefonoError
+                      ? "text-red-500"
+                      : formData.telefono.length >= 9
+                        ? "text-emerald-500"
+                        : "text-slate-400"
+                  }`}
+                  strokeWidth={2}
+                />
+                <Input
+                  id="telefono"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleTelefonoChange}
+                  placeholder="987654321"
+                  className={`w-full pl-10 h-10 text-[13.5px] bg-white border-slate-200 rounded-xl transition-all ${
+                    telefonoError
+                      ? "border-red-300 focus-visible:ring-red-400/20 focus-visible:border-red-400"
+                      : formData.telefono.length >= 9
+                        ? "border-emerald-300 focus-visible:ring-emerald-400/20 focus-visible:border-emerald-400"
+                        : "focus-visible:ring-blue-500/20 focus-visible:border-blue-500"
+                  }`}
+                  inputMode="numeric"
+                  required
+                />
+              </div>
+              <div className="h-4 flex items-center gap-1.5">
+                {telefonoError ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                    <span className="text-[11.5px] text-red-600">
+                      {telefonoError}
+                    </span>
+                  </>
+                ) : formData.telefono.length >= 9 ? (
+                  <>
+                    <CircleCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span className="text-[11.5px] text-emerald-600">
+                      Teléfono válido
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11.5px] text-slate-400">
+                    Campo obligatorio
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Fecha Inicio */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Fecha de inicio
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Calendar
+                  className={`absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none transition-colors ${
+                    formData.fechaInicioPracticas
+                      ? "text-emerald-500"
+                      : "text-slate-400"
+                  }`}
+                  strokeWidth={2}
+                />
+                <Input
+                  id="fechaInicioPracticas"
+                  name="fechaInicioPracticas"
+                  value={formData.fechaInicioPracticas}
+                  onChange={handleChange}
+                  type="date"
+                  className="w-full pl-10 h-10 text-[13.5px] bg-white border-slate-200 rounded-xl focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all"
+                  required
+                />
+              </div>
+              <div className="h-4" />
+            </div>
+
+            {/* Fecha Fin */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Fecha de fin
+                <span className="text-[11px] text-slate-400 font-normal ml-1">
+                  opcional
+                </span>
+              </Label>
+              <div className="relative">
+                <Calendar
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400"
+                  strokeWidth={2}
+                />
+                <Input
+                  id="fechaFinPracticas"
+                  name="fechaFinPracticas"
+                  value={formData.fechaFinPracticas}
+                  onChange={handleChange}
+                  type="date"
+                  className="w-full pl-10 h-10 text-[13.5px] bg-white border-slate-200 rounded-xl focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all"
+                />
+              </div>
+              <div className="h-4" />
             </div>
           </div>
         </div>
 
-        <Separator />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Sede */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="idSede" className="text-xs pl-1 font-medium">
-              Sede *
-            </Label>
-            <div className="relative pl-1">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                id="idSede"
-                name="idSede"
-                value={formData.idSede}
-                onChange={handleChange}
-                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
-                disabled={loadingSelects}
-              >
-                {loadingSelects ? (
-                  <option value="0">Cargando...</option>
-                ) : (
-                  sedes.map((sede) => (
-                    <option key={sede.idSede} value={sede.idSede}>
-                      {sede.nombre}
-                    </option>
-                  ))
-                )}
-              </select>
+        {/* ═══════════ SECCIÓN: INFORMACIÓN LABORAL ═══════════ */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+          {/* Header de sección */}
+          <div className="flex items-start gap-3 pb-5 mb-5 border-b border-slate-100">
+            <div className="h-10 w-10 rounded-full bg-violet-50 flex items-center justify-center shrink-0 mt-0.5">
+              <BriefcaseBusiness
+                className="h-4.5 w-4.5 text-violet-700"
+                strokeWidth={2.2}
+              />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight">
+                Información laboral
+              </h3>
+              <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">
+                Asigná la sede, oficina, cargo y centro de estudios
+              </p>
             </div>
           </div>
 
-          {/* Oficina */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="idOficina" className="text-xs font-medium">
-              Oficina *
-            </Label>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                id="idOficina"
-                name="idOficina"
-                value={formData.idOficina}
-                onChange={handleChange}
-                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
-                disabled={loadingSelects}
-              >
-                {loadingSelects ? (
-                  <option value="0">Cargando...</option>
-                ) : (
-                  oficinas.map((oficina) => (
-                    <option key={oficina.idOficina} value={oficina.idOficina}>
-                      {oficina.oficina}
-                    </option>
-                  ))
-                )}
-              </select>
+          {/* Contenido */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
+            {/* Sede */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Sede
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Building2
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400 z-10"
+                  strokeWidth={2}
+                />
+                <select
+                  id="idSede"
+                  name="idSede"
+                  value={formData.idSede}
+                  onChange={handleChange}
+                  className="w-full pl-10 h-10 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none disabled:opacity-50 transition-all"
+                  disabled={loadingSelects}
+                >
+                  {loadingSelects ? (
+                    <option value="0">Cargando...</option>
+                  ) : (
+                    sedes.map((sede) => (
+                      <option key={sede.idSede} value={sede.idSede}>
+                        {sede.nombre}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
             </div>
-          </div>
 
-
-          {/* Cargo */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="idCargo" className="text-xs pl-1 font-medium">
-              Cargo *
-            </Label>
-            <div className="relative pl-1">
-              <BriefcaseBusiness className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                id="idCargo"
-                name="idCargo"
-                value={formData.idCargo}
-                onChange={handleChange}
-                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
-                disabled={loadingSelects}
-              >
-                {loadingSelects ? (
-                  <option value="0">Cargando...</option>
-                ) : (
-                  cargos.map((cargo) => (
-                    <option key={cargo.idCargo} value={cargo.idCargo}>
-                      {cargo.nombre}
-                    </option>
-                  ))
-                )}
-              </select>
+            {/* Oficina */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Oficina
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Building2
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400 z-10"
+                  strokeWidth={2}
+                />
+                <select
+                  id="idOficina"
+                  name="idOficina"
+                  value={formData.idOficina}
+                  onChange={handleChange}
+                  className="w-full pl-10 h-10 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none disabled:opacity-50 transition-all"
+                  disabled={loadingSelects}
+                >
+                  {loadingSelects ? (
+                    <option value="0">Cargando...</option>
+                  ) : (
+                    oficinas.map((oficina) => (
+                      <option key={oficina.idOficina} value={oficina.idOficina}>
+                        {oficina.oficina}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
             </div>
-          </div>
 
-          {/* Centro de Estudios */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="idTipoInstituto" className="text-xs font-medium">
-              Centro de Estudios *
-            </Label>
-            <div className="relative">
-              <School className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                id="idTipoInstituto"
-                name="idTipoInstituto"
-                value={formData.idTipoInstituto}
-                onChange={handleChange}
-                className="w-full pl-9 rounded-lg border border-input px-3 text-sm bg-white h-10 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 outline-none disabled:opacity-50"
-                disabled={loadingSelects}
-              >
-                {loadingSelects ? (
-                  <option value="0">Cargando...</option>
-                ) : (
-                  tiposInstituto.map((tipo) => (
-                    <option
-                      key={tipo.idTipoInstituto}
-                      value={tipo.idTipoInstituto}
-                    >
-                      {tipo.nombre}
-                    </option>
-                  ))
-                )}
-              </select>
+            {/* Cargo */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Cargo
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <BriefcaseBusiness
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400 z-10"
+                  strokeWidth={2}
+                />
+                <select
+                  id="idCargo"
+                  name="idCargo"
+                  value={formData.idCargo}
+                  onChange={handleChange}
+                  className="w-full pl-10 h-10 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none disabled:opacity-50 transition-all"
+                  disabled={loadingSelects}
+                >
+                  {loadingSelects ? (
+                    <option value="0">Cargando...</option>
+                  ) : (
+                    cargos.map((cargo) => (
+                      <option key={cargo.idCargo} value={cargo.idCargo}>
+                        {cargo.nombre}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+            </div>
+
+            {/* Centro de Estudios */}
+            <div className="space-y-2">
+              <Label className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1">
+                Centro de Estudios
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <School
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400 z-10"
+                  strokeWidth={2}
+                />
+                <select
+                  id="idTipoInstituto"
+                  name="idTipoInstituto"
+                  value={formData.idTipoInstituto}
+                  onChange={handleChange}
+                  className="w-full pl-10 h-10 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none disabled:opacity-50 transition-all"
+                  disabled={loadingSelects}
+                >
+                  {loadingSelects ? (
+                    <option value="0">Cargando...</option>
+                  ) : (
+                    tiposInstituto.map((tipo) => (
+                      <option
+                        key={tipo.idTipoInstituto}
+                        value={tipo.idTipoInstituto}
+                      >
+                        {tipo.nombre}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
             </div>
           </div>
         </div>
-
-        <Separator />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Email */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="correoElectronico" className="text-xs pl-1 font-medium">
-              Email *
-            </Label>
-            <div className="relative pl-1">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="correoElectronico"
-                name="correoElectronico"
-                value={formData.correoElectronico}
-                onChange={handleEmailChange}
-                placeholder="correo@empresa.com"
-                type="email"
-                className={`w-full pl-9 h-10 text-sm ${
-                  emailError
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : formData.correoElectronico.length > 0 && !emailError
-                      ? "border-green-500 focus-visible:ring-green-500"
-                      : ""
-                }`}
-                required
-              />
-            </div>
-            <div className="h-5 flex items-center gap-1">
-              {emailError ? (
-                <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                  <span className="text-xs text-red-600">{emailError}</span>
-                </>
-              ) : formData.correoElectronico.length > 0 && !emailError ? (
-                <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span className="text-xs text-green-600 pl-1">Email válido</span>
-                </>
-              ) : (
-                <span className="text-xs text-gray-400 pl-1">Obligatorio</span>
-              )}
-            </div>
-          </div>
-
-          {/* Teléfono */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="telefono" className="text-xs font-medium">
-              Teléfono *
-            </Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="telefono"
-                name="telefono"
-                value={formData.telefono}
-                onChange={handleTelefonoChange}
-                placeholder="987654321"
-                className={`w-full pl-9 h-10 text-sm ${
-                  telefonoError
-                    ? "border-red-500 focus-visible:ring-red-500"
-                    : formData.telefono.length >= 9
-                      ? "border-green-500 focus-visible:ring-green-500"
-                      : ""
-                }`}
-                inputMode="numeric"
-                required
-              />
-            </div>
-            <div className="h-5 flex items-center gap-1">
-              {telefonoError ? (
-                <>
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                  <span className="text-xs text-red-600">{telefonoError}</span>
-                </>
-              ) : formData.telefono.length >= 9 ? (
-                <>
-                  <CircleCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span className="text-xs text-green-600">
-                    Teléfono válido
-                  </span>
-                </>
-              ) : formData.telefono.length > 0 ? (
-                <span className="text-xs text-gray-400">Faltan dígitos</span>
-              ) : (
-                <span className="text-xs text-gray-400">Obligatorio</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Fecha Inicio */}
-          <div className="grid gap-1.5">
-            <Label
-              htmlFor="fechaInicioPracticas"
-              className="text-xs font-medium pl-1"
-            >
-              Fecha de inicio *
-            </Label>
-            <div className="relative pl-1">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="fechaInicioPracticas"
-                name="fechaInicioPracticas"
-                value={formData.fechaInicioPracticas}
-                onChange={handleChange}
-                type="date"
-                className="w-full pl-9 h-10 text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Fecha Fin */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="fechaFinPracticas" className="text-xs font-medium">
-              Fecha de fin (opcional)
-            </Label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="fechaFinPracticas"
-                name="fechaFinPracticas"
-                value={formData.fechaFinPracticas}
-                onChange={handleChange}
-                type="date"
-                className="w-full pl-9 h-10 text-sm"
-              />
-            </div>
-          </div>
-        </div>
-
-        {!validateStep1() && (
-          <p className="text-xs text-amber-600 mt-1">
-            * Completa todos los campos obligatorios para continuar
-          </p>
-        )}
       </div>
     );
   };
-
   // ====== RENDER STEP 2: HORARIO ======
   const renderStep2 = () => {
     const {
@@ -1113,14 +1282,20 @@ export function PracticanteCreateDialog({
                         <span
                           className={`sm:hidden text-xs font-medium px-2.5 py-1 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : diaData.activo ? "bg-slate-100 text-slate-700 border-slate-200" : "bg-slate-50 text-slate-400 border-slate-200"}`}
                         >
-                          {diaData.activo ? (tieneError ? "Inválido" : duracionFmt) : "—"}
+                          {diaData.activo
+                            ? tieneError
+                              ? "Inválido"
+                              : duracionFmt
+                            : "—"}
                         </span>
                       </div>
 
                       {diaData.activo ? (
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2 flex-1 w-full">
                           <div className="flex flex-col gap-1.5 flex-1">
-                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">Entrada</span>
+                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">
+                              Entrada
+                            </span>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-slate-400 hidden sm:block shrink-0" />
                               <Input
@@ -1137,9 +1312,13 @@ export function PracticanteCreateDialog({
                               />
                             </div>
                           </div>
-                          <span className="hidden sm:block text-xs text-slate-400">—</span>
+                          <span className="hidden sm:block text-xs text-slate-400">
+                            —
+                          </span>
                           <div className="flex flex-col gap-1.5 flex-1">
-                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">Salida</span>
+                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">
+                              Salida
+                            </span>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-slate-400 hidden sm:block shrink-0" />
                               <Input
@@ -1163,7 +1342,9 @@ export function PracticanteCreateDialog({
                           </span>
                         </div>
                       ) : (
-                        <span className="hidden sm:inline text-sm text-gray-400 italic">Descanso</span>
+                        <span className="hidden sm:inline text-sm text-gray-400 italic">
+                          Descanso
+                        </span>
                       )}
                     </div>
                     {tieneError && (
@@ -1202,84 +1383,330 @@ export function PracticanteCreateDialog({
     const oficinaFinal = oficinaItem?.oficina || "—";
     const tipoFinal = tipoItem?.nombre || "—";
 
-    return (
-      <div className="space-y-3 sm:space-y-4 pr-0 sm:pr-1 overscroll-contain">
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 sm:p-3">
-          <p className="text-sm text-blue-700 flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            Revisa los datos antes de registrar al practicante
-          </p>
-        </div>
+    // Iniciales del practicante
+    const iniciales = (nombre: string) => {
+      return nombre
+        .split(" ")
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+    };
 
-        <div>
-          <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-            <User className="h-4 w-4" />
-            Datos personales
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3 sm:p-3">
-            <span className="text-gray-500">Nombre completo:</span>
-            <span className="font-medium break-words">
-              {formData.nombre} {formData.apellido}
+    const nombreCompleto = `${formData.nombre} ${formData.apellido}`.trim();
+    const diasActivos = DIAS_SEMANA.filter(
+      (dia) => horario[dia.key as keyof HorarioSemanal].activo,
+    ).length;
+
+    return (
+      <div className="space-y-4 pr-0 sm:pr-1">
+        {/* ═══════════ HEADER HERO ═══════════ */}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 p-5">
+          {/* Halo decorativo */}
+          <div
+            className="absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-40 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)",
+            }}
+          />
+
+          <div className="relative z-10 flex items-start gap-4">
+            {/* Avatar con iniciales */}
+            <div className="relative shrink-0">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-md shadow-blue-900/20">
+                <span className="text-[16px] font-bold text-white tracking-tight">
+                  {iniciales(nombreCompleto)}
+                </span>
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white">
+                <CheckCircle2
+                  className="h-2.5 w-2.5 text-white"
+                  strokeWidth={3}
+                />
+              </span>
+            </div>
+
+            {/* Info */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  Revisión final
+                </span>
+              </div>
+              <h3 className="mt-1.5 text-[18px] font-bold text-slate-900 tracking-tight leading-tight truncate">
+                {nombreCompleto}
+              </h3>
+              <p className="text-[12px] text-slate-500 mt-0.5">
+                Verificá los datos antes de registrar al practicante
+              </p>
+            </div>
+          </div>
+
+          {/* Chips resumen */}
+          <div className="relative z-10 flex flex-wrap gap-2 mt-4">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-mono font-semibold text-slate-700">
+              <IdCard className="h-3 w-3 text-slate-400" strokeWidth={2.4} />
+              {formData.documento || "—"}
             </span>
-            <span className="text-gray-500">Documento:</span>
-            <span className="font-medium break-words">{formData.documento}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700 truncate max-w-[180px]">
+              <BriefcaseBusiness
+                className="h-3 w-3 text-violet-500 shrink-0"
+                strokeWidth={2.4}
+              />
+              <span className="truncate">{cargoFinal}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700 truncate max-w-[180px]">
+              <Building2
+                className="h-3 w-3 text-blue-500 shrink-0"
+                strokeWidth={2.4}
+              />
+              <span className="truncate">{sedeFinal}</span>
+            </span>
           </div>
         </div>
 
-        <div>
-          <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-            <BriefcaseBusiness className="h-4 w-4" />
-            Información laboral
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm bg-gray-50 rounded-lg p-3 sm:p-3">
-            <span className="text-gray-500">Sede:</span>
-            <span className="font-medium break-words">{sedeFinal}</span>
-            <span className="text-gray-500">Oficina:</span>
-            <span className="font-medium break-words">{oficinaFinal}</span>
-            <span className="text-gray-500">Cargo:</span>
-            <span className="font-medium break-words">{cargoFinal}</span>
-            <span className="text-gray-500">Centro de Estudios:</span>
-            <span className="font-medium break-words">{tipoFinal}</span>
-            <span className="text-gray-500">Inicio:</span>
-            <span className="font-medium">{formData.fechaInicioPracticas}</span>
-            {formData.fechaFinPracticas && (
-              <>
-                <span className="text-gray-500">Fin:</span>
-                <span className="font-medium">
-                  {formData.fechaFinPracticas}
-                </span>
-              </>
+        {/* ═══════════ GRID 2 COLUMNAS: PERSONAL + LABORAL ═══════════ */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Datos personales */}
+          <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="h-7 w-7 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                  <User
+                    className="h-3.5 w-3.5 text-blue-700"
+                    strokeWidth={2.4}
+                  />
+                </div>
+                <h4 className="text-[12px] font-bold text-slate-800 tracking-tight">
+                  Datos personales
+                </h4>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                <CheckCircle2 className="h-3 w-3" strokeWidth={2.6} />
+                Completado
+              </span>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
+                  Email
+                </p>
+                <p className="text-[13px] font-medium text-slate-900 mt-1.5 break-all">
+                  {formData.correoElectronico || "—"}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
+                    Teléfono
+                  </p>
+                  <p className="text-[13px] font-mono font-medium text-slate-900 mt-1.5">
+                    {formData.telefono || "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
+                    DNI
+                  </p>
+                  <p className="text-[13px] font-mono font-medium text-slate-900 mt-1.5">
+                    {formData.documento || "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Info laboral */}
+          <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="h-7 w-7 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center shrink-0">
+                  <BriefcaseBusiness
+                    className="h-3.5 w-3.5 text-violet-700"
+                    strokeWidth={2.4}
+                  />
+                </div>
+                <h4 className="text-[12px] font-bold text-slate-800 tracking-tight">
+                  Información laboral
+                </h4>
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                <CheckCircle2 className="h-3 w-3" strokeWidth={2.6} />
+                Completado
+              </span>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
+                  Oficina
+                </p>
+                <p className="text-[13px] font-medium text-slate-900 mt-1.5 break-words">
+                  {oficinaFinal || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
+                  Centro de estudios
+                </p>
+                <p className="text-[13px] font-medium text-slate-900 mt-1.5 break-words">
+                  {tipoFinal || "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══════════ PERÍODO DE PRÁCTICAS ═══════════ */}
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                <Calendar
+                  className="h-3.5 w-3.5 text-emerald-700"
+                  strokeWidth={2.4}
+                />
+              </div>
+              <h4 className="text-[12px] font-bold text-slate-800 tracking-tight">
+                Período de prácticas
+              </h4>
+            </div>
+          </div>
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 px-3.5 py-3">
+              <div className="h-10 w-10 rounded-lg bg-white border border-emerald-200 flex items-center justify-center shrink-0">
+                <Calendar
+                  className="h-4 w-4 text-emerald-700"
+                  strokeWidth={2.2}
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 leading-none">
+                  Fecha de inicio
+                </p>
+                <p className="text-[14px] font-bold text-emerald-900 mt-1.5 truncate tabular-nums">
+                  {formData.fechaInicioPracticas || "—"}
+                </p>
+              </div>
+            </div>
+            {formData.fechaFinPracticas ? (
+              <div className="flex items-center gap-3 rounded-xl border border-amber-100 bg-amber-50/40 px-3.5 py-3">
+                <div className="h-10 w-10 rounded-lg bg-white border border-amber-200 flex items-center justify-center shrink-0">
+                  <Calendar
+                    className="h-4 w-4 text-amber-700"
+                    strokeWidth={2.2}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 leading-none">
+                    Fecha de fin
+                  </p>
+                  <p className="text-[14px] font-bold text-amber-900 mt-1.5 truncate tabular-nums">
+                    {formData.fechaFinPracticas}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/40 px-3.5 py-3">
+                <div className="h-10 w-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                  <Calendar
+                    className="h-4 w-4 text-slate-400"
+                    strokeWidth={2.2}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
+                    Fecha de fin
+                  </p>
+                  <p className="text-[13px] font-medium text-slate-400 italic mt-1.5">
+                    Sin definir
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        <div>
-          <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4" />
-            Horario semanal
-          </h4>
-          <div className="grid grid-cols-1 gap-0.5 text-sm bg-gray-50 rounded-lg p-3 sm:p-3">
-            {DIAS_SEMANA.map((dia) => {
-              const diaData = horario[dia.key as keyof HorarioSemanal];
-              return (
-                <div
-                  key={dia.key}
-                  className="flex justify-between py-0.5 border-b border-gray-100 last:border-0"
-                >
-                  <span className="text-gray-600">{dia.label}</span>
-                  <span
-                    className={
-                      diaData.activo ? "font-medium" : "text-gray-400 italic"
-                    }
-                  >
-                    {diaData.activo
-                      ? `${diaData.entrada} - ${diaData.salida}`
-                      : "Descanso"}
-                  </span>
-                </div>
-              );
-            })}
+        {/* ═══════════ HORARIO SEMANAL ═══════════ */}
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="h-7 w-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                <Clock
+                  className="h-3.5 w-3.5 text-orange-700"
+                  strokeWidth={2.4}
+                />
+              </div>
+              <h4 className="text-[12px] font-bold text-slate-800 tracking-tight">
+                Horario semanal
+              </h4>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+              {diasActivos} {diasActivos === 1 ? "día" : "días"}
+            </span>
           </div>
+          <div className="p-3">
+            <div className="space-y-1">
+              {DIAS_SEMANA.map((dia) => {
+                const diaData = horario[dia.key as keyof HorarioSemanal];
+                return (
+                  <div
+                    key={dia.key}
+                    className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 transition-colors ${
+                      diaData.activo ? "bg-slate-50/70" : "opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`h-2 w-2 rounded-full shrink-0 ${
+                          diaData.activo
+                            ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                            : "bg-slate-300"
+                        }`}
+                      />
+                      <span
+                        className={`text-[12.5px] font-semibold ${
+                          diaData.activo ? "text-slate-900" : "text-slate-400"
+                        }`}
+                      >
+                        {dia.label}
+                      </span>
+                    </div>
+                    {diaData.activo ? (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11.5px] font-semibold text-slate-700 tabular-nums">
+                          {diaData.entrada}
+                        </span>
+                        <ArrowRight
+                          className="h-3 w-3 text-slate-300"
+                          strokeWidth={2.4}
+                        />
+                        <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11.5px] font-semibold text-slate-700 tabular-nums">
+                          {diaData.salida}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[11.5px] text-slate-400 italic">
+                        Descanso
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ═══════════ BANNER DE ADVERTENCIA ═══════════ */}
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-100 bg-amber-50/50 px-3.5 py-3">
+          <AlertCircle
+            className="h-4 w-4 text-amber-600 shrink-0 mt-0.5"
+            strokeWidth={2.4}
+          />
+          <p className="text-[12px] text-amber-800 leading-snug">
+            Al confirmar, se registrará al practicante en el sistema con el
+            horario configurado.
+          </p>
         </div>
       </div>
     );
@@ -1289,88 +1716,123 @@ export function PracticanteCreateDialog({
   const renderFooter = () => {
     const isStep1Valid = validateStep1();
     const isStep2Valid = validateStep2();
+    const canContinue = currentStep === 1 ? isStep1Valid : isStep2Valid;
 
     return (
-      <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t sm:justify-between sm:items-center">
-        {currentStep === 1 && (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="flex-1 sm:flex-none text-gray-500 h-10"
-          >
-            Cancelar
-          </Button>
-        )}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center sm:justify-between">
+        {/* Botón cancelar / atrás */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           {currentStep > 1 && (
             <Button
               type="button"
               variant="outline"
               onClick={goToPreviousStep}
-              className="flex-1 sm:flex-none h-10"
+              className="flex-1 sm:flex-none h-10 border-slate-200 hover:bg-slate-50"
             >
-              <ArrowLeft className="h-4 w-4 mr-1" />
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
               Atrás
             </Button>
           )}
+          {currentStep === 1 && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="flex-1 sm:flex-none text-slate-500 hover:text-slate-700 hover:bg-slate-100 h-10"
+            >
+              Cancelar
+            </Button>
+          )}
+        </div>
 
+        {/* Botón avanzar / confirmar */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {currentStep < 3 && (
+            <Button
+              type="button"
+              onClick={goToNextStep}
+              disabled={!canContinue}
+              className={`flex-1 sm:flex-none h-10 gap-1.5 bg-blue-700 hover:bg-blue-800 text-[13px] font-semibold ${
+                !canContinue ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Continuar
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
           {currentStep === 3 && (
             <Button
               type="button"
               onClick={handleSubmit}
-              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 h-10"
+              className="flex-1 sm:flex-none h-10 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-[13px] font-semibold shadow-sm"
             >
-              <SaveCheck className="h-4 w-4 mr-1" />
+              <SaveCheck className="h-4 w-4" />
               Registrar practicante
             </Button>
           )}
         </div>
-        {currentStep < 3 && (
-          <Button
-            type="button"
-            onClick={goToNextStep}
-            className={`flex-1 sm:flex-none bg-blue-700 hover:bg-blue-800 h-10 ${(currentStep === 1 ? !isStep1Valid : !isStep2Valid) ? "opacity-50 cursor-not-allowed" : ""}`}
-            disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
-          >
-            Continuar
-            <ArrowRight className="h-4 w-4 ml-1" />
-          </Button>
-        )}
-      </DialogFooter>
+      </div>
     );
   };
 
   // ====== MAIN RENDER ======
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-24px)] sm:w-full max-w-4xl! max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-2 shrink-0 pr-10 sm:pr-6">
-          <div className="flex items-center gap-2 sm:gap-2">
-            <UserPlus className="h-5 w-5 sm:h-6 sm:w-6 text-blue-700 shrink-0" />
-            <DialogTitle className="text-lg sm:text-xl leading-tight">Agregar practicante</DialogTitle>
+      <DialogContent className="w-[calc(100vw-24px)] sm:w-full !max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl border-slate-200 shadow-2xl gap-0">
+        {/* ─── Header ─── */}
+        <DialogHeader className="p-0 shrink-0 border-b border-slate-100">
+          <div className="flex items-start gap-3.5 px-5 sm:px-6 pt-5 pb-4">
+            <div className="relative shrink-0">
+              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-md shadow-blue-900/20">
+                <UserPlus className="h-5 w-5 text-white" strokeWidth={2.2} />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 ring-2 ring-white" />
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <DialogTitle className="text-[17px] font-bold text-slate-900 tracking-tight leading-tight">
+                  Agregar practicante
+                </DialogTitle>
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                  Paso {currentStep} de 3
+                </span>
+              </div>
+              <DialogDescription className="text-[12.5px] text-slate-500 mt-0.5">
+                {currentStep === 1
+                  ? "Completa los datos personales y laborales del practicante."
+                  : currentStep === 2
+                    ? "Configura el horario semanal según el cargo asignado."
+                    : "Revisa los datos antes de registrar al practicante."}
+              </DialogDescription>
+            </div>
           </div>
-          <DialogDescription className="text-xs sm:text-sm pr-2">
-            Completa los datos del nuevo practicante en{" "}
-            {currentStep === 1
-              ? "3 pasos"
-              : currentStep === 2
-                ? "paso 2 de 3"
-                : "paso 3 de 3"}
-            .
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-3 sm:px-6 py-3 sm:py-5">
+        {/* ─── Body ─── */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-4 sm:px-6 py-4 sm:py-5 bg-slate-50/30">
           {renderStepIndicator()}
-          <div className="mt-3 sm:mt-4 flex-1 min-h-0 flex flex-col overflow-hidden">
-            {currentStep === 1 && <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">{renderStep1()}</div>}
+          <div className="mt-2 sm:mt-3 flex-1 min-h-0 flex flex-col overflow-hidden">
+            {currentStep === 1 && (
+              <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">
+                {renderStep1()}
+              </div>
+            )}
             {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">{renderStep3()}</div>}
+            {currentStep === 3 && (
+              <div className="flex-1 overflow-y-auto pr-1 overscroll-contain">
+                {renderStep3()}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="p-3 sm:p-6 pt-2 sm:pt-2 shrink-0 border-t bg-white">{renderFooter()}</div>
+        {/* ─── Footer ─── */}
+        <div className="p-4 sm:px-6 sm:py-5 shrink-0 border-t border-slate-100 bg-white">
+          {renderFooter()}
+        </div>
       </DialogContent>
     </Dialog>
   );

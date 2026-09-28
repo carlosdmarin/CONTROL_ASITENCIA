@@ -7,6 +7,7 @@ import VigilantesTable, { VigilanteMock } from "./components/VigilantesTable";
 import VigilanteDialog from "./components/VigilanteDialog";
 import CambiarContrasenaDialog from "./components/CambiarContrasenaDialog";
 import VigilanteEstadoDialog from "./components/VigilanteEstadoDialog";
+import VigilanteFilters from "./components/VigilanteFilters";
 import { Input } from "@/components/ui/input";
 import { Search, AlertCircle } from "lucide-react";
 import { vigilantesApi, VigilanteResponse } from "@/lib/api/vigilantes";
@@ -31,10 +32,23 @@ export default function VigilantesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [dialogNuevoAbierto, setDialogNuevoAbierto] = useState(false);
   const [dialogPasswordAbierto, setDialogPasswordAbierto] = useState(false);
-  const [vigilanteSeleccionado, setVigilanteSeleccionado] = useState<VigilanteMock | null>(null);
+  const [vigilanteSeleccionado, setVigilanteSeleccionado] =
+    useState<VigilanteMock | null>(null);
   const [dialogEstadoAbierto, setDialogEstadoAbierto] = useState(false);
-  const [vigilanteEstado, setVigilanteEstado] = useState<VigilanteMock | null>(null);
+  const [vigilanteEstado, setVigilanteEstado] = useState<VigilanteMock | null>(
+    null,
+  );
   const [isChangingEstado, setIsChangingEstado] = useState(false);
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
+  const [filtroSede, setFiltroSede] = useState("todas");
+
+  const sedesDisponibles = useMemo(() => {
+    const set = new Set<string>();
+    vigilantes.forEach((v) => {
+      if (v.sede && v.sede !== "—") set.add(v.sede);
+    });
+    return Array.from(set).sort();
+  }, [vigilantes]);
 
   const cargarVigilantes = async () => {
     try {
@@ -44,7 +58,8 @@ export default function VigilantesPage() {
       const mapped = Array.isArray(data) ? data.map(toUiModel) : [];
       setVigilantes(mapped);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error al cargar vigilantes";
+      const msg =
+        err instanceof Error ? err.message : "Error al cargar vigilantes";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -57,15 +72,21 @@ export default function VigilantesPage() {
   }, []);
 
   const vigilantesFiltrados = useMemo(() => {
-    if (!busqueda) return vigilantes;
-    const term = busqueda.toLowerCase();
-    return vigilantes.filter(
-      (v) =>
+    const term = busqueda.toLowerCase().trim();
+    return vigilantes.filter((v) => {
+      const matchBusqueda =
+        term === "" ||
         v.nombreCompleto.toLowerCase().includes(term) ||
         v.usuario.toLowerCase().includes(term) ||
-        v.sede.toLowerCase().includes(term)
-    );
-  }, [vigilantes, busqueda]);
+        v.sede.toLowerCase().includes(term);
+
+      const matchEstado = filtroEstado === "TODOS" || v.estado === filtroEstado;
+
+      const matchSede = filtroSede === "todas" || v.sede === filtroSede;
+
+      return matchBusqueda && matchEstado && matchSede;
+    });
+  }, [vigilantes, busqueda, filtroEstado, filtroSede]);
 
   const handleChangePassword = (v: VigilanteMock) => {
     setVigilanteSeleccionado(v);
@@ -83,15 +104,26 @@ export default function VigilantesPage() {
     try {
       setIsChangingEstado(true);
       await vigilantesApi.cambiarEstado(vigilanteEstado.id, nuevoEstado);
-      toast.success(nuevoEstado ? "Vigilante activado correctamente." : "Vigilante desactivado correctamente.");
+      toast.success(
+        nuevoEstado
+          ? "Vigilante activado correctamente."
+          : "Vigilante desactivado correctamente.",
+      );
       setDialogEstadoAbierto(false);
       setVigilanteEstado(null);
       await cargarVigilantes();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "No se pudo actualizar el estado del vigilante. Intenta nuevamente.";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "No se pudo actualizar el estado del vigilante. Intenta nuevamente.";
       if (msg.toLowerCase().includes("no encontrado") || msg.includes("404")) {
         toast.error("El vigilante ya no existe o no está disponible.");
-      } else if (msg.toLowerCase().includes("permisos") || msg.includes("403") || msg.toLowerCase().includes("forbidden")) {
+      } else if (
+        msg.toLowerCase().includes("permisos") ||
+        msg.includes("403") ||
+        msg.toLowerCase().includes("forbidden")
+      ) {
         toast.error("No tienes permisos para realizar esta acción.");
       } else {
         toast.error(msg);
@@ -104,27 +136,16 @@ export default function VigilantesPage() {
   return (
     <div className="space-y-6">
       <VigilantesHeader onOpenCreate={() => setDialogNuevoAbierto(true)} />
-
-      <div className="relative w-full max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <Input
-          placeholder="Buscar por nombre, usuario o sede..."
-          className="pl-9 h-10 bg-white border-slate-200 rounded-xl"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </div>
-
-      {error && !loading && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <span className="flex-1">{error}</span>
-          <Button variant="outline" size="sm" onClick={cargarVigilantes} className="h-8 bg-white">
-            Reintentar
-          </Button>
-        </div>
-      )}
-
+        
+      <VigilanteFilters
+        busqueda={busqueda}
+        onBusquedaChange={setBusqueda}
+        filtroEstado={filtroEstado}
+        onFiltroEstadoChange={setFiltroEstado}
+        filtroSede={filtroSede}
+        onFiltroSedeChange={setFiltroSede}
+        sedes={sedesDisponibles}
+      />
       <VigilantesTable
         vigilantes={vigilantesFiltrados}
         loading={loading}
@@ -133,7 +154,6 @@ export default function VigilantesPage() {
         onToggleEstado={handleToggleEstado}
         onCreate={() => setDialogNuevoAbierto(true)}
       />
-
       <VigilanteDialog
         open={dialogNuevoAbierto}
         onOpenChange={setDialogNuevoAbierto}

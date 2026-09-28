@@ -5,32 +5,52 @@ import { Button } from "@/components/ui/button";
 
 interface PracticanteHeaderProps {
   onOpenCreate: () => void;
+  /** Opcional: total de practicantes para mostrar como contexto */
+  total?: number;
 }
 
-export default function PracticanteHeader({ onOpenCreate }: PracticanteHeaderProps) {
+export default function PracticanteHeader({
+  onOpenCreate,
+  total,
+}: PracticanteHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-      {/* ====== IZQUIERDA: Título ====== */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
-        <div className="p-2.5 sm:p-3 bg-blue-100 rounded-xl shrink-0">
-          <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight">Practicantes</h1>
-          <p className="text-xs sm:text-sm text-gray-500 leading-snug">
-            Gestiona los practicantes de tu empresa
-          </p>
-        </div>
-      </div>
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-4 sm:px-5 py-4">
+        {/* ─── Izquierda: ícono + título + subtítulo ─── */}
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="relative shrink-0">
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-md shadow-blue-900/20">
+              <Users className="h-5 w-5 text-white" strokeWidth={2.2} />
+            </div>
+          </div>
 
-      {/* ====== DERECHA: Botón Agregar ====== */}
-      <Button
-        className="w-50! sm:w-auto justify-center gap-2 px-4 py-2.5 sm:p-4 h-9! sm:h-auto hover:shadow-md transition-all bg-blue-700 duration-300 hover:bg-blue-800 shrink-0"
-        onClick={onOpenCreate}
-      >
-        <UserPlus className="h-5 w-5 shrink-0" />
-        Agregar practicante
-      </Button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-[18px] sm:text-[20px] font-bold text-slate-900 tracking-tight leading-tight">
+                Practicantes
+              </h1>
+              {typeof total === "number" && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 text-slate-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                  {total} {total === 1 ? "registro" : "registros"}
+                </span>
+              )}
+            </div>
+            <p className="text-[12.5px] text-slate-500 mt-0.5">
+              Gestiona los practicantes de tu empresa
+            </p>
+          </div>
+        </div>
+
+        {/* ─── Derecha: acción primaria ─── */}
+        <Button
+          onClick={onOpenCreate}
+          className="w-full sm:w-auto shrink-0 h-10 gap-2 bg-blue-700 hover:bg-blue-800 shadow-sm hover:shadow-md transition-all text-[13px] font-semibold justify-center"
+        >
+          <UserPlus className="h-4 w-4 shrink-0" strokeWidth={2.4} />
+          Agregar practicante
+        </Button>
+      </div>
     </div>
   );
 }

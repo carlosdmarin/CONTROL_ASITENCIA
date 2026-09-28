@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ReportesHeader } from "./components/ReportesHeader";
 import { ReportesPracticantesTable } from "./components/ReportesTable";
 import { ReporteDialog } from "./components/ReporteDialog";
+import ReporteFilters from "./components/ReporteFilters";
 import { practicantesApi } from "@/lib/api/practicantes";
 import { Practicante } from "@/types/practicante";
 import { Input } from "@/components/ui/input";
@@ -17,15 +18,22 @@ export default function ReportesPage() {
 
   // ===== Estado del modal =====
   const [modalReporteAbierto, setModalReporteAbierto] = useState(false);
-  const [practicanteReporte, setPracticanteReporte] = useState<Practicante | null>(null);
+  const [practicanteReporte, setPracticanteReporte] =
+    useState<Practicante | null>(null);
 
+  // BUSQUEDA
+  const [filtroSituacion, setFiltroSituacion] = useState("TODOS");
+  const [filtroSede, setFiltroSede] = useState("todas");
   const cargarPracticantes = async () => {
     try {
       setLoading(true);
       const data = await practicantesApi.getAll();
       setPracticantes(Array.isArray(data) ? data : []);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Error al cargar los practicantes";
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "Error al cargar los practicantes";
       console.error("Error:", error);
       toast.error(msg);
     } finally {
@@ -47,44 +55,58 @@ export default function ReportesPage() {
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
+  const sedesDisponibles = useMemo(() => {
+    const set = new Set<string>();
+    practicantes.forEach((p) => {
+      if (p.sede) set.add(p.sede);
+    });
+    return Array.from(set).sort();
+  }, [practicantes]);
+
 
   const practicantesFiltrados = useMemo(() => {
-    if (!busqueda) return practicantes;
-    const term = busqueda.toLowerCase();
-    return practicantes.filter((p) => {
-      const nombreOficina = p.nombreOficina || p.oficina  || "";
-      const sede = p.sede || "";
-      return (
-        p.nombreCompleto?.toLowerCase().includes(term) ||
-        p.documento?.includes(busqueda) ||
-        p.documento?.toLowerCase().includes(term) ||
-        sede.toLowerCase().includes(term) ||
-        nombreOficina.toLowerCase().includes(term)
-      );
-    });
-  }, [practicantes, busqueda]);
+  const term = busqueda.toLowerCase().trim();
+  return practicantes.filter((p) => {
+    const nombreOficina = p.nombreOficina || p.oficina || "";
+    const sede = p.sede || "";
 
+    const matchBusqueda =
+      term === "" ||
+      p.nombreCompleto?.toLowerCase().includes(term) ||
+      p.documento?.includes(busqueda) ||
+      p.documento?.toLowerCase().includes(term) ||
+      sede.toLowerCase().includes(term) ||
+      nombreOficina.toLowerCase().includes(term);
+
+    const matchSituacion =
+      filtroSituacion === "TODOS" || p.situacion === filtroSituacion;
+
+    const matchSede = filtroSede === "todas" || p.sede === filtroSede;
+
+    return matchBusqueda && matchSituacion && matchSede;
+  });
+}, [practicantes, busqueda, filtroSituacion, filtroSede]);
   // ===== Abrir modal =====
   const handleViewReporte = (practicante: Practicante) => {
     setPracticanteReporte(practicante);
     setModalReporteAbierto(true);
   };
 
-// ReporteDialog maneja su propio toast "Reporte configurado correctamente"
+  // ReporteDialog maneja su propio toast "Reporte configurado correctamente"
 
   return (
     <div className="space-y-6">
       <ReportesHeader />
 
-      <div className="relative w-full max-w-95">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <Input
-          placeholder="Buscar por nombre, DNI, sede o área..."
-          className="pl-9 h-10 bg-white border-slate-200 rounded-xl"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </div>
+      <ReporteFilters
+        busqueda={busqueda}
+        onBusquedaChange={setBusqueda}
+        filtroSituacion={filtroSituacion}
+        onFiltroSituacionChange={setFiltroSituacion}
+        filtroSede={filtroSede}
+        onFiltroSedeChange={setFiltroSede}
+        sedes={sedesDisponibles}
+      />
 
       <ReportesPracticantesTable
         practicantes={practicantesFiltrados}

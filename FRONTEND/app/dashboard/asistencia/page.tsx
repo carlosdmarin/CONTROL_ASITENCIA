@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
 import AsistenciaHeader from "./components/AsistenciaHeader";
 import AsistenciaFilters from "./components/AsistenciaFilters";
 import AsistenciaTable from "./components/AsistenciaTable";
+import { Button } from "@/components/ui/button";
+
 import { asistenciasApi } from "@/lib/api/asistencias";
 import { practicantesApi } from "@/lib/api/practicantes";
 import {
@@ -54,29 +57,14 @@ function mapEstado(
 
 export default function AsistenciaPage() {
   const [fecha, setFecha] = useState<Date>(new Date());
-  const [asistencias, setAsistencias] = useState<AsistenciaDiariaResponse[]>([]);
-  const [resumen, setResumen] = useState({
-    total: 0,
-    presentes: 0,
-    tardanzas: 0,
-    ausentes: 0,
-    descansos: 0,
-    sinMarcar: 0,
-    justificados: 0,
-  });
+  const [asistencias, setAsistencias] = useState<AsistenciaDiariaResponse[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroSede, setFiltroSede] = useState("todas");
-  const [tabEstado, setTabEstado] = useState("todos");
-  const [permisoOpen, setPermisoOpen] = useState(false);
-  const [permisoFecha, setPermisoFecha] = useState(formatFechaISO(new Date()));
-  const [permisoMotivo, setPermisoMotivo] = useState("");
-  const [permisoObs, setPermisoObs] = useState("");
-  const [permisoTipo, setPermisoTipo] = useState("PERSONAL");
-  const [permisoPracticante, setPermisoPracticante] = useState("");
-  const [practicantes, setPracticantes] = useState<Practicante[]>([]);
   const [practicantesAll, setPracticantesAll] = useState<Practicante[]>([]);
 
   const fechaISO = formatFechaISO(fecha);
@@ -89,26 +77,14 @@ export default function AsistenciaPage() {
       setError(null);
       const data = await asistenciasApi.getAsistenciasDelDia(fechaISO);
       if (requestId !== requestIdRef.current) return;
-      const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data) ? data : [];
+      const dataArray: AsistenciaDiariaResponse[] = Array.isArray(data)
+        ? data
+        : [];
       setAsistencias(dataArray);
-      const presentes = dataArray.filter((a) => {
-        const n = normalizeEstadoDia(a.estadoDia);
-        return n === "PRESENTE" || n === "TARDANZA";
-      }).length;
-      const tardanzas = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "TARDANZA").length;
-      const ausentes = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "AUSENTE").length;
-      const descansos = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length;
-      const sinMarcar = dataArray.filter((a) => normalizeEstadoDia(a.estadoDia) === "SIN_MARCAR").length;
-      const justificados = dataArray.filter((a) => {
-        const det = a.situacionesDetalle;
-        const situacion = a.situacion;
-        return Boolean(a.justificado) || Boolean(situacion && situacion !== "NINGUNA") || Boolean(det && det.length > 0);
-      }).length;
-      const total = dataArray.length;
-      setResumen({ total, presentes, tardanzas, ausentes, descansos, sinMarcar, justificados });
     } catch (e: unknown) {
       if (requestId !== requestIdRef.current) return;
-      const msg = e instanceof Error ? e.message : "Error al cargar asistencias";
+      const msg =
+        e instanceof Error ? e.message : "Error al cargar asistencias";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -118,13 +94,16 @@ export default function AsistenciaPage() {
 
   const cargarPracticantesSede = async () => {
     try {
-      const list = await practicantesApi.getAll().catch(() => [] as Practicante[]);
+      const list = await practicantesApi
+        .getAll()
+        .catch(() => [] as Practicante[]);
       setPracticantesAll(Array.isArray(list) ? list : []);
     } catch {}
   };
 
   useEffect(() => {
     cargarDatos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fechaISO]);
 
   useEffect(() => {
@@ -137,20 +116,26 @@ export default function AsistenciaPage() {
       n.setDate(n.getDate() - 1);
       return n;
     });
+
   const handleNext = () =>
     setFecha((d) => {
       const n = new Date(d);
       n.setDate(n.getDate() + 1);
       return n;
     });
+
   const handleFechaChange = (iso: string) => {
     if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
     const [y, m, d] = iso.split("-").map(Number);
     if (!y || !m || !d) return;
     const parsed = new Date(y, m - 1, d);
     if (isNaN(parsed.getTime())) return;
-    // Validar que el parseo no haya hecho overflow (ej 2026-13-40)
-    if (parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) return;
+    if (
+      parsed.getFullYear() !== y ||
+      parsed.getMonth() !== m - 1 ||
+      parsed.getDate() !== d
+    )
+      return;
     setFecha(parsed);
     setError(null);
   };
@@ -182,7 +167,6 @@ export default function AsistenciaPage() {
     return Array.from(s).sort();
   }, [asistencias, sedeMap, practicantesAll]);
 
-  // Filas unificadas con referencia estable al registro original
   const filasCompletas = useMemo(() => {
     return asistencias.map((a) => {
       const practInfo = practicantesMap.get(a.idPracticante);
@@ -195,34 +179,29 @@ export default function AsistenciaPage() {
         documento,
         sede,
         oficina,
-        jornada: a.entradaEsperada && a.salidaEsperada ? `${a.entradaEsperada.substring(0, 5)} – ${a.salidaEsperada.substring(0, 5)}` : a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : "—",
-        programada: a.entradaEsperada ? a.entradaEsperada.substring(0, 5) : null,
+        jornada:
+          a.entradaEsperada && a.salidaEsperada
+            ? `${a.entradaEsperada.substring(0, 5)} – ${a.salidaEsperada.substring(0, 5)}`
+            : a.entradaEsperada
+              ? a.entradaEsperada.substring(0, 5)
+              : "—",
+        programada: a.entradaEsperada
+          ? a.entradaEsperada.substring(0, 5)
+          : null,
         entrada: a.entradaReal ? a.entradaReal.substring(0, 5) : null,
         tardanza: a.minutosTardanza ?? null,
         salida: a.salidaReal ? a.salidaReal.substring(0, 5) : null,
         horas: formatHoras(a.horasTrabajadas),
         estado: mapEstado(a.estadoDia),
         _sede: sede,
-        _justificado: Boolean(a.justificado) || Boolean(a.situacion && a.situacion !== "NINGUNA") || Boolean(a.situacionesDetalle?.length),
+        _justificado:
+          Boolean(a.justificado) ||
+          Boolean(a.situacion && a.situacion !== "NINGUNA") ||
+          Boolean(a.situacionesDetalle?.length),
       };
       return { ui, raw: a };
     });
   }, [asistencias, sedeMap, practicantesMap]);
-
-  const tabCounts = useMemo(() => {
-    return {
-      todos: asistencias.length,
-      presente: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "PRESENTE").length,
-      tardanza: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "TARDANZA").length,
-      ausente: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "AUSENTE").length,
-      sin_marcar: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "SIN_MARCAR").length,
-      descanso: asistencias.filter((a) => normalizeEstadoDia(a.estadoDia) === "DESCANSO").length,
-      justificado: asistencias.filter((a) => {
-        const det = a.situacionesDetalle;
-        return Boolean(a.justificado) || Boolean(a.situacion && a.situacion !== "NINGUNA") || Boolean(det && det.length > 0);
-      }).length,
-    };
-  }, [asistencias]);
 
   const filasFiltradas = useMemo(() => {
     return filasCompletas.filter(({ ui }) => {
@@ -231,6 +210,7 @@ export default function AsistenciaPage() {
         ui.practicante.toLowerCase().includes(busqueda.toLowerCase()) ||
         ui._sede.toLowerCase().includes(busqueda.toLowerCase()) ||
         ui.documento.toLowerCase().includes(busqueda.toLowerCase());
+
       let matchEstado = true;
       if (filtroEstado !== "todos") {
         if (filtroEstado === "justificado") {
@@ -239,66 +219,15 @@ export default function AsistenciaPage() {
           matchEstado = ui.estado.toLowerCase() === filtroEstado.toLowerCase();
         }
       }
-      let matchTab = true;
-      if (tabEstado !== "todos") {
-        if (tabEstado === "justificado") {
-          matchTab = ui._justificado;
-        } else {
-          matchTab = ui.estado.toLowerCase() === tabEstado.toLowerCase();
-        }
-      }
+
       const matchSede = filtroSede === "todas" || ui._sede === filtroSede;
-      return matchBusqueda && matchEstado && matchTab && matchSede;
+      return matchBusqueda && matchEstado && matchSede;
     });
-  }, [filasCompletas, busqueda, filtroEstado, tabEstado, filtroSede]);
+  }, [filasCompletas, busqueda, filtroEstado, filtroSede]);
 
   const filtradas = filasFiltradas.map((f) => f.ui);
   const filtradasRaw = filasFiltradas.map((f) => f.raw);
-  // Estructura unificada para tabla sin índices frágiles
   const filasParaTabla = filasFiltradas.map(({ ui, raw }) => ({ ui, raw }));
-
-  const openPermiso = async () => {
-    setPermisoOpen(true);
-    try {
-      const list = await practicantesApi.getActivos();
-      setPracticantes(list);
-    } catch {}
-  };
-  const handlePermiso = async () => {
-    if (!permisoPracticante) {
-      toast.error("Seleccione practicante");
-      return;
-    }
-    if (!permisoMotivo.trim()) {
-      toast.error("Motivo obligatorio");
-      return;
-    }
-    try {
-      await asistenciasApi.registrarPermiso(
-        Number(permisoPracticante),
-        permisoFecha,
-        permisoMotivo,
-        permisoObs,
-        permisoTipo,
-      );
-      toast.success("Permiso registrado. No se generará AUSENTE ese día.");
-      setPermisoOpen(false);
-      setPermisoMotivo("");
-      setPermisoObs("");
-      cargarDatos();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Error al registrar permiso";
-      toast.error(msg);
-    }
-  };
-
-  const fechaLarga = fecha.toLocaleDateString("es-PE", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "America/Lima",
-  });
 
   return (
     <div className="space-y-4">
@@ -309,41 +238,6 @@ export default function AsistenciaPage() {
         onFechaChange={handleFechaChange}
         loading={loading}
       />
-
-      {/* Resumen compacto del día */}
-
-
-      {/* Tabs de estados */}
-      <div className="flex gap-2 pt-7 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
-        {[
-          { key: "todos", label: "Todos", count: tabCounts.todos },
-          { key: "presente", label: "Presentes", count: tabCounts.presente },
-          { key: "tardanza", label: "Tardanzas", count: tabCounts.tardanza },
-          { key: "ausente", label: "Ausentes", count: tabCounts.ausente },
-          { key: "sin_marcar", label: "Sin marcar", count: tabCounts.sin_marcar },
-          { key: "descanso", label: "Descanso", count: tabCounts.descanso },
-          { key: "justificado", label: "Justificados", count: tabCounts.justificado },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setTabEstado(tab.key)}
-            className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
-              tabEstado === tab.key
-                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            {tab.label}
-            <span
-              className={`rounded-full px-1.5 py-0 text-xs font-semibold ${
-                tabEstado === tab.key ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-              }`}
-            >
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
 
       <AsistenciaFilters
         busqueda={busqueda}
@@ -357,8 +251,26 @@ export default function AsistenciaPage() {
       />
 
       {error && !loading && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
+        <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50/60 px-4 py-3.5">
+          <div className="h-8 w-8 rounded-lg bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
+            <AlertCircle className="h-4 w-4 text-rose-600" strokeWidth={2.4} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12.5px] font-semibold text-rose-900">
+              Error al cargar las asistencias
+            </p>
+            <p className="text-[11.5px] text-rose-700 mt-0.5 break-words">
+              {error}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={cargarDatos}
+            className="h-8 px-3 text-[12px] bg-white border-rose-200 hover:bg-rose-50 text-rose-700 shrink-0"
+          >
+            Reintentar
+          </Button>
         </div>
       )}
 

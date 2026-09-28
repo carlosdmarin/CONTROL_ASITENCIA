@@ -10,34 +10,34 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface PracticanteFiltersProps {
+interface VigilanteFiltersProps {
   busqueda: string;
   onBusquedaChange: (value: string) => void;
-  filtroSituacion: string;
-  onFiltroSituacionChange: (value: string) => void;
-  filtroSede: string;
-  onFiltroSedeChange: (value: string) => void;
-  sedes: string[];
+  filtroEstado: string;
+  onFiltroEstadoChange: (value: string) => void;
+  filtroSede?: string;
+  onFiltroSedeChange?: (value: string) => void;
+  sedes?: string[];
 }
 
-export default function PracticanteFilters({
+export default function VigilanteFilters({
   busqueda,
   onBusquedaChange,
-  filtroSituacion,
-  onFiltroSituacionChange,
-  filtroSede,
+  filtroEstado,
+  onFiltroEstadoChange,
+  filtroSede = "todas",
   onFiltroSedeChange,
-  sedes,
-}: PracticanteFiltersProps) {
+  sedes = [],
+}: VigilanteFiltersProps) {
   const hayFiltrosActivos =
     busqueda.trim() !== "" ||
-    (filtroSituacion && filtroSituacion !== "TODOS") ||
+    (filtroEstado && filtroEstado !== "TODOS") ||
     (filtroSede && filtroSede !== "todas");
 
   const limpiarFiltros = () => {
     onBusquedaChange("");
-    onFiltroSituacionChange("TODOS");
-    onFiltroSedeChange("todas");
+    onFiltroEstadoChange("TODOS");
+    onFiltroSedeChange?.("todas");
   };
 
   return (
@@ -86,7 +86,7 @@ export default function PracticanteFilters({
               strokeWidth={2.2}
             />
             <Input
-              placeholder="Buscar por nombre, documento o sede..."
+              placeholder="Buscar por nombre, usuario o sede..."
               className="h-10 w-full pl-9 pr-9 bg-slate-50 border-slate-200 rounded-xl text-[13px] placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-600/20 focus-visible:border-blue-500 focus-visible:bg-white transition-colors"
               value={busqueda}
               onChange={(e) => onBusquedaChange(e.target.value)}
@@ -105,46 +105,48 @@ export default function PracticanteFilters({
 
           {/* Filtros */}
           <div className="flex gap-2 items-center shrink-0">
-            <Select
-              value={filtroSede}
-              onValueChange={(v) => onFiltroSedeChange(v ?? "todas")}
-            >
-              <SelectTrigger
-                className={`w-full sm:w-44 h-10 rounded-xl text-[13px] transition-colors ${
-                  filtroSede !== "todas"
-                    ? "bg-blue-50 border-blue-200 text-blue-800"
-                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-white"
-                }`}
+            {onFiltroSedeChange && (
+              <Select
+                value={filtroSede}
+                onValueChange={(v) => onFiltroSedeChange(v ?? "todas")}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <MapPin
-                    className={`h-3.5 w-3.5 shrink-0 ${
-                      filtroSede !== "todas"
-                        ? "text-blue-600"
-                        : "text-slate-400"
-                    }`}
-                    strokeWidth={2.4}
-                  />
-                  <SelectValue placeholder="Todas las sedes" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas las sedes</SelectItem>
-                {sedes.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <SelectTrigger
+                  className={`w-full sm:w-44 h-10 rounded-xl text-[13px] transition-colors ${
+                    filtroSede !== "todas"
+                      ? "bg-blue-50 border-blue-200 text-blue-800"
+                      : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin
+                      className={`h-3.5 w-3.5 shrink-0 ${
+                        filtroSede !== "todas"
+                          ? "text-blue-600"
+                          : "text-slate-400"
+                      }`}
+                      strokeWidth={2.4}
+                    />
+                    <SelectValue placeholder="Todas las sedes" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas las sedes</SelectItem>
+                  {sedes.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             <Select
-              value={filtroSituacion}
-              onValueChange={(v) => onFiltroSituacionChange(v ?? "TODOS")}
+              value={filtroEstado}
+              onValueChange={(v) => onFiltroEstadoChange(v ?? "TODOS")}
             >
               <SelectTrigger
                 className={`w-full sm:w-44 h-10 rounded-xl text-[13px] transition-colors ${
-                  filtroSituacion !== "TODOS"
+                  filtroEstado !== "TODOS"
                     ? "bg-blue-50 border-blue-200 text-blue-800"
                     : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-white"
                 }`}
@@ -152,7 +154,7 @@ export default function PracticanteFilters({
                 <div className="flex items-center gap-2 min-w-0">
                   <SlidersHorizontal
                     className={`h-3.5 w-3.5 shrink-0 ${
-                      filtroSituacion !== "TODOS"
+                      filtroEstado !== "TODOS"
                         ? "text-blue-600"
                         : "text-slate-400"
                     }`}
