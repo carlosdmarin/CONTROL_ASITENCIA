@@ -87,3 +87,20 @@ export function getSituacionLabel(situacion?: string | null): string {
   if (situacion === "INASISTENCIA_JUSTIFICADA") return "Inasistencia justificada";
   return situacion;
 }
+/**
+ * Historial de marcaciones de la sede del vigilante.
+ * Refleja exactamente el contrato MarcacionResponse del backend.
+ * La sede no viaja aquí: el backend la resuelve desde el vigilante autenticado.
+ */
+export type MarcacionHistorial = {
+  idMarcacion: number;
+  documento: string | null;
+  nombreCompleto: string | null;
+  fecha: string;
+  horaMarcacion: string;
+  tipoMarcacion: "ENTRADA" | "SALIDA" | string;
+  metodoRegistro: string | null;
+  estado: string | null;
+  mensaje: string | null;
+  fechaRegistro: string | null;
+};

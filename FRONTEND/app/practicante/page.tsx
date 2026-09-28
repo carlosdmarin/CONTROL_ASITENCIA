@@ -103,7 +103,7 @@ export default function PracticantePage() {
         {/* SALUDO COMPACTO + CARNET PRINCIPAL */}
         <div className="text-center mb-4">
           <p className="text-sm text-slate-500">Hola, <span className="font-semibold text-slate-800">{user?.nombre}</span></p>
-          <p className="text-xs text-slate-400">PractiQR · Tu carnet está listo para mostrar al vigilante</p>
+          <p className="text-xs text-slate-400">PractiQR · Tu carnet está listo para ser escanearse</p>
         </div>
 
         <div className="flex justify-center" aria-live="polite" aria-busy={!practicanteFull || !qrValue}>

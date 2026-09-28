@@ -2,6 +2,7 @@ package com.asistencia.attendance_system.repository;
 
 import com.asistencia.attendance_system.model.entity.Marcacion;
 import com.asistencia.attendance_system.model.enums.TipoMarcacion;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,6 +43,26 @@ public interface MarcacionRepository extends JpaRepository<Marcacion, Long> {
 
     @Query("SELECT COUNT(m) > 0 FROM Marcacion m WHERE m.practicante.idPracticante = :idPracticante AND m.fecha = :fecha AND m.tipoMarcacion = 'SALIDA'")
     boolean yaMarcoSalidaHoy(@Param("idPracticante") Long idPracticante, @Param("fecha") LocalDate fecha);
+
+    // ========== HISTORIAL POR SEDE (VIGILANTE) ==========
+    // El idSede lo resuelve el servicio a partir del vigilante autenticado, nunca desde el cliente.
+    // JOIN FETCH practicante evita N+1 al mapear nombre/documento.
+    @Query("SELECT m FROM Marcacion m JOIN FETCH m.practicante p WHERE p.sede.idSede = :idSede AND m.fecha = :fecha ORDER BY m.horaMarcacion ASC, m.idMarcacion ASC")
+    List<Marcacion> findHistorialBySedeIdAndFecha(@Param("idSede") Integer idSede, @Param("fecha") LocalDate fecha);
+
+    // ========== HISTORIAL RECIENTE POR SEDE (VIGILANTE) ==========
+    // Misma garantía que findHistorialBySedeIdAndFecha: el idSede lo resuelve el servicio
+    // desde el vigilante autenticado, nunca desde el cliente.
+    // Pageable aplica el límite en SQL (no se carga la tabla completa).
+    // JOIN FETCH practicante evita N+1 al mapear nombre/documento.
+    @Query("SELECT m FROM Marcacion m JOIN FETCH m.practicante p WHERE p.sede.idSede = :idSede AND m.fecha = :fecha ORDER BY m.fechaRegistro DESC, m.idMarcacion DESC")
+    List<Marcacion> findRecientesBySedeIdAndFecha(@Param("idSede") Integer idSede, @Param("fecha") LocalDate fecha, Pageable pageable);
+
+    // ========== VISTA GLOBAL (RRHH) ==========
+    // Sin filtro de sede ni de fecha. El límite se aplica en SQL mediante Pageable
+    // en lugar de traer toda la tabla y recortar en Java.
+    @Query("SELECT m FROM Marcacion m JOIN FETCH m.practicante p ORDER BY m.fechaRegistro DESC, m.idMarcacion DESC")
+    List<Marcacion> findAllByOrderByFechaRegistroDesc(Pageable pageable);
 
     // ========== QUERYS CON SQL NATIVO ==========
 

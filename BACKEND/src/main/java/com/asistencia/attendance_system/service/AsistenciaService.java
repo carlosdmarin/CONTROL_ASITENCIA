@@ -36,6 +36,16 @@ public interface AsistenciaService {
 
     List<MarcacionResponse> obtenerMarcacionesPorPracticanteYFecha(Long idPracticante, LocalDate fecha);
 
+    /**
+     * Historial de marcaciones de la SEDE asignada al vigilante autenticado.
+     * La sede se resuelve internamente desde la entidad Vigilante; el cliente nunca la envía.
+     * Si el vigilante no tiene sede asignada devuelve lista vacía (fail-closed).
+     *
+     * @param idVigilante id del vigilante autenticado (subject del JWT)
+     * @param fecha       fecha a consultar; si es null se usa el día actual en America/Lima
+     */
+    List<MarcacionResponse> obtenerHistorialMarcacionesDeSedeDelVigilante(Integer idVigilante, LocalDate fecha);
+
     // ========== ASISTENCIA DIARIA ==========
 
     AsistenciaDiariaResponse obtenerAsistenciaDiaria(Long idPracticante, LocalDate fecha);
@@ -89,6 +99,18 @@ public interface AsistenciaService {
 
     // Historial reciente de marcaciones
     List<com.asistencia.attendance_system.model.dto.MarcacionResponse> obtenerMarcacionesRecientes(int limite);
+
+    /**
+     * Marcaciones más recientes de HOY de la SEDE asignada al vigilante autenticado.
+     * Misma garantía de aislamiento que obtenerHistorialMarcacionesDeSedeDelVigilante:
+     * la sede se resuelve desde la entidad Vigilante y "hoy" se calcula en el backend
+     * (America/Lima). El cliente nunca envía sede ni fecha.
+     * Si el vigilante no tiene sede asignada devuelve lista vacía (fail-closed).
+     *
+     * @param idVigilante id del vigilante autenticado (subject del JWT)
+     * @param limite      máximo de registros; default 20, tope 50
+     */
+    List<com.asistencia.attendance_system.model.dto.MarcacionResponse> obtenerMarcacionesRecientesDeSedeDelVigilante(Integer idVigilante, int limite);
 
     // Cierre diario: convierte SIN_MARCAR -> AUSENTE al finalizar jornada (excluye descansos y justificados)
     int cerrarJornadaDelDia(LocalDate fecha);

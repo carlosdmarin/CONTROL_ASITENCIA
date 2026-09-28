@@ -13,6 +13,7 @@ import com.asistencia.attendance_system.model.entity.Practicante;
 import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.entity.Oficina;
 import com.asistencia.attendance_system.model.entity.Sede;
+import com.asistencia.attendance_system.model.entity.Vigilante;
 import com.asistencia.attendance_system.model.enums.Agencia;
 import org.springframework.http.HttpStatus;
 import com.asistencia.attendance_system.model.enums.EstadoDia;
@@ -26,6 +27,7 @@ import com.asistencia.attendance_system.repository.AsistenciaSituacionRepository
 import com.asistencia.attendance_system.repository.JustificacionRepository;
 import com.asistencia.attendance_system.repository.MarcacionRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
+import com.asistencia.attendance_system.repository.VigilanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
 import com.asistencia.attendance_system.service.CalculadoraEstadoAsistencia;
 import com.asistencia.attendance_system.service.HorarioService;
@@ -33,7 +35,7 @@ import com.asistencia.attendance_system.utils.HorarioUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +61,7 @@ public class AsistenciaServiceImpl implements AsistenciaService {
     private final MarcacionRepository marcacionRepository;
     private final AsistenciaDiariaRepository asistenciaDiariaRepository;
     private final PracticanteRepository practicanteRepository;
+    private final VigilanteRepository vigilanteRepository;
     private final HorarioService horarioService;
     private final JustificacionRepository justificacionRepository;
     private final CalculadoraEstadoAsistencia calculadoraEstado;
@@ -250,11 +253,76 @@ public class AsistenciaServiceImpl implements AsistenciaService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Historial de marcaciones acotado a la sede del vigilante autenticado.
+     * La sede NUNCA proviene de la petición: se lee de la entidad Vigilante en base de datos.
+     */
+    @Override
+    public List<MarcacionResponse> obtenerHistorialMarcacionesDeSedeDelVigilante(Integer idVigilante, LocalDate fecha) {
+        Integer idSede = resolverIdSedeDelVigilante(idVigilante);
+        // Fail-closed: sin sede asignada no se asume ninguna ni se devuelve data de otras sedes
+        if (idSede == null) {
+            return List.of();
+        }
+
+        LocalDate fechaConsulta = (fecha != null) ? fecha : hoyLima();
+
+        return marcacionRepository.findHistorialBySedeIdAndFecha(idSede, fechaConsulta).stream()
+                .map(this::convertMarcacionToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Marcaciones más recientes de HOY de la sede del vigilante autenticado.
+     * Misma cadena de seguridad que el historial completo: la sede sale de la entidad
+     * Vigilante y la fecha de hoy se calcula en el backend (America/Lima), nunca la envía el cliente.
+     */
+    @Override
+    public List<MarcacionResponse> obtenerMarcacionesRecientesDeSedeDelVigilante(Integer idVigilante, int limite) {
+        Integer idSede = resolverIdSedeDelVigilante(idVigilante);
+        if (idSede == null) {
+            return List.of();
+        }
+
+        Pageable paginable = PageRequest.of(0, normalizarLimite(limite));
+
+        return marcacionRepository.findRecientesBySedeIdAndFecha(idSede, hoyLima(), paginable).stream()
+                .map(this::convertMarcacionToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Resuelve la sede asignada al vigilante autenticado.
+     * Punto único de resolución de sede para todo el flujo del VIGILANTE.
+     *
+     * @return idSede del vigilante, o null si no tiene sede asignada (fail-closed)
+     * @throws BusinessException 401 si el vigilante no existe en base de datos
+     */
+    private Integer resolverIdSedeDelVigilante(Integer idVigilante) {
+        Vigilante vigilante = vigilanteRepository.findById(idVigilante)
+                .orElseThrow(() -> new BusinessException("Vigilante no encontrado", HttpStatus.UNAUTHORIZED));
+
+        if (vigilante.getSede() == null) {
+            log.warn("Vigilante {} no tiene sede asignada: no se expone historial de marcaciones", idVigilante);
+            return null;
+        }
+
+        return vigilante.getSede().getIdSede();
+    }
+
+    /**
+     * Normaliza el límite pedido por el cliente: default 20, máximo 50.
+     */
+    private int normalizarLimite(int limite) {
+        return limite <= 0 ? 20 : Math.min(limite, 50);
+    }
+
     @Override
     public List<MarcacionResponse> obtenerMarcacionesRecientes(int limite) {
-        int l = limite <= 0 ? 20 : Math.min(limite, 50);
-        List<Marcacion> todas = marcacionRepository.findAll(Sort.by(Sort.Direction.DESC, "fechaRegistro"));
-        return todas.stream().limit(l).map(this::convertMarcacionToResponse).collect(Collectors.toList());
+        Pageable paginable = PageRequest.of(0, normalizarLimite(limite));
+        return marcacionRepository.findAllByOrderByFechaRegistroDesc(paginable).stream()
+                .map(this::convertMarcacionToResponse)
+                .collect(Collectors.toList());
     }
 
     @Override

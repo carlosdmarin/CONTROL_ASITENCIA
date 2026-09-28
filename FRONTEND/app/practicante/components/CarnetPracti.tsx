@@ -106,7 +106,7 @@ export function CarnetPracti({
                   ? "border-[#E64A19]"
                   : isDownloading
                     ? "border-transparent"
-                    : "border-dashed border-gray-300 hover:border-[#E64A19]"
+                    : "border-gray-300 hover:border-[#E64A19]"
               } bg-slate-50`}
               style={{ borderRadius: "12px" }}
             >

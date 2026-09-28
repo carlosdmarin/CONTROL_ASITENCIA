@@ -1,6 +1,6 @@
 // lib/api/asistencias.ts
 import { api, handleApiError } from './axios';
-import type { AsistenciaDiariaResponse, ResumenAsistenciaDTO } from '@/types/asistencia';
+import type { AsistenciaDiariaResponse, ResumenAsistenciaDTO, MarcacionHistorial } from '@/types/asistencia';
 
 export const asistenciasApi = {
   getAsistenciasDelDia: async (fecha: string): Promise<AsistenciaDiariaResponse[]> => {
@@ -79,10 +79,27 @@ export const asistenciasApi = {
     }
   },
 
-  getMarcacionesRecientes: async (limite = 20): Promise<any[]> => {
+  getMarcacionesRecientes: async (limite = 20): Promise<MarcacionHistorial[]> => {
     try {
-      const response = await api.get(`/asistencias/marcaciones/recientes?limite=${limite}`);
-      return response.data;
+      const response = await api.get<MarcacionHistorial[]>('/asistencias/marcaciones/recientes', {
+        params: { limite },
+      });
+      return response.data ?? [];
+    } catch (error) {
+      throw new Error(handleApiError(error));
+    }
+  },
+
+  /**
+   * Historial de marcaciones de la SEDE del vigilante autenticado.
+   * No se envía la sede: el backend la deduce del vigilante del JWT.
+   * @param fecha opcional en formato YYYY-MM-DD; si se omite, el backend usa hoy (America/Lima)
+   */
+  getHistorialMarcacionesSede: async (fecha?: string): Promise<MarcacionHistorial[]> => {
+    try {
+      const params = fecha ? { fecha } : {};
+      const response = await api.get<MarcacionHistorial[]>('/asistencias/marcaciones/historial', { params });
+      return response.data ?? [];
     } catch (error) {
       throw new Error(handleApiError(error));
     }

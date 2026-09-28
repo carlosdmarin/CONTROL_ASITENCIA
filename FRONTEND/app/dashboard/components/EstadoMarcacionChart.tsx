@@ -63,10 +63,25 @@ export default function EstadoMarcacionChart({
   // Estado general del día para el insight
   const estadoGeneral =
     pctAsistencia >= 80
-      ? { label: "Excelente", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-100" }
+      ? {
+          label: "Excelente",
+          color: "text-emerald-700",
+          bg: "bg-emerald-50",
+          border: "border-emerald-100",
+        }
       : pctAsistencia >= 50
-        ? { label: "Aceptable", color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-100" }
-        : { label: "Baja asistencia", color: "text-rose-700", bg: "bg-rose-50", border: "border-rose-100" };
+        ? {
+            label: "Aceptable",
+            color: "text-amber-700",
+            bg: "bg-amber-50",
+            border: "border-amber-100",
+          }
+        : {
+            label: "Baja asistencia",
+            color: "text-rose-700",
+            bg: "bg-rose-50",
+            border: "border-rose-100",
+          };
 
   return (
     <Card className="relative rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
@@ -74,7 +89,7 @@ export default function EstadoMarcacionChart({
       <div className="relative z-10 flex items-start justify-between gap-3 px-5 pt-5 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 flex items-center justify-center shadow-md shadow-slate-900/20">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 flex items-center justify-center shadow-md shadow-blue-900/30">
               <Activity className="h-5 w-5 text-white" strokeWidth={2.4} />
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
@@ -93,7 +108,8 @@ export default function EstadoMarcacionChart({
               </span>
             </div>
             <p className="text-[11.5px] text-slate-500 mt-0.5">
-              {totalDonut} {totalDonut === 1 ? "marcación" : "marcaciones"} registradas
+              {totalDonut} {totalDonut === 1 ? "marcación" : "marcaciones"}{" "}
+              registradas
             </p>
           </div>
         </div>
@@ -237,14 +253,18 @@ export default function EstadoMarcacionChart({
             <div
               className={`mt-4 flex items-center gap-2.5 rounded-xl border ${estadoGeneral.border} ${estadoGeneral.bg} px-3.5 py-2.5`}
             >
-              <div className={`h-6 w-6 rounded-lg bg-white border ${estadoGeneral.border} flex items-center justify-center shrink-0`}>
+              <div
+                className={`h-6 w-6 rounded-lg bg-white border ${estadoGeneral.border} flex items-center justify-center shrink-0`}
+              >
                 <TrendingUp
                   className={`h-3.5 w-3.5 ${estadoGeneral.color}`}
                   strokeWidth={2.6}
                 />
               </div>
               <div className="min-w-0">
-                <p className={`text-[11.5px] font-bold ${estadoGeneral.color} leading-none`}>
+                <p
+                  className={`text-[11.5px] font-bold ${estadoGeneral.color} leading-none`}
+                >
                   {estadoGeneral.label}
                 </p>
                 <p className="text-[10.5px] text-slate-500 mt-1 leading-none">

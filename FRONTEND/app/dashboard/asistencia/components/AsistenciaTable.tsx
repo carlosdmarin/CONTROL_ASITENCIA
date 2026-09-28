@@ -59,7 +59,7 @@ import AsistenciaJustificarDialog from "./AsistenciaJustificarDialog";
 type AsistenciaRow = AsistenciaDiaria & {
   documento?: string;
   sede?: string;
-  area?: string;
+  oficina?: string;
   jornada?: string;
 };
 
@@ -499,7 +499,7 @@ export default function AsistenciaTable({
                     Sede
                   </TableHead>
                   <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
-                    Área
+                    Oficina
                   </TableHead>
                   <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center whitespace-nowrap">
                     Jornada
@@ -615,7 +615,7 @@ export default function AsistenciaTable({
                           </div>
                         </TableCell>
 
-                        {/* Área */}
+                        {/* Oficina */}
                         <TableCell>
                           <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-slate-700 bg-slate-100 border border-slate-200/70 rounded-md px-2 py-1">
                             <BriefcaseBusiness
@@ -623,7 +623,7 @@ export default function AsistenciaTable({
                               strokeWidth={2.4}
                             />
                             <span className="truncate max-w-[140px]">
-                              {asistencia.area || "—"}
+                              {asistencia.oficina || "—"}
                             </span>
                           </span>
                         </TableCell>

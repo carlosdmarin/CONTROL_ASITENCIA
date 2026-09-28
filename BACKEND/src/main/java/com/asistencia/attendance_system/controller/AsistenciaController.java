@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -191,11 +192,83 @@ public class AsistenciaController {
         return ResponseEntity.ok(responses);
     }
 
+    /**
+     * Marcaciones recientes.
+     *
+     * VIGILANTE: la sede se resuelve en el servicio desde la entidad Vigilante identificada por
+     * el subject del JWT, y solo se devuelve HOY de esa sede. No se acepta sede ni fecha del cliente.
+     *
+     * RRHH: conserva la vista global, que es su uso previsto. La decisión se toma server-side
+     * leyendo las autoridades del token, nunca desde un parámetro de la petición, de modo que un
+     * VIGILANTE no pueda caer en el camino global.
+     */
     @GetMapping("/marcaciones/recientes")
     @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
-    public ResponseEntity<List<MarcacionResponse>> obtenerMarcacionesRecientes(@RequestParam(defaultValue = "20") int limite) {
-        List<MarcacionResponse> responses = asistenciaService.obtenerMarcacionesRecientes(limite);
-        return ResponseEntity.ok(responses);
+    public ResponseEntity<?> obtenerMarcacionesRecientes(Authentication authentication,
+                                                         @RequestParam(defaultValue = "20") int limite) {
+        boolean esVigilante = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_VIGILANTE".equals(a.getAuthority()));
+
+        try {
+            if (esVigilante) {
+                Integer idVigilante;
+                try {
+                    idVigilante = Integer.valueOf(authentication.getName());
+                } catch (NumberFormatException | NullPointerException e) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("message", "Sesión inválida: no se pudo identificar al vigilante"));
+                }
+                return ResponseEntity.ok(
+                        asistenciaService.obtenerMarcacionesRecientesDeSedeDelVigilante(idVigilante, limite));
+            }
+
+            return ResponseEntity.ok(asistenciaService.obtenerMarcacionesRecientes(limite));
+        } catch (BusinessException be) {
+            return ResponseEntity.status(be.getStatus()).body(Map.of("message", be.getMessage()));
+        }
+    }
+
+    /**
+     * Historial de marcaciones de la SEDE del vigilante autenticado.
+     *
+     * Seguridad: la sede se resuelve en el servicio a partir de la entidad Vigilante
+     * (id tomado del subject del JWT firmado). No se acepta ninguna sede desde el
+     * cliente: query params, body o headers ajenos a la sede se ignoran por completo.
+     *
+     * @param authentication usuario autenticado (VIGILANTE por @PreAuthorize)
+     * @param fecha          opcional, YYYY-MM-DD; por defecto el día actual en America/Lima
+     */
+    @GetMapping("/marcaciones/historial")
+    @PreAuthorize("hasRole('VIGILANTE')")
+    public ResponseEntity<?> obtenerHistorialMarcacionesDeMiSede(
+            Authentication authentication,
+            @RequestParam(required = false) String fecha) {
+
+        Integer idVigilante;
+        try {
+            idVigilante = Integer.valueOf(authentication.getName());
+        } catch (NumberFormatException | NullPointerException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Sesión inválida: no se pudo identificar al vigilante"));
+        }
+
+        LocalDate fechaLocal = null;
+        if (fecha != null && !fecha.isBlank()) {
+            try {
+                fechaLocal = LocalDate.parse(fecha.trim());
+            } catch (java.time.format.DateTimeParseException e) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Formato de fecha inválido, use YYYY-MM-DD"));
+            }
+        }
+
+        try {
+            List<MarcacionResponse> responses =
+                    asistenciaService.obtenerHistorialMarcacionesDeSedeDelVigilante(idVigilante, fechaLocal);
+            return ResponseEntity.ok(responses);
+        } catch (BusinessException be) {
+            return ResponseEntity.status(be.getStatus()).body(Map.of("message", be.getMessage()));
+        }
     }
 
     // ========== ASISTENCIA DIARIA ==========
