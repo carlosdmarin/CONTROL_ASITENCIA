@@ -387,7 +387,6 @@ export default function VigilantesTable({
                               </span>
                               <span className="text-slate-300">·</span>
                               <span className="font-mono text-slate-400">
-                                ID-{String(v.id).padStart(3, "0")}
                               </span>
                             </div>
                           </div>
