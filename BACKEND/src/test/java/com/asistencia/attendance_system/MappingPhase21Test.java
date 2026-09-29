@@ -1,8 +1,8 @@
 package com.asistencia.attendance_system;
 
-import com.asistencia.attendance_system.model.entity.Trabajador;
+import com.asistencia.attendance_system.model.entity.Administrador;
 import com.asistencia.attendance_system.model.entity.Vigilante;
-import com.asistencia.attendance_system.repository.TrabajadorRepository;
+import com.asistencia.attendance_system.repository.AdministradorRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ public class MappingPhase21Test {
     private VigilanteRepository vigilanteRepository;
 
     @Autowired
-    private TrabajadorRepository trabajadorRepository;
+    private AdministradorRepository administradorRepository;
 
     @Test
     public void testLecturaVigilante() {
@@ -41,18 +41,12 @@ public class MappingPhase21Test {
     }
 
     @Test
-    public void testLecturaTrabajador() {
-        long count = trabajadorRepository.count();
-        System.out.println("TRABAJADOR_COUNT=" + count);
-        Optional<Trabajador> t = trabajadorRepository.findById(87);
-        if (t.isPresent()) {
-            Trabajador tr = t.get();
-            System.out.println("Trabajador 87: id=" + tr.getIdTrabajador() + " cod=" + tr.getCodTrab() + " nombre=" + tr.getNombres() + " " + tr.getApellidos() + " usuario=" + tr.getUsuario() + " estado=" + tr.getEstado() + " estadoUsuario=" + tr.getEstadoUsuario() + " idRol=" + tr.getIdRol());
-        } else {
-            System.out.println("Trabajador 87 no encontrado");
-        }
-        // Prueba findByUsuario
-        Optional<Trabajador> byUser = trabajadorRepository.findByUsuario("75257890");
-        System.out.println("findByUsuario 75257890 present=" + byUser.isPresent());
+    public void testLecturaAdministrador() {
+        long count = administradorRepository.count();
+        System.out.println("ADMINISTRADORES_COUNT=" + count);
+        Optional<Administrador> a = administradorRepository.findById(1L);
+        System.out.println("findById 1 present=" + a.isPresent());
+        // Prueba findByUsuario (sin imprimir datos personales)
+        System.out.println("existsByUsuario admin present=" + administradorRepository.existsByUsuario("admin"));
     }
 }

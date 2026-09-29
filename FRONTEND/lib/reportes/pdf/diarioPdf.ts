@@ -170,7 +170,7 @@ export async function generarPdfDiario(reporte: ReporteDiarioResponse): Promise<
   autoTable(doc, { ...tableStyles, startY: y, head: [["Practicante", "DNI"]], body: [[p.nombreCompleto || "—", p.documento || "—"]] });
   y = (doc as any).lastAutoTable.finalY + 0.5;
 
-  autoTable(doc, { ...tableStyles, startY: y, head: [["Oficina", "Cargo"]], body: [[p.nombreOficina || (p as any).oficina || "—", p.cargo || "—"]] });
+  autoTable(doc, { ...tableStyles, startY: y, head: [["Oficina", "Tipo de practicante"]], body: [[p.nombreOficina || (p as any).oficina || "—", p.tipoPracticante || "—"]] });
   y = (doc as any).lastAutoTable.finalY + 0.5;
 
   autoTable(doc, { ...tableStyles, startY: y, head: [["Sede", "Instituto"]], body: [[p.sede || "—", (p as any).tipoInstituto || "—"]] });

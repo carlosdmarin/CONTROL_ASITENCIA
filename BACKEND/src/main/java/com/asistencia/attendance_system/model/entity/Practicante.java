@@ -43,8 +43,8 @@ public class Practicante {
     private TipoInstituto tipoInstituto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cargo", referencedColumnName = "id_cargo", nullable = false)
-    private Cargo cargo;
+    @JoinColumn(name = "id_tipo_practicante", referencedColumnName = "id_tipo_practicante", nullable = false)
+    private TipoPracticante tipoPracticante;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "situacion", nullable = false)

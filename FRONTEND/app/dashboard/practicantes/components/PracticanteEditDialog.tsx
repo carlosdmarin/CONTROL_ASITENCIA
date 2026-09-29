@@ -43,7 +43,7 @@ import {
 import {
   Practicante,
   Sede,
-  Cargo,
+  TipoPracticante,
   Oficina,
   TipoInstituto,
   ActualizarPracticante,
@@ -51,7 +51,7 @@ import {
 } from "@/types/practicante";
 import { sedeApi } from "@/lib/api/sedes";
 import { oficinasApi } from "@/lib/api/oficinas";
-import { cargosApi } from "@/lib/api/cargos";
+import { tiposPracticanteApi } from "@/lib/api/tiposPracticante";
 import { tiposInstitutoApi } from "@/lib/api/tipos-instituto";
 import { practicantesApi } from "@/lib/api/practicantes";
 import {
@@ -135,7 +135,7 @@ export function PracticanteEditDialog({
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const [sedes, setSedes] = useState<Sede[]>([]);
-  const [cargos, setCargos] = useState<Cargo[]>([]);
+  const [tiposPracticante, setTiposPracticante] = useState<TipoPracticante[]>([]);
   const [oficinas, setOficinas] = useState<Oficina[]>([]);
   const [tiposInstituto, setTiposInstituto] = useState<TipoInstituto[]>([]);
   const [loadingSelects, setLoadingSelects] = useState(false);
@@ -145,7 +145,7 @@ export function PracticanteEditDialog({
     apellido: "",
     documento: "",
     idSede: 0,
-    idCargo: 0,
+    idTipoPracticante: 0,
     idOficina: 0,
     idTipoInstituto: 0,
     correoElectronico: "",
@@ -160,10 +160,10 @@ export function PracticanteEditDialog({
   const [horario, setHorario] = useState<HorarioSemanal>(HORARIO_DEFAULT);
 
   // ====== CÁLCULO REACTIVO DE HORAS ======
-  const cargoSeleccionado = cargos.find(
-    (c) => c.idCargo === Number(formData.idCargo),
+  const tipoPracticanteSeleccionado = tiposPracticante.find(
+    (c) => c.idTipoPracticante === Number(formData.idTipoPracticante),
   );
-  const horasObjetivo = cargoSeleccionado?.horasSemanales ?? 0;
+  const horasObjetivo = tipoPracticanteSeleccionado?.horasSemanales ?? 0;
   const horasObjetivoMinutos = horasObjetivo * 60;
 
   const resumenHorario = useMemo(() => {
@@ -219,15 +219,15 @@ export function PracticanteEditDialog({
     const cargarSelects = async () => {
       try {
         setLoadingSelects(true);
-        const [sedesData, cargosData, tiposData, oficinasData] =
+        const [sedesData, tiposPracticanteData, tiposData, oficinasData] =
           await Promise.all([
             sedeApi.getAll().catch(() => {
               toast.error("Error al cargar sedes");
               return [] as Sede[];
             }),
-            cargosApi.getAll().catch(() => {
-              toast.error("Error al cargar cargos");
-              return [] as Cargo[];
+            tiposPracticanteApi.getAll().catch(() => {
+              toast.error("Error al cargar tiposPracticante");
+              return [] as TipoPracticante[];
             }),
             tiposInstitutoApi.getAll().catch(() => {
               toast.error("Error al cargar tipos de instituto");
@@ -240,7 +240,7 @@ export function PracticanteEditDialog({
           ]);
 
         setSedes(sedesData);
-        setCargos(cargosData);
+        setTiposPracticante(tiposPracticanteData);
         // Mantener solo activas; si el practicante actual tiene área inactiva, se añadirá luego en el segundo useEffect
 
         setTiposInstituto(tiposData);
@@ -278,10 +278,10 @@ export function PracticanteEditDialog({
       return sedes.find((s) => normalizar(s.nombre) === normalizado);
     };
 
-    const buscarCargo = (nombreCargo: string) => {
-      if (!nombreCargo) return null;
-      const normalizado = normalizar(nombreCargo);
-      return cargos.find((c) => normalizar(c.nombre) === normalizado);
+    const buscarTipoPracticante = (nombreTipo: string) => {
+      if (!nombreTipo) return null;
+      const normalizado = normalizar(nombreTipo);
+      return tiposPracticante.find((c) => normalizar(c.nombre) === normalizado);
     };
 
     const buscarTipoInstituto = (nombreTipo: string) => {
@@ -292,13 +292,13 @@ export function PracticanteEditDialog({
 
     let sedeEncontrada = buscarSede(practicante.sede);
 
-    const cargoEncontrado = buscarCargo(practicante.cargo);
+    const tipoPracticanteEncontrado = buscarTipoPracticante(practicante.tipoPracticante);
     const tipoEncontrado = buscarTipoInstituto(practicante.tipoInstituto);
 
     const idSedeFinal =
       sedeEncontrada?.idSede || (sedes.length > 0 ? sedes[0].idSede : 0);
-    const idCargoFinal =
-      cargoEncontrado?.idCargo || (cargos.length > 0 ? cargos[0].idCargo : 0);
+    const idTipoPracticanteFinal =
+      tipoPracticanteEncontrado?.idTipoPracticante || (tiposPracticante.length > 0 ? tiposPracticante[0].idTipoPracticante : 0);
     const oficinaEncontrada = oficinas.find(
       (o) => o.idOficina === (practicante as any).idOficina,
     );
@@ -315,7 +315,7 @@ export function PracticanteEditDialog({
       apellido: apellido,
       documento: practicante.documento || "",
       idSede: idSedeFinal,
-      idCargo: idCargoFinal,
+      idTipoPracticante: idTipoPracticanteFinal,
       idOficina: idOficinaFinal,
       idTipoInstituto: idTipoFinal,
       correoElectronico: practicante.correoElectronico || "",
@@ -371,7 +371,7 @@ export function PracticanteEditDialog({
     };
 
     cargarHorario();
-  }, [practicante, open, sedes, cargos, oficinas, tiposInstituto]);
+  }, [practicante, open, sedes, tiposPracticante, oficinas, tiposInstituto]);
 
   // ====== HANDLERS ======
   const handleDniChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -474,7 +474,7 @@ export function PracticanteEditDialog({
       formData.fechaInicioPracticas !== "" &&
       formData.idSede > 0 &&
       formData.idOficina > 0 &&
-      formData.idCargo > 0 &&
+      formData.idTipoPracticante > 0 &&
       formData.idTipoInstituto > 0
     );
   };
@@ -517,7 +517,7 @@ export function PracticanteEditDialog({
       idSede: formData.idSede,
       idOficina: formData.idOficina,
       idTipoInstituto: formData.idTipoInstituto,
-      idCargo: formData.idCargo,
+      idTipoPracticante: formData.idTipoPracticante,
       correoElectronico: formData.correoElectronico || undefined,
       telefono: formData.telefono || undefined,
       fechaInicioPracticas: formData.fechaInicioPracticas,
@@ -1002,7 +1002,7 @@ export function PracticanteEditDialog({
                 Información laboral
               </h3>
               <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">
-                Actualizá la sede, oficina, cargo y centro de estudios
+                Actualizá la sede, oficina, tipo de practicante y centro de estudios
               </p>
             </div>
           </div>
@@ -1070,13 +1070,13 @@ export function PracticanteEditDialog({
               </div>
             </div>
 
-            {/* Cargo */}
+            {/* Tipo de practicante */}
             <div className="space-y-2">
               <Label
-                htmlFor="idCargo"
+                htmlFor="idTipoPracticante"
                 className="text-[12.5px] font-medium text-slate-700 flex items-center gap-1"
               >
-                Cargo <span className="text-red-500">*</span>
+                Tipo de practicante <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
                 <BriefcaseBusiness
@@ -1084,17 +1084,17 @@ export function PracticanteEditDialog({
                   strokeWidth={2}
                 />
                 <select
-                  id="idCargo"
-                  name="idCargo"
-                  value={formData.idCargo}
+                  id="idTipoPracticante"
+                  name="idTipoPracticante"
+                  value={formData.idTipoPracticante}
                   onChange={handleSelectChange}
                   className="w-full pl-10 h-10 rounded-xl border border-slate-200 bg-white text-[13.5px] font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none disabled:opacity-50 transition-all"
                   disabled={loadingSelects}
                 >
-                  <option value="0">Seleccionar cargo</option>
-                  {cargos.map((cargo) => (
-                    <option key={cargo.idCargo} value={cargo.idCargo}>
-                      {cargo.nombre}
+                  <option value="0">Seleccionar tipo de practicante</option>
+                  {tiposPracticante.map((tp) => (
+                    <option key={tp.idTipoPracticante} value={tp.idTipoPracticante}>
+                      {tp.nombre}
                     </option>
                   ))}
                 </select>
@@ -1236,7 +1236,7 @@ export function PracticanteEditDialog({
                 Horas semanales
               </p>
               <p className="text-sm font-medium text-slate-700">
-                {cargoSeleccionado?.nombre || "Selecciona un cargo"}
+                {tipoPracticanteSeleccionado?.nombre || "Selecciona un tipo de practicante"}
               </p>
             </div>
             <div className="text-right">
@@ -1292,7 +1292,7 @@ export function PracticanteEditDialog({
                 >
                   {horasObjetivo > 0
                     ? config.message
-                    : "Selecciona un cargo para ver el objetivo"}
+                    : "Selecciona un tipo para ver el objetivo"}
                 </p>
               </div>
               {horasObjetivo > 0 && (
@@ -1427,8 +1427,8 @@ export function PracticanteEditDialog({
   // ====== RENDER STEP 3: CONFIRMACIÓN ======
   const renderStep3 = () => {
     const sedeItem = sedes.find((a) => a.idSede === Number(formData.idSede));
-    const cargoItem = cargos.find(
-      (c) => c.idCargo === Number(formData.idCargo),
+    const tipoPracticanteItem = tiposPracticante.find(
+      (c) => c.idTipoPracticante === Number(formData.idTipoPracticante),
     );
     const oficinaItemConfirm = oficinas.find(
       (o) => o.idOficina === Number(formData.idOficina),
@@ -1438,13 +1438,13 @@ export function PracticanteEditDialog({
     );
 
     let sedeFinal = sedeItem?.nombre || "—";
-    let cargoFinal = cargoItem?.nombre || "—";
+    let tipoPracticanteFinal = tipoPracticanteItem?.nombre || "—";
     let oficinaFinalConfirm = oficinaItemConfirm?.oficina || "—";
     let tipoFinal = tipoItem?.nombre || "—";
 
     if (sedeFinal === "—" && practicante) sedeFinal = practicante.sede || "—";
-    if (cargoFinal === "—" && practicante)
-      cargoFinal = practicante.cargo || "—";
+    if (tipoPracticanteFinal === "—" && practicante)
+      tipoPracticanteFinal = practicante.tipoPracticante || "—";
     if (oficinaFinalConfirm === "—" && practicante) {
       oficinaFinalConfirm =
         (practicante as any).nombreOficina ||
@@ -1460,11 +1460,11 @@ export function PracticanteEditDialog({
       );
       sedeFinal = encontrado?.nombre || practicante.sede || "—";
     }
-    if (cargoFinal === "—" && practicante?.cargo) {
-      const encontrado = cargos.find(
-        (c) => normalizar(c.nombre) === normalizar(practicante.cargo),
+    if (tipoPracticanteFinal === "—" && practicante?.tipoPracticante) {
+      const encontrado = tiposPracticante.find(
+        (c) => normalizar(c.nombre) === normalizar(practicante.tipoPracticante),
       );
-      cargoFinal = encontrado?.nombre || practicante.cargo || "—";
+      tipoPracticanteFinal = encontrado?.nombre || practicante.tipoPracticante || "—";
     }
     if (oficinaFinalConfirm === "—" && practicante) {
       const encontrado = oficinas.find(
@@ -1560,7 +1560,7 @@ export function PracticanteEditDialog({
                 className="h-3 w-3 text-violet-500 shrink-0"
                 strokeWidth={2.4}
               />
-              <span className="truncate">{cargoFinal}</span>
+              <span className="truncate">{tipoPracticanteFinal}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-md bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-700 truncate max-w-[180px]">
               <Building2
@@ -1907,7 +1907,7 @@ export function PracticanteEditDialog({
                 {currentStep === 1
                   ? "Modificá los datos personales y laborales del practicante."
                   : currentStep === 2
-                    ? "Ajustá el horario semanal según el cargo asignado."
+                    ? "Ajustá el horario semanal según el tipo asignado."
                     : "Revisá los cambios antes de guardar."}
               </DialogDescription>
             </div>

@@ -12,6 +12,7 @@ import QRScannerResult from "./components/QRScannerResult";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  AlertCircle,
   History,
   RefreshCw,
   ChevronRight,

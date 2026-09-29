@@ -42,8 +42,8 @@ public class AuthControllerTest {
 
     private AuthResult rrhhResult() {
         return AuthResult.builder()
-                .id(87L).nombre("KELITA HARO TAMANI").usuario("75257890")
-                .rol("RRHH").documento("75257890").sid("trabajadores:87").source("trabajadores")
+                .id(1L).nombre("admin").usuario("admin")
+                .rol("RRHH").documento(null).sid("administradores:1").source("administradores")
                 .build();
     }
 
@@ -64,9 +64,9 @@ public class AuthControllerTest {
     @Test
     public void testLoginValidoRRHH() throws Exception {
         AuthResult authResult = rrhhResult();
-        when(authService.authenticate("75257890", "pass")).thenReturn(authResult);
+        when(authService.authenticate("admin", "pass")).thenReturn(authResult);
 
-        String json = "{\"usuario\":\"75257890\",\"contrasena\":\"pass\"}";
+        String json = "{\"usuario\":\"admin\",\"contrasena\":\"pass\"}";
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -105,7 +105,7 @@ public class AuthControllerTest {
     @Test
     public void testLoginRRHH() throws Exception {
         when(authService.authenticate(anyString(), anyString())).thenReturn(rrhhResult());
-        String json = "{\"usuario\":\"75257890\",\"contrasena\":\"pass\"}";
+        String json = "{\"usuario\":\"admin\",\"contrasena\":\"pass\"}";
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(json))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.rol").value("RRHH"));
@@ -133,7 +133,7 @@ public class AuthControllerTest {
     @Test
     public void testCookieAtributos() throws Exception {
         when(authService.authenticate(anyString(), anyString())).thenReturn(rrhhResult());
-        String json = "{\"usuario\":\"75257890\",\"contrasena\":\"pass\"}";
+        String json = "{\"usuario\":\"admin\",\"contrasena\":\"pass\"}";
         MvcResult result = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(json))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -164,10 +164,10 @@ public class AuthControllerTest {
     @Test
     public void testJwtRealExtraccion() throws Exception {
         // Usar JwtService real para generar y validar
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
-        assertEquals("87", jwtService.getSubject(token));
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
+        assertEquals("1", jwtService.getSubject(token));
         assertEquals("RRHH", jwtService.getRol(token));
-        assertEquals("trabajadores:87", jwtService.getSid(token));
+        assertEquals("administradores:1", jwtService.getSid(token));
         assertEquals("practiqr", jwtService.getIssuer(token));
         assertTrue(jwtService.isValid(token));
         // No mostrar token en logs
@@ -176,7 +176,7 @@ public class AuthControllerTest {
 
     @Test
     public void testAutorizacionConJwtValido() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         // Endpoint protegido debe pasar con cookie válida
         int status = mockMvc.perform(get("/api/practicantes").cookie(cookie)).andReturn().getResponse().getStatus();

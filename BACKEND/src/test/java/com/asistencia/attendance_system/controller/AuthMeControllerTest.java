@@ -1,11 +1,11 @@
 package com.asistencia.attendance_system.controller;
 
+import com.asistencia.attendance_system.model.entity.Administrador;
 import com.asistencia.attendance_system.model.entity.Practicante;
-import com.asistencia.attendance_system.model.entity.Trabajador;
 import com.asistencia.attendance_system.model.entity.Vigilante;
 import com.asistencia.attendance_system.model.enums.Situacion;
+import com.asistencia.attendance_system.repository.AdministradorRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
-import com.asistencia.attendance_system.repository.TrabajadorRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import com.asistencia.attendance_system.security.JwtService;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ public class AuthMeControllerTest {
     private VigilanteRepository vigilanteRepository;
 
     @MockBean
-    private TrabajadorRepository trabajadorRepository;
+    private AdministradorRepository administradorRepository;
 
     private Practicante practicanteActivo() {
         Practicante p = new Practicante();
@@ -64,17 +64,11 @@ public class AuthMeControllerTest {
         return v;
     }
 
-    private Trabajador trabajadorRRHH() {
-        Trabajador t = new Trabajador();
-        t.setIdTrabajador(87);
-        t.setNombres("KELITA");
-        t.setApellidos("HARO TAMANI");
-        t.setUsuario("75257890");
-        t.setNroDoc("75257890");
-        t.setEstado(1);
-        t.setEstadoUsuario(1);
-        t.setIdRol(2);
-        return t;
+    private Administrador administrador() {
+        Administrador a = new Administrador();
+        a.setId(1L);
+        a.setUsuario("admin");
+        return a;
     }
 
     @Test
@@ -112,20 +106,25 @@ public class AuthMeControllerTest {
 
     @Test
     public void jwtValidoRRHH200() throws Exception {
-        Trabajador t = trabajadorRRHH();
-        when(trabajadorRepository.findById(87)).thenReturn(Optional.of(t));
+        Administrador a = administrador();
+        when(administradorRepository.findById(1L)).thenReturn(Optional.of(a));
 
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
 
         mockMvc.perform(get("/api/auth/me").cookie(cookie))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user.rol").value("RRHH"));
+                .andExpect(jsonPath("$.authenticated").value(true))
+                .andExpect(jsonPath("$.user.rol").value("RRHH"))
+                .andExpect(jsonPath("$.user.usuario").value("admin"));
     }
 
     @Test
     public void jwtExpirado401() throws Exception {
-        JwtService shortLived = new JwtService("practiqr-dev-secret-key-32-chars-long-local-only-123456", 1, "practiqr", "practiqr_token", 1, false, "Lax");
+        String secret = System.getenv("JWT_SECRET");
+        org.junit.jupiter.api.Assertions.assertNotNull(secret, "JWT_SECRET debe estar configurado para ejecutar las pruebas");
+        org.junit.jupiter.api.Assertions.assertFalse(secret.isBlank(), "JWT_SECRET no debe estar vacío para ejecutar las pruebas");
+        JwtService shortLived = new JwtService(secret, 1, "practiqr", "practiqr_token", 1, false, "Lax");
         String token = shortLived.generateToken("1", "PRACTICANTE", "practicante:1");
         Thread.sleep(10);
         Cookie cookie = new Cookie("practiqr_token", token);
@@ -167,25 +166,10 @@ public class AuthMeControllerTest {
     }
 
     @Test
-    public void usuarioDesactivadoRRHHEstado0_401() throws Exception {
-        Trabajador t = trabajadorRRHH();
-        t.setEstado(0);
-        when(trabajadorRepository.findById(87)).thenReturn(Optional.of(t));
+    public void administradorEliminado401() throws Exception {
+        when(administradorRepository.findById(1L)).thenReturn(Optional.empty());
 
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
-        Cookie cookie = new Cookie("practiqr_token", token);
-
-        mockMvc.perform(get("/api/auth/me").cookie(cookie))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    public void usuarioDesactivadoRRHHEstadoUsuario0_401() throws Exception {
-        Trabajador t = trabajadorRRHH();
-        t.setEstadoUsuario(0);
-        when(trabajadorRepository.findById(87)).thenReturn(Optional.of(t));
-
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
 
         mockMvc.perform(get("/api/auth/me").cookie(cookie))

@@ -33,7 +33,7 @@ type PracticanteReal = {
   documento: string;
   sede: string;
   area: string;
-  cargo: string;
+  tipoPracticante: string;
   situacion: string;
 } | null;
 
@@ -148,7 +148,7 @@ export default function QRScannerResult({
           documento: data.documento,
           sede: (data as any).sede || "—",
           area: (data as any).area || (data as any).nombreOficina || "—",
-          cargo: data.cargo,
+          tipoPracticante: data.tipoPracticante,
           situacion: data.situacion,
         });
       } catch (e: any) {
@@ -221,7 +221,7 @@ export default function QRScannerResult({
           practicante
             ? {
                 nombreCompleto: practicante.nombreCompleto,
-                cargo: practicante.cargo,
+                tipoPracticante: practicante.tipoPracticante,
                 area: practicante.area,
                 sede: practicante.sede,
                 documento: practicante.documento,
@@ -253,7 +253,7 @@ export default function QRScannerResult({
           practicante
             ? {
                 nombreCompleto: practicante.nombreCompleto,
-                cargo: practicante.cargo,
+                tipoPracticante: practicante.tipoPracticante,
                 area: practicante.area,
                 sede: practicante.sede,
                 documento: practicante.documento,
@@ -282,7 +282,7 @@ export default function QRScannerResult({
           practicante
             ? {
                 nombreCompleto: practicante.nombreCompleto,
-                cargo: practicante.cargo,
+                tipoPracticante: practicante.tipoPracticante,
                 area: practicante.area,
                 sede: practicante.sede,
                 documento: practicante.documento,
@@ -310,7 +310,7 @@ export default function QRScannerResult({
           practicante
             ? {
                 nombreCompleto: practicante.nombreCompleto,
-                cargo: practicante.cargo,
+                tipoPracticante: practicante.tipoPracticante,
                 area: practicante.area,
                 sede: practicante.sede,
                 documento: practicante.documento,
@@ -337,7 +337,7 @@ export default function QRScannerResult({
           hasPracticante && practicante
             ? {
                 nombreCompleto: practicante.nombreCompleto,
-                cargo: practicante.cargo,
+                tipoPracticante: practicante.tipoPracticante,
                 area: practicante.area,
                 sede: practicante.sede,
                 documento: practicante.documento,
@@ -373,7 +373,7 @@ export default function QRScannerResult({
           practicante
             ? {
                 nombreCompleto: practicante.nombreCompleto,
-                cargo: practicante.cargo,
+                tipoPracticante: practicante.tipoPracticante,
                 area: practicante.area,
                 sede: practicante.sede,
                 documento: practicante.documento,
@@ -401,7 +401,7 @@ export default function QRScannerResult({
         practicante
           ? {
               nombreCompleto: practicante.nombreCompleto,
-              cargo: practicante.cargo,
+              tipoPracticante: practicante.tipoPracticante,
               area: practicante.area,
               sede: practicante.sede,
               documento: practicante.documento,

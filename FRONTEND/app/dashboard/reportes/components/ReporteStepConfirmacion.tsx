@@ -109,9 +109,9 @@ export function ReporteStepConfirmacion({
               Practicante
             </h4>
           </div>
-          {practicante.cargo && (
+          {practicante.tipoPracticante && (
             <span className="inline-flex items-center rounded-md bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shrink-0">
-              {practicante.cargo}
+              {practicante.tipoPracticante}
             </span>
           )}
         </div>

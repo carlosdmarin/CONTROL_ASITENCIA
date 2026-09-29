@@ -43,7 +43,7 @@ export default function PracticantePage() {
           idOficina: 0,
           nombreOficina: "",
           tipoInstituto: "",
-          cargo: "",
+          tipoPracticante: "",
           situacion: "ACTIVO",
           horasSemanalesRequeridas: 0,
           fechaInicioPracticas: new Date().toISOString(),

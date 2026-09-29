@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * TEMPORAL - Pruebas reales contra one_db. Solo se ejecuta con perfil real-db-test y env PRACTIQR_RRHH_TEST_PASSWORD
+ * TEMPORAL - Pruebas reales contra practiqr_db. Solo se ejecuta con perfil real-db-test y env PRACTIQR_RRHH_TEST_PASSWORD
  * No imprime hashes, JWT ni secretos.
  */
 @SpringBootTest
@@ -125,8 +125,9 @@ public class RealDatabaseAuthenticationTest {
             System.out.println("SKIP RRHH test: PRACTIQR_RRHH_TEST_PASSWORD no está seteado");
             return;
         }
-        // Usuario de RRHH es 75257890
-        String usuario = "75257890";
+        // Usuario administrativo migrado desde trabajadores (tabla propia: administradores).
+        // El password real se inyecta por variable de entorno, nunca en código.
+        String usuario = System.getenv().getOrDefault("PRACTIQR_ADMIN_TEST_USER", "admin");
         String json = "{\"usuario\":\"" + usuario + "\",\"contrasena\":\"" + pwd + "\"}";
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -137,7 +138,7 @@ public class RealDatabaseAuthenticationTest {
         String token = extractToken(result);
         assertNotNull(token);
         assertEquals("RRHH", jwtService.getRol(token));
-        assertTrue(jwtService.getSid(token).equals("trabajadores:87"));
+        assertTrue(jwtService.getSid(token).startsWith("administradores:"));
     }
 
     @Test

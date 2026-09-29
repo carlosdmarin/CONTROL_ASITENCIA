@@ -156,7 +156,7 @@ export function PracticanteDetailDialog({
               />
             </div>
 
-            {/* Nombre + estado + cargo */}
+            {/* Nombre + estado + tipo */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <DialogTitle className="text-[20px] font-semibold text-slate-900 tracking-tight leading-tight">
@@ -178,7 +178,7 @@ export function PracticanteDetailDialog({
                 )}
               </div>
               <p className="text-[13px] text-slate-500 mt-1">
-                {practicante.cargo || "Sin cargo asignado"}
+                {practicante.tipoPracticante || "Sin tipo asignado"}
               </p>
             </div>
 
@@ -283,8 +283,8 @@ export function PracticanteDetailDialog({
                 />
                 <FieldRow
                   icon={BadgeCheck}
-                  label="Cargo"
-                  value={practicante.cargo || "—"}
+                  label="Tipo de practicante"
+                  value={practicante.tipoPracticante || "—"}
                 />
                 <FieldRow
                   icon={Clock}

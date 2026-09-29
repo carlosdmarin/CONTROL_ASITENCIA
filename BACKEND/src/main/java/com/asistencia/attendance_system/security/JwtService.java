@@ -27,10 +27,18 @@ public class JwtService {
             @Value("${jwt.issuer}") String issuer,
             @Value("${jwt.cookie.name:practiqr_token}") String cookieName,
             @Value("${jwt.cookie.max-age:28800}") long cookieMaxAge,
-            @Value("${jwt.cookie.secure:false}") boolean cookieSecure,
+            @Value("${jwt.cookie.secure}") boolean cookieSecure,
             @Value("${jwt.cookie.same-site:Lax}") String cookieSameSite) {
-        // HS256 requiere clave >= 256 bits (32 chars)
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        // HS256 requiere clave >= 256 bits (32 bytes). No existe secreto por defecto:
+        // la propiedad jwt.secret debe provenir de configuración externa, normalmente JWT_SECRET.
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("Falta jwt.secret: configure JWT_SECRET y vuelva a arrancar");
+        }
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length < 32) {
+            throw new IllegalStateException("jwt.secret debe tener al menos 32 bytes para HS256");
+        }
+        this.key = Keys.hmacShaKeyFor(secretBytes);
         this.expiration = expiration;
         this.issuer = issuer;
         this.cookieName = cookieName;
@@ -52,8 +60,6 @@ public class JwtService {
                 .expiration(expiry)
                 .signWith(key)
                 .compact();
-
-        System.out.println("JWT DEBUG - token generado para subject=" + subject + ", rol=" + rol + ", sid=" + sid);
 
         return token;
     }
@@ -102,14 +108,6 @@ public class JwtService {
     }
 
     public ResponseCookie createCookie(String token) {
-
-        System.out.println(
-                "JWT DEBUG - cookie creada: name=" + cookieName
-                        + ", secure=" + cookieSecure
-                        + ", sameSite=" + cookieSameSite
-                        + ", maxAge=" + cookieMaxAge
-        );
-
         return ResponseCookie.from(cookieName, token)
                 .httpOnly(true)
                 .secure(cookieSecure)

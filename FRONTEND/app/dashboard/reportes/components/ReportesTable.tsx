@@ -289,7 +289,7 @@ export function ReportesPracticantesTable({
                   Oficina
                 </TableHead>
                 <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
-                  Cargo
+                  Tipo de practicante
                 </TableHead>
                 <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-slate-500 text-center">
                   Estado
@@ -372,7 +372,7 @@ export function ReportesPracticantesTable({
                               {nombreDisplay}
                             </p>
                             <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                              {practicante.cargo || "Sin cargo asignado"}
+                              {practicante.tipoPracticante || "Sin tipo asignado"}
                             </p>
                           </div>
                         </div>
@@ -411,12 +411,12 @@ export function ReportesPracticantesTable({
                         </div>
                       </TableCell>
 
-                      {/* Cargo — chip sutil */}
+                      {/* Tipo — chip sutil */}
                       <TableCell>
                         <span className="inline-flex items-center gap-1 text-[11.5px] font-medium text-slate-700 bg-slate-100 border border-slate-200/70 rounded-md px-2 py-1">
                           <UserRound className="h-3 w-3 text-slate-500 shrink-0" />
                           <span className="truncate max-w-[140px]">
-                            {practicante.cargo || "—"}
+                            {practicante.tipoPracticante || "—"}
                           </span>
                         </span>
                       </TableCell>

@@ -32,9 +32,9 @@ export type Sede = {
 // Alias compatibilidad: código antiguo usa Agencia
 export type Agencia = Sede;
 
-// ====== CARGO ======
-export type Cargo = {
-  idCargo: number;
+// ====== TIPO PRACTICANTE ======
+export type TipoPracticante = {
+  idTipoPracticante: number;
   nombre: string;
   descripcion?: string;
   horasSemanales?: number;
@@ -70,10 +70,10 @@ export type Practicante = {
   idOficina: number;
   nombreOficina: string;
   idSede?: number;
-  idCargo?: number;
+  idTipoPracticante?: number;
   idTipoInstituto?: number;
   tipoInstituto: string;
-  cargo: string;
+  tipoPracticante: string;
   situacion: string;
   horasSemanalesRequeridas: number;
   correoElectronico?: string;
@@ -88,7 +88,7 @@ export type Practicante = {
   sedeObj?: Sede;
   oficinaObj?: Oficina;
   tipoInstitutoObj?: TipoInstituto;
-  cargoObj?: Cargo;
+  tipoPracticanteObj?: TipoPracticante;
   horario?: BloqueHorarioRequest[];
 };
 
@@ -100,7 +100,7 @@ export type NuevoPracticante = {
   idSede: number;
   idOficina: number;
   idTipoInstituto: number;
-  idCargo: number;
+  idTipoPracticante: number;
   correoElectronico?: string;
   telefono?: string;
   fechaInicioPracticas: string;
@@ -116,7 +116,7 @@ export type ActualizarPracticante = {
   idSede: number;
   idOficina: number;
   idTipoInstituto: number;
-  idCargo: number;
+  idTipoPracticante: number;
   correoElectronico?: string;
   telefono?: string;
   fechaInicioPracticas: string;

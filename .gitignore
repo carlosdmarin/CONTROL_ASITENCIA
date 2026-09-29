@@ -15,3 +15,15 @@ BACKEND/src/main/resources/application.properties
 # IDE
 .idea/
 .vscode/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Local logs
+FRONTEND/logs/
+BACKEND/logs/
+
+# Sensitive database dumps in DB/
+DB/*.sql

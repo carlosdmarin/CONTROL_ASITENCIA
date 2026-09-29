@@ -1,7 +1,7 @@
 // lib/auth.ts - Utilidad simple para recuperar sesión via cookie HttpOnly
 // No lee document.cookie para practiqr_token (HttpOnly). Usa credentials:"include".
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 export type AuthUser = {
   id: number;

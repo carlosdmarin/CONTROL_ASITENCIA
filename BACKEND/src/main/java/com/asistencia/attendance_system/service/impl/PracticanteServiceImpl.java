@@ -29,7 +29,7 @@ public class PracticanteServiceImpl implements PracticanteService {
 
     private final PracticanteRepository practicanteRepository;
     private final SedeRepository sedeRepository;
-    private final CargoRepository cargoRepository;
+    private final TipoPracticanteRepository tipoPracticanteRepository;
     private final TipoInstitutoRepository tipoInstitutoRepository;
     private final BloqueHorarioRepository bloqueHorarioRepository;
     private final OficinaRepository oficinaRepository;
@@ -63,8 +63,8 @@ public class PracticanteServiceImpl implements PracticanteService {
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
                 .orElseThrow(() -> new RuntimeException("Tipo de instituto no encontrado con ID: " + request.getIdTipoInstituto()));
 
-        Cargo cargo = cargoRepository.findById(request.getIdCargo())
-                .orElseThrow(() -> new RuntimeException("Cargo no encontrado con ID: " + request.getIdCargo()));
+        TipoPracticante tipoPracticante = tipoPracticanteRepository.findById(request.getIdTipoPracticante())
+                .orElseThrow(() -> new RuntimeException("Tipo de practicante no encontrado con ID: " + request.getIdTipoPracticante()));
 
         // 1. Crear el practicante
         Practicante practicante = new Practicante();
@@ -74,13 +74,13 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setSede(sede);
         practicante.setOficina(oficina);
         practicante.setTipoInstituto(tipoInstituto);
-        practicante.setCargo(cargo);
+        practicante.setTipoPracticante(tipoPracticante);
         practicante.setSituacion(Situacion.ACTIVO);
         practicante.setCorreoElectronico(request.getCorreoElectronico());
         practicante.setTelefono(request.getTelefono());
         practicante.setFechaInicioPracticas(request.getFechaInicioPracticas());
         practicante.setFechaFinPracticas(request.getFechaFinPracticas());
-        // FASE 5: one_db.Practicante requiere usuario/contrasena NOT NULL UNIQUE
+        // FASE 5: practiqr_db.Practicante requiere usuario/contrasena NOT NULL UNIQUE
         // Si no vienen en el request, se derivan del documento (compatible con flujo actual)
         practicante.setUsuario(request.getDocumento());
         practicante.setContrasena(request.getDocumento());
@@ -122,8 +122,8 @@ public class PracticanteServiceImpl implements PracticanteService {
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
                 .orElseThrow(() -> new RuntimeException("Tipo de instituto no encontrado con ID: " + request.getIdTipoInstituto()));
 
-        Cargo cargo = cargoRepository.findById(request.getIdCargo())
-                .orElseThrow(() -> new RuntimeException("Cargo no encontrado con ID: " + request.getIdCargo()));
+        TipoPracticante tipoPracticante = tipoPracticanteRepository.findById(request.getIdTipoPracticante())
+                .orElseThrow(() -> new RuntimeException("Tipo de practicante no encontrado con ID: " + request.getIdTipoPracticante()));
 
         // 1. Actualizar datos del practicante
         practicante.setNombre(request.getNombre());
@@ -132,12 +132,12 @@ public class PracticanteServiceImpl implements PracticanteService {
         practicante.setSede(sede);
         practicante.setOficina(oficina);
         practicante.setTipoInstituto(tipoInstituto);
-        practicante.setCargo(cargo);
+        practicante.setTipoPracticante(tipoPracticante);
         practicante.setCorreoElectronico(request.getCorreoElectronico());
         practicante.setTelefono(request.getTelefono());
         practicante.setFechaInicioPracticas(request.getFechaInicioPracticas());
         practicante.setFechaFinPracticas(request.getFechaFinPracticas());
-        // FASE 5: mantener usuario/contrasena alineados a one_db (NOT NULL)
+        // FASE 5: mantener usuario/contrasena alineados a practiqr_db (NOT NULL)
         // Si el usuario aún no existe o debe seguir al documento
         if (practicante.getUsuario() == null || practicante.getUsuario().isBlank()) {
             practicante.setUsuario(request.getDocumento());
@@ -342,12 +342,12 @@ public class PracticanteServiceImpl implements PracticanteService {
             response.setNombreOficina(practicante.getOficina().getOficina());
             response.setOficina(practicante.getOficina().getOficina());
         }
-        response.setIdCargo(practicante.getCargo().getIdCargo());
+        response.setIdTipoPracticante(practicante.getTipoPracticante().getIdTipoPracticante());
         response.setIdTipoInstituto(practicante.getTipoInstituto().getIdTipoInstituto());
         response.setTipoInstituto(practicante.getTipoInstituto().getNombre());
-        response.setCargo(practicante.getCargo().getNombre());
+        response.setTipoPracticante(practicante.getTipoPracticante().getNombre());
         response.setSituacion(practicante.getSituacion().toString());
-        response.setHorasSemanalesRequeridas(practicante.getCargo().getHorasSemanales());
+        response.setHorasSemanalesRequeridas(practicante.getTipoPracticante().getHorasSemanales());
         response.setCorreoElectronico(practicante.getCorreoElectronico());
         response.setTelefono(practicante.getTelefono());
         response.setFechaInicioPracticas(practicante.getFechaInicioPracticas());

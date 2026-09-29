@@ -1,12 +1,12 @@
 package com.asistencia.attendance_system.service;
 
 import com.asistencia.attendance_system.model.dto.AuthResult;
+import com.asistencia.attendance_system.model.entity.Administrador;
 import com.asistencia.attendance_system.model.entity.Practicante;
-import com.asistencia.attendance_system.model.entity.Trabajador;
 import com.asistencia.attendance_system.model.entity.Vigilante;
 import com.asistencia.attendance_system.model.enums.Situacion;
+import com.asistencia.attendance_system.repository.AdministradorRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
-import com.asistencia.attendance_system.repository.TrabajadorRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import com.asistencia.attendance_system.model.entity.Sede;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
@@ -35,15 +34,14 @@ public class AuthServiceTest {
     @Mock
     private VigilanteRepository vigilanteRepository;
     @Mock
-    private TrabajadorRepository trabajadorRepository;
+    private AdministradorRepository administradorRepository;
 
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private AuthService authService;
 
     @BeforeEach
     void setup() {
-        authService = new AuthService(practicanteRepository, vigilanteRepository, trabajadorRepository, passwordEncoder);
-        ReflectionTestUtils.setField(authService, "rrhhWorkerIds", "87");
+        authService = new AuthService(practicanteRepository, vigilanteRepository, administradorRepository, passwordEncoder);
     }
 
     private Practicante practicanteActivo(String usuario, String contrasena) {
@@ -75,20 +73,12 @@ public class AuthServiceTest {
         return v;
     }
 
-    private Trabajador trabajadorRRHH(String usuario, String hash) {
-        Trabajador t = new Trabajador();
-        t.setIdTrabajador(87);
-        t.setNombres("KELITA");
-        t.setApellidos("HARO TAMANI");
-        t.setUsuario(usuario);
-        t.setPasswordUser(hash);
-        t.setNroDoc("75257890");
-        t.setCodTrab("00424");
-        t.setEstado(1);
-        t.setEstadoUsuario(1);
-        t.setIdRol(2);
-        t.setIdSede(1);
-        return t;
+    private Administrador administrador(String usuario, String hash) {
+        Administrador a = new Administrador();
+        a.setId(1L);
+        a.setUsuario(usuario);
+        a.setPasswordHash(hash);
+        return a;
     }
 
     @Test
@@ -122,7 +112,7 @@ public class AuthServiceTest {
         p.setSituacion(Situacion.INACTIVO);
         when(practicanteRepository.findByUsuario("ana")).thenReturn(Optional.of(p));
         when(vigilanteRepository.findByUsuario("ana")).thenReturn(Optional.empty());
-        when(trabajadorRepository.findByUsuario("ana")).thenReturn(Optional.empty());
+        when(administradorRepository.findByUsuario("ana")).thenReturn(Optional.empty());
         // También por documento
         when(practicanteRepository.findByDocumento("ana")).thenReturn(Optional.empty());
         assertThrows(Exception.class, () -> authService.authenticate("ana", "pass"));
@@ -141,62 +131,50 @@ public class AuthServiceTest {
     }
 
     @Test
-    void trabajadorAutorizadoCorrecto() {
-        String raw = "RRHHpass123";
+    void administradorCorrecto() {
+        String raw = "AdminPass123";
         String hash = passwordEncoder.encode(raw);
-        Trabajador t = trabajadorRRHH("75257890", hash);
-        when(trabajadorRepository.findByUsuario("75257890")).thenReturn(Optional.of(t));
-        when(practicanteRepository.findByUsuario("75257890")).thenReturn(Optional.empty());
-        when(practicanteRepository.findByDocumento("75257890")).thenReturn(Optional.empty());
-        when(vigilanteRepository.findByUsuario("75257890")).thenReturn(Optional.empty());
+        Administrador a = administrador("admin", hash);
+        when(administradorRepository.findByUsuario("admin")).thenReturn(Optional.of(a));
+        when(practicanteRepository.findByUsuario("admin")).thenReturn(Optional.empty());
+        when(practicanteRepository.findByDocumento("admin")).thenReturn(Optional.empty());
+        when(vigilanteRepository.findByUsuario("admin")).thenReturn(Optional.empty());
 
-        AuthResult r = authService.authenticate("75257890", raw);
+        AuthResult r = authService.authenticate("admin", raw);
         assertEquals("RRHH", r.getRol());
-        assertEquals(87L, r.getId());
+        assertEquals(1L, r.getId());
+        assertEquals("administradores:1", r.getSid());
+        assertEquals("administradores", r.getSource());
     }
 
     @Test
-    void trabajadorPasswordIncorrectoRechaza() {
+    void administradorPasswordIncorrectoRechaza() {
         String hash = passwordEncoder.encode("correcto");
-        Trabajador t = trabajadorRRHH("75257890", hash);
-        when(trabajadorRepository.findByUsuario("75257890")).thenReturn(Optional.of(t));
+        Administrador a = administrador("admin", hash);
+        when(administradorRepository.findByUsuario("admin")).thenReturn(Optional.of(a));
         when(practicanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         when(practicanteRepository.findByDocumento(anyString())).thenReturn(Optional.empty());
         when(vigilanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        assertThrows(Exception.class, () -> authService.authenticate("75257890", "incorrecto"));
+        assertThrows(Exception.class, () -> authService.authenticate("admin", "incorrecto"));
     }
 
     @Test
-    void trabajadorEstado0Rechaza() {
-        Trabajador t = trabajadorRRHH("75257890", passwordEncoder.encode("pass"));
-        t.setEstado(0);
-        when(trabajadorRepository.findByUsuario("75257890")).thenReturn(Optional.of(t));
+    void administradorInexistenteRechaza() {
+        when(administradorRepository.findByUsuario("nadie")).thenReturn(Optional.empty());
         when(practicanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         when(practicanteRepository.findByDocumento(anyString())).thenReturn(Optional.empty());
         when(vigilanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        assertThrows(Exception.class, () -> authService.authenticate("75257890", "pass"));
+        assertThrows(Exception.class, () -> authService.authenticate("nadie", "pass"));
     }
 
     @Test
-    void trabajadorEstadoUsuario0Rechaza() {
-        Trabajador t = trabajadorRRHH("75257890", passwordEncoder.encode("pass"));
-        t.setEstadoUsuario(0);
-        when(trabajadorRepository.findByUsuario("75257890")).thenReturn(Optional.of(t));
+    void administradorHashNoBCryptRechaza() {
+        Administrador a = administrador("admin", "texto-plano-no-bcrypt");
+        when(administradorRepository.findByUsuario("admin")).thenReturn(Optional.of(a));
         when(practicanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         when(practicanteRepository.findByDocumento(anyString())).thenReturn(Optional.empty());
         when(vigilanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        assertThrows(Exception.class, () -> authService.authenticate("75257890", "pass"));
-    }
-
-    @Test
-    void trabajadorNoAutorizadoRechaza() {
-        Trabajador t = trabajadorRRHH("75257890", passwordEncoder.encode("pass"));
-        t.setIdTrabajador(99); // no está en lista 87
-        when(trabajadorRepository.findByUsuario("75257890")).thenReturn(Optional.of(t));
-        when(practicanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        when(practicanteRepository.findByDocumento(anyString())).thenReturn(Optional.empty());
-        when(vigilanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        assertThrows(Exception.class, () -> authService.authenticate("75257890", "pass"));
+        assertThrows(Exception.class, () -> authService.authenticate("admin", "texto-plano-no-bcrypt"));
     }
 
     @Test
@@ -207,9 +185,7 @@ public class AuthServiceTest {
         when(vigilanteRepository.findByUsuario("vig1")).thenReturn(Optional.of(v));
         when(practicanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         when(practicanteRepository.findByDocumento(anyString())).thenReturn(Optional.empty());
-        when(trabajadorRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        // Mock email fallback
-        when(trabajadorRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(administradorRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
 
         AuthResult r = authService.authenticate("vig1", raw);
         assertEquals("VIGILANTE", r.getRol());
@@ -222,8 +198,7 @@ public class AuthServiceTest {
         when(vigilanteRepository.findByUsuario("vig1")).thenReturn(Optional.of(v));
         when(practicanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         when(practicanteRepository.findByDocumento(anyString())).thenReturn(Optional.empty());
-        when(trabajadorRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        when(trabajadorRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(administradorRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         assertThrows(Exception.class, () -> authService.authenticate("vig1", "pass"));
     }
 
@@ -233,8 +208,7 @@ public class AuthServiceTest {
         when(vigilanteRepository.findByUsuario("vig1")).thenReturn(Optional.of(v));
         when(practicanteRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         when(practicanteRepository.findByDocumento(anyString())).thenReturn(Optional.empty());
-        when(trabajadorRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
-        when(trabajadorRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        when(administradorRepository.findByUsuario(anyString())).thenReturn(Optional.empty());
         assertThrows(Exception.class, () -> authService.authenticate("vig1", "incorrecto"));
     }
 
@@ -245,9 +219,8 @@ public class AuthServiceTest {
         Vigilante v = vigilanteActivo("duplicado", passwordEncoder.encode("pass"));
         when(practicanteRepository.findByUsuario("duplicado")).thenReturn(Optional.of(p));
         when(vigilanteRepository.findByUsuario("duplicado")).thenReturn(Optional.of(v));
-        // trabajador no encontrado
-        when(trabajadorRepository.findByUsuario("duplicado")).thenReturn(Optional.empty());
-        when(trabajadorRepository.findByEmail(anyString())).thenReturn(Optional.empty());
+        // administrador no encontrado
+        when(administradorRepository.findByUsuario("duplicado")).thenReturn(Optional.empty());
         assertThrows(Exception.class, () -> authService.authenticate("duplicado", "pass"));
     }
 }

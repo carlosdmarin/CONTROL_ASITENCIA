@@ -31,7 +31,7 @@ public class JwtFilterAndCookieCorsTest {
 
     @Test
     public void cookieValidaAutentica() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         // Con cookie válida, endpoint protegido debe pasar (200) porque token válido
         // Si no hay datos, puede ser 200 con lista vacía, pero no 401/403
@@ -60,7 +60,7 @@ public class JwtFilterAndCookieCorsTest {
 
     @Test
     public void cookieContieneAtributosCorrectos() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         ResponseCookie cookie = jwtService.createCookie(token);
         String header = cookie.toString();
         // HttpOnly
@@ -80,7 +80,7 @@ public class JwtFilterAndCookieCorsTest {
     public void corsOrigenLocalhostPermitido() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/practicantes")
                 .header("Origin", "http://localhost:3000")
-                .cookie(new Cookie("practiqr_token", jwtService.generateToken("87", "RRHH", "trabajadores:87"))))
+                .cookie(new Cookie("practiqr_token", jwtService.generateToken("1", "RRHH", "administradores:1"))))
                 .andReturn();
         String allowOrigin = result.getResponse().getHeader("Access-Control-Allow-Origin");
         // Con allowCredentials true, debe devolver el origen exacto, no *
@@ -91,7 +91,7 @@ public class JwtFilterAndCookieCorsTest {
     public void corsOrigenArbitrarioRechazado() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/practicantes")
                 .header("Origin", "http://evil.com")
-                .cookie(new Cookie("practiqr_token", jwtService.generateToken("87", "RRHH", "trabajadores:87"))))
+                .cookie(new Cookie("practiqr_token", jwtService.generateToken("1", "RRHH", "administradores:1"))))
                 .andReturn();
         String allowOrigin = result.getResponse().getHeader("Access-Control-Allow-Origin");
         // Origen no permitido no debe ser reflejado

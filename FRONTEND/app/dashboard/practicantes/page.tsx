@@ -73,7 +73,7 @@ export default function PracticantesPage() {
       p.documento?.includes(busqueda) ||
       sede.toLowerCase().includes(busqueda.toLowerCase()) ||
       nombreOficina.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.cargo?.toLowerCase().includes(busqueda.toLowerCase());
+      p.tipoPracticante?.toLowerCase().includes(busqueda.toLowerCase());
     return matchSituacion && matchBusqueda && matchSede;
   });
 
@@ -124,10 +124,10 @@ export default function PracticantesPage() {
       const idSede = practicanteEditado.idSede;
       const idOficina = practicanteEditado.idOficina;
       const idTipoInstituto = practicanteEditado.idTipoInstituto;
-      const idCargo = practicanteEditado.idCargo;
+      const idTipoPracticante = practicanteEditado.idTipoPracticante;
 
-      if (!idSede || !idOficina || !idTipoInstituto || !idCargo) {
-        toast.error("Faltan datos de sede/oficina/cargo/centro. Verifique selección.");
+      if (!idSede || !idOficina || !idTipoInstituto || !idTipoPracticante) {
+        toast.error("Faltan datos de sede/oficina/tipo de practicante/centro. Verifique selección.");
         return;
       }
 
@@ -138,7 +138,7 @@ export default function PracticantesPage() {
         idSede,
         idOficina,
         idTipoInstituto,
-        idCargo,
+        idTipoPracticante,
         correoElectronico: practicanteEditado.correoElectronico,
         telefono: practicanteEditado.telefono,
         fechaInicioPracticas: practicanteEditado.fechaInicioPracticas,

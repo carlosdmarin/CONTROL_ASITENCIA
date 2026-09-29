@@ -2,15 +2,14 @@ package com.asistencia.attendance_system.service;
 
 import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.dto.AuthResult;
+import com.asistencia.attendance_system.model.entity.Administrador;
 import com.asistencia.attendance_system.model.entity.Practicante;
-import com.asistencia.attendance_system.model.entity.Trabajador;
 import com.asistencia.attendance_system.model.entity.Vigilante;
+import com.asistencia.attendance_system.repository.AdministradorRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
-import com.asistencia.attendance_system.repository.TrabajadorRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,29 +24,8 @@ public class AuthService {
 
     private final PracticanteRepository practicanteRepository;
     private final VigilanteRepository vigilanteRepository;
-    private final TrabajadorRepository trabajadorRepository;
+    private final AdministradorRepository administradorRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @Value("${practiqr.auth.rrhh-worker-ids:87}")
-    private String rrhhWorkerIds;
-
-    private Set<Integer> parseRrhhIds() {
-        Set<Integer> ids = new HashSet<>();
-
-        if (rrhhWorkerIds == null || rrhhWorkerIds.isBlank()) {
-            return ids;
-        }
-
-        for (String s : rrhhWorkerIds.split(",")) {
-            try {
-                ids.add(Integer.valueOf(s.trim()));
-            } catch (NumberFormatException e) {
-                log.warn("Id RRHH inválido en configuración: {}", s);
-            }
-        }
-
-        return ids;
-    }
 
     private boolean isBCrypt(String hash) {
         return hash != null &&
@@ -146,60 +124,19 @@ public class AuthService {
         }
 
         // =========================================================
-        // TRABAJADOR / RRHH
+        // ADMINISTRADOR (tabla propia: administradores)
+        // Sin whitelist, sin estados heredados: la existencia
+        // del registro es la autorización.
         // =========================================================
 
-        Optional<Trabajador> optTrabajador =
-                trabajadorRepository.findByUsuario(usuarioTrim);
+        Optional<Administrador> optAdministrador =
+                administradorRepository.findByUsuario(usuarioTrim);
 
-        if (optTrabajador.isEmpty()) {
+        if (optAdministrador.isPresent()) {
 
-            // Fallback por email
-            if (usuarioTrim.contains("@")) {
-
-                optTrabajador =
-                        trabajadorRepository.findByEmail(usuarioTrim);
-            }
-        }
-
-        if (optTrabajador.isPresent()) {
-
-            Trabajador t = optTrabajador.get();
-
-            Set<Integer> allowed = parseRrhhIds();
-
-            boolean isAuthorized =
-                    allowed.contains(t.getIdTrabajador());
-
-            boolean estadoOk =
-                    t.getEstado() != null
-                            && t.getEstado() == 1;
-
-            boolean estadoUsuarioOk =
-                    t.getEstadoUsuario() != null
-                            && t.getEstadoUsuario() == 1;
-
-            if (isAuthorized
-                    && estadoOk
-                    && estadoUsuarioOk) {
-
-                candidates.add(
-                        new Candidate("trabajadores", t)
-                );
-
-            } else {
-
-                log.debug(
-                        "Trabajador no autorizado o inactivo: " +
-                                "usuario={}, id={}, estado={}, " +
-                                "estadoUsuario={}, autorizado={}",
-                        usuarioTrim,
-                        t.getIdTrabajador(),
-                        t.getEstado(),
-                        t.getEstadoUsuario(),
-                        isAuthorized
-                );
-            }
+            candidates.add(
+                    new Candidate("administradores", optAdministrador.get())
+            );
         }
 
         // =========================================================
@@ -440,33 +377,30 @@ public class AuthService {
         }
 
         // =========================================================
-        // AUTENTICACIÓN DE RRHH
+        // AUTENTICACIÓN DEL ADMINISTRADOR (rol RRHH)
         // =========================================================
 
-        else if ("trabajadores".equals(source)) {
+        else if ("administradores".equals(source)) {
 
-            Trabajador t = (Trabajador) entity;
+            Administrador a = (Administrador) entity;
 
             String stored =
-                    t.getPasswordUser();
+                    a.getPasswordHash();
 
-            // DEBUG
+            // DEBUG (sin exponer el hash)
             log.info(
-                    "LOGIN DEBUG - trabajador encontrado id={}, usuario={}, passwordBCrypt={}",
-                    t.getIdTrabajador(),
-                    t.getUsuario(),
+                    "LOGIN DEBUG - administrador encontrado id={}, usuario={}, passwordBCrypt={}",
+                    a.getId(),
+                    a.getUsuario(),
                     isBCrypt(stored)
             );
 
-            String normalized =
-                    normalizeForBcrypt(stored);
-
-            // Trabajadores deben tener BCrypt
+            // Solo se aceptan hashes BCrypt
             if (!isBCrypt(stored)) {
 
                 log.warn(
-                        "Trabajador {} con password no BCrypt",
-                        t.getUsuario()
+                        "Administrador {} con password no BCrypt",
+                        a.getUsuario()
                 );
 
                 throw new BusinessException(
@@ -474,6 +408,9 @@ public class AuthService {
                         HttpStatus.UNAUTHORIZED
                 );
             }
+
+            String normalized =
+                    normalizeForBcrypt(stored);
 
             boolean matches =
                     passwordEncoder.matches(
@@ -484,8 +421,8 @@ public class AuthService {
             if (!matches) {
 
                 log.warn(
-                        "LOGIN DEBUG - contraseña incorrecta para trabajador usuario={}",
-                        t.getUsuario()
+                        "LOGIN DEBUG - contraseña incorrecta para administrador usuario={}",
+                        a.getUsuario()
                 );
 
                 throw new BusinessException(
@@ -494,27 +431,20 @@ public class AuthService {
                 );
             }
 
-            String nombre =
-                    t.getNombres() + " " + t.getApellidos();
-
             log.info(
                     "LOGIN DEBUG - autenticación exitosa como RRHH, id={}",
-                    t.getIdTrabajador()
+                    a.getId()
             );
 
             return AuthResult.builder()
-                    .id(Long.valueOf(t.getIdTrabajador()))
-                    .nombre(nombre)
-                    .usuario(t.getUsuario())
+                    .id(a.getId())
+                    .nombre(a.getUsuario())
+                    .usuario(a.getUsuario())
                     .rol("RRHH")
-                    .documento(t.getNroDoc())
-                    .sede(
-                            t.getIdSede() != null
-                                    ? String.valueOf(t.getIdSede())
-                                    : null
-                    )
-                    .sid("trabajadores:" + t.getIdTrabajador())
-                    .source("trabajadores")
+                    .documento(null)
+                    .sede(null)
+                    .sid("administradores:" + a.getId())
+                    .source("administradores")
                     .build();
         }
 

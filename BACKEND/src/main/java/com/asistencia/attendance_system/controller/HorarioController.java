@@ -56,9 +56,9 @@ public class HorarioController {
             horarioService.guardarHorario(idPracticante, horarioRequests);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (Exception e) {
-            log.error("❌ Error al guardar horario: {}", e.getMessage());
+            log.error("❌ Error al guardar horario para practicante ID: {}", idPracticante, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error: " + e.getMessage());
+                    .body("Error interno del servidor");
         }
     }
 
@@ -75,9 +75,9 @@ public class HorarioController {
             horarioService.guardarHorario(idPracticante, horarioRequests);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            log.error("❌ Error al actualizar horario: {}", e.getMessage());
+            log.error("❌ Error al actualizar horario para practicante ID: {}", idPracticante, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error: " + e.getMessage());
+                    .body("Error interno del servidor");
         }
     }
 
@@ -92,9 +92,9 @@ public class HorarioController {
             horarioService.eliminarHorario(idPracticante);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
-            log.error("❌ Error al eliminar horario: {}", e.getMessage());
+            log.error("❌ Error al eliminar horario para practicante ID: {}", idPracticante, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error: " + e.getMessage());
+                    .body("Error interno del servidor");
         }
     }
 }

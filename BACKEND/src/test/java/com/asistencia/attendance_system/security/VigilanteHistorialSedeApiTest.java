@@ -1,12 +1,12 @@
 package com.asistencia.attendance_system.security;
 
 import com.asistencia.attendance_system.model.dto.MarcacionResponse;
-import com.asistencia.attendance_system.repository.CargoRepository;
+import com.asistencia.attendance_system.repository.TipoPracticanteRepository;
 import com.asistencia.attendance_system.repository.OficinaRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.repository.SedeRepository;
 import com.asistencia.attendance_system.repository.TipoInstitutoRepository;
-import com.asistencia.attendance_system.repository.TrabajadorRepository;
+import com.asistencia.attendance_system.repository.AdministradorRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
 import com.asistencia.attendance_system.service.HorarioService;
@@ -65,13 +65,13 @@ public class VigilanteHistorialSedeApiTest {
     @MockBean private AsistenciaService asistenciaService;
     @MockBean private ReportesService reportesService;
     @MockBean private HorarioService horarioService;
-    @MockBean private CargoRepository cargoRepository;
+    @MockBean private TipoPracticanteRepository tipoPracticanteRepository;
     @MockBean private SedeRepository sedeRepository;
     @MockBean private OficinaRepository oficinaRepository;
     @MockBean private TipoInstitutoRepository tipoInstitutoRepository;
     @MockBean private PracticanteRepository practicanteRepository;
     @MockBean private VigilanteRepository vigilanteRepository;
-    @MockBean private TrabajadorRepository trabajadorRepository;
+    @MockBean private AdministradorRepository administradorRepository;
 
     private Cookie vigilanteCookie;   // id 10, sede A
     private Cookie otroVigilanteCookie; // id 11, sede B
@@ -85,7 +85,7 @@ public class VigilanteHistorialSedeApiTest {
         otroVigilanteCookie = new Cookie("practiqr_token",
                 jwtService.generateToken("11", "VIGILANTE", "vigilante:11"));
         rrhhCookie = new Cookie("practiqr_token",
-                jwtService.generateToken("87", "RRHH", "trabajadores:87"));
+                jwtService.generateToken("1", "RRHH", "administradores:1"));
         practicanteCookie = new Cookie("practiqr_token",
                 jwtService.generateToken("1", "PRACTICANTE", "practicante:1"));
 

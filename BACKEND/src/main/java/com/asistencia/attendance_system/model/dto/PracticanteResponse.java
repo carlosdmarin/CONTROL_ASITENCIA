@@ -21,10 +21,10 @@ public class PracticanteResponse {
     private Integer idOficina;
     private String nombreOficina;
     private Integer idSede;
-    private Long idCargo;
+    private Long idTipoPracticante;
     private Long idTipoInstituto;
     private String tipoInstituto;
-    private String cargo;
+    private String tipoPracticante;
     private String situacion;
     private Integer horasSemanalesRequeridas;
     private String correoElectronico;

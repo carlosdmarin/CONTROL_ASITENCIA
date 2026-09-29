@@ -372,8 +372,8 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         resumen.setNombreCompleto(practicante.getNombre() + " " + practicante.getApellido());
         resumen.setDocumento(practicante.getDocumento());
         resumen.setSede(practicante.getSede().getNombre());
-        resumen.setCargo(practicante.getCargo().getNombre());
-        resumen.setHorasSemanalesRequeridas(practicante.getCargo().getHorasSemanales());
+        resumen.setTipoPracticante(practicante.getTipoPracticante().getNombre());
+        resumen.setHorasSemanalesRequeridas(practicante.getTipoPracticante().getHorasSemanales());
 
         long presentes = asistencias.stream().filter(a -> a.getEstadoDia() != null && a.getEstadoDia().normalizado() == EstadoDia.PRESENTE).count();
         long tardes = asistencias.stream().filter(a -> a.getEstadoDia() != null && a.getEstadoDia().esTardanza()).count();
@@ -389,10 +389,10 @@ public class AsistenciaServiceImpl implements AsistenciaService {
                 .map(a -> a.getHorasTrabajadas() != null ? a.getHorasTrabajadas() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         resumen.setHorasCumplidas(horasCumplidas.intValue());
-        resumen.setHorasPendientes(practicante.getCargo().getHorasSemanales() - horasCumplidas.intValue());
-        double porcentaje = horasCumplidas.doubleValue() / practicante.getCargo().getHorasSemanales() * 100;
+        resumen.setHorasPendientes(practicante.getTipoPracticante().getHorasSemanales() - horasCumplidas.intValue());
+        double porcentaje = horasCumplidas.doubleValue() / practicante.getTipoPracticante().getHorasSemanales() * 100;
         resumen.setPorcentajeCumplimiento(Math.min(porcentaje, 100));
-        resumen.setEstadoSemanal(horasCumplidas.doubleValue() >= practicante.getCargo().getHorasSemanales() ? "CUMPLIDO" : "INCOMPLETO");
+        resumen.setEstadoSemanal(horasCumplidas.doubleValue() >= practicante.getTipoPracticante().getHorasSemanales() ? "CUMPLIDO" : "INCOMPLETO");
         return resumen;
     }
 
@@ -656,7 +656,7 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         r.setIdPracticante(0L);
         r.setNombreCompleto("Resumen Diario");
         r.setSede("");
-        r.setCargo("");
+        r.setTipoPracticante("");
         r.setHorasSemanalesRequeridas(0);
         r.setHorasCumplidas((int) presentes);
         r.setHorasPendientes((int) ausentes);

@@ -20,7 +20,7 @@ type Variant = "entrada" | "salida" | "ya_registrado" | "jornada_finalizada" | "
 
 type Practicante = {
   nombreCompleto?: string;
-  cargo?: string;
+  tipoPracticante?: string;
   area?: string;
   sede?: string;
   documento?: string;
@@ -105,9 +105,9 @@ export function ResultadoCardBody({ variant, title, subtitle, message, practican
                 <p className="text-lg sm:text-xl font-semibold leading-tight break-words line-clamp-2 text-slate-900" title={practicante?.nombreCompleto}>
                   {practicante?.nombreCompleto}
                 </p>
-                {practicante?.cargo && (
-                  <p className="text-sm text-slate-600 line-clamp-2 break-words" title={practicante?.cargo}>
-                    {practicante.cargo}
+                {practicante?.tipoPracticante && (
+                  <p className="text-sm text-slate-600 line-clamp-2 break-words" title={practicante?.tipoPracticante}>
+                    {practicante.tipoPracticante}
                   </p>
                 )}
               </div>

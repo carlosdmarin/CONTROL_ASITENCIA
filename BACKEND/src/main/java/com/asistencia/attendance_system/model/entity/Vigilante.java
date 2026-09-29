@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
- * Entidad para tabla existente one_db.vigilante
+ * Entidad para tabla practiqr_db.vigilante
  * Mapeo verificado contra DESCRIBE vigilante (2026-09-23) + ALTER 2026-09-24 + ALTER 2026-09-25 sede_id:
  *  id_vigilante int(11) PK auto_increment
  *  nombre varchar(100) NOT NULL

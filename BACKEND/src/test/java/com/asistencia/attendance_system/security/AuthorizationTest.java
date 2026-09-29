@@ -3,16 +3,16 @@ package com.asistencia.attendance_system.security;
 import com.asistencia.attendance_system.model.dto.MarcacionResponse;
 import com.asistencia.attendance_system.model.dto.PracticanteResponse;
 import com.asistencia.attendance_system.model.dto.ReporteDiarioResponse;
-import com.asistencia.attendance_system.model.entity.Cargo;
+import com.asistencia.attendance_system.model.entity.TipoPracticante;
 import com.asistencia.attendance_system.model.entity.Oficina;
 import com.asistencia.attendance_system.model.entity.Sede;
 import com.asistencia.attendance_system.model.entity.TipoInstituto;
-import com.asistencia.attendance_system.repository.CargoRepository;
+import com.asistencia.attendance_system.repository.TipoPracticanteRepository;
 import com.asistencia.attendance_system.repository.OficinaRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.repository.SedeRepository;
 import com.asistencia.attendance_system.repository.TipoInstitutoRepository;
-import com.asistencia.attendance_system.repository.TrabajadorRepository;
+import com.asistencia.attendance_system.repository.AdministradorRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
 import com.asistencia.attendance_system.service.HorarioService;
@@ -53,13 +53,13 @@ public class AuthorizationTest {
     @MockBean private AsistenciaService asistenciaService;
     @MockBean private ReportesService reportesService;
     @MockBean private HorarioService horarioService;
-    @MockBean private CargoRepository cargoRepository;
+    @MockBean private TipoPracticanteRepository tipoPracticanteRepository;
     @MockBean private SedeRepository sedeRepository;
     @MockBean private OficinaRepository oficinaRepository;
     @MockBean private TipoInstitutoRepository tipoInstitutoRepository;
     @MockBean private PracticanteRepository practicanteRepository;
     @MockBean private VigilanteRepository vigilanteRepository;
-    @MockBean private TrabajadorRepository trabajadorRepository;
+    @MockBean private AdministradorRepository administradorRepository;
 
     private Cookie rrhhCookie;
     private Cookie vigilanteCookie;
@@ -68,7 +68,7 @@ public class AuthorizationTest {
     @BeforeEach
     void setupMocks() {
         // Tokens: subject = id, rol, sid
-        rrhhCookie = new Cookie("practiqr_token", jwtService.generateToken("87", "RRHH", "trabajadores:87"));
+        rrhhCookie = new Cookie("practiqr_token", jwtService.generateToken("1", "RRHH", "administradores:1"));
         vigilanteCookie = new Cookie("practiqr_token", jwtService.generateToken("10", "VIGILANTE", "vigilante:10"));
         practicanteCookie = new Cookie("practiqr_token", jwtService.generateToken("1", "PRACTICANTE", "practicante:1"));
 
@@ -84,7 +84,7 @@ public class AuthorizationTest {
         when(practicanteService.buscarPorNombre(anyString())).thenReturn(List.of());
         when(horarioService.obtenerHorarioPorPracticante(any())).thenReturn(List.of());
         when(horarioService.obtenerHorarioActivoPorPracticante(any())).thenReturn(List.of());
-        when(cargoRepository.findAll()).thenReturn(List.of(new Cargo()));
+        when(tipoPracticanteRepository.findAll()).thenReturn(List.of(new TipoPracticante()));
         when(sedeRepository.findAll()).thenReturn(List.of(new Sede()));
         when(oficinaRepository.findAll()).thenReturn(List.of(new Oficina()));
         when(oficinaRepository.findByEstado(1)).thenReturn(List.of());
@@ -101,16 +101,10 @@ public class AuthorizationTest {
         when(asistenciaService.obtenerResumenDiario(any())).thenReturn(null);
         when(asistenciaService.obtenerAsistenciasPorPracticante(any())).thenReturn(List.of());
         // Mock para /api/auth/me - necesita entidades reales
-        com.asistencia.attendance_system.model.entity.Trabajador t = new com.asistencia.attendance_system.model.entity.Trabajador();
-        t.setIdTrabajador(87);
-        t.setNombres("KELITA");
-        t.setApellidos("HARO TAMANI");
-        t.setUsuario("75257890");
-        t.setNroDoc("75257890");
-        t.setEstado(1);
-        t.setEstadoUsuario(1);
-        t.setIdRol(2);
-        when(trabajadorRepository.findById(87)).thenReturn(java.util.Optional.of(t));
+        com.asistencia.attendance_system.model.entity.Administrador a = new com.asistencia.attendance_system.model.entity.Administrador();
+        a.setId(1L);
+        a.setUsuario("admin");
+        when(administradorRepository.findById(1L)).thenReturn(java.util.Optional.of(a));
         com.asistencia.attendance_system.model.entity.Vigilante v = new com.asistencia.attendance_system.model.entity.Vigilante();
         v.setIdVigilante(10);
         v.setNombre("Juan");
@@ -209,8 +203,8 @@ public class AuthorizationTest {
     }
 
     @Test
-    void practicante_exclusivoRRHH_cargos_403() throws Exception {
-        mockMvc.perform(get("/api/cargos").cookie(practicanteCookie))
+    void practicante_exclusivoRRHH_tiposPracticante_403() throws Exception {
+        mockMvc.perform(get("/api/tipos-practicante").cookie(practicanteCookie))
                 .andExpect(status().isForbidden());
     }
 
@@ -304,8 +298,8 @@ public class AuthorizationTest {
     }
 
     @Test
-    void vigilante_exclusivoRRHH_cargos_403() throws Exception {
-        mockMvc.perform(get("/api/cargos").cookie(vigilanteCookie))
+    void vigilante_exclusivoRRHH_tiposPracticante_403() throws Exception {
+        mockMvc.perform(get("/api/tipos-practicante").cookie(vigilanteCookie))
                 .andExpect(status().isForbidden());
     }
 
@@ -330,8 +324,8 @@ public class AuthorizationTest {
     }
 
     @Test
-    void rrhh_administrativo_cargos_permitido() throws Exception {
-        mockMvc.perform(get("/api/cargos").cookie(rrhhCookie))
+    void rrhh_administrativo_tiposPracticante_permitido() throws Exception {
+        mockMvc.perform(get("/api/tipos-practicante").cookie(rrhhCookie))
                 .andExpect(status().isOk());
     }
 

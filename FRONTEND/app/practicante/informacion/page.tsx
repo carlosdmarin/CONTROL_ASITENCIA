@@ -64,7 +64,7 @@ export default function InformacionPage() {
           idOficina: 0,
           nombreOficina: "",
           tipoInstituto: "",
-          cargo: "",
+          tipoPracticante: "",
           situacion: "ACTIVO",
           horasSemanalesRequeridas: 0,
           fechaInicioPracticas: new Date().toISOString(),
@@ -135,7 +135,7 @@ export default function InformacionPage() {
                 {practicanteFull.nombreCompleto}
               </h2>
               <p className="text-sm text-white/70 truncate">
-                {practicanteFull.cargo || "Sin cargo asignado"}
+                {practicanteFull.tipoPracticante || "Sin tipo asignado"}
               </p>
             </div>
           </div>

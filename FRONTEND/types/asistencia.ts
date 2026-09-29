@@ -50,7 +50,7 @@ export type ResumenAsistenciaDTO = {
   nombreCompleto: string;
   documento: string;
   sede: string;
-  cargo: string;
+  tipoPracticante: string;
   horasSemanalesRequeridas: number;
   horasCumplidas: number;
   horasPendientes: number;

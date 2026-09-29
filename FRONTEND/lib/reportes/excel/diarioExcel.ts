@@ -250,7 +250,7 @@ export async function generarExcelDiario(reporte: ReporteDiarioResponse): Promis
   };
 
   addFieldRow("Practicante", p.nombreCompleto || "—", "DNI", p.documento || "—");
-  addFieldRow("Oficina", p.nombreOficina || (p as any).oficina || "—", "Cargo", p.cargo || "—");
+  addFieldRow("Oficina", p.nombreOficina || (p as any).oficina || "—", "Tipo de practicante", p.tipoPracticante || "—");
   addFieldRow("Sede", p.sede || "—", "Instituto", (p as any).tipoInstituto || "—");
   addFieldRow(
     "Estado",

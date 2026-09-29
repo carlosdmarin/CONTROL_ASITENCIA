@@ -14,61 +14,68 @@ public class JwtServiceTest {
 
     @Test
     public void testGenerateTokenNotNull() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         assertNotNull(token);
         assertFalse(token.isBlank());
     }
 
     @Test
     public void testExtractSubject() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
-        assertEquals("87", jwtService.getSubject(token));
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
+        assertEquals("1", jwtService.getSubject(token));
     }
 
     @Test
     public void testExtractRol() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         assertEquals("RRHH", jwtService.getRol(token));
     }
 
     @Test
     public void testExtractSid() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
-        assertEquals("trabajadores:87", jwtService.getSid(token));
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
+        assertEquals("administradores:1", jwtService.getSid(token));
     }
 
     @Test
     public void testVerifyIssuer() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         assertEquals("practiqr", jwtService.getIssuer(token));
     }
 
     @Test
     public void testValidToken() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         assertTrue(jwtService.isValid(token));
     }
 
     @Test
     public void testExpiredTokenInvalid() throws InterruptedException {
         // Creamos un JwtService temporal con expiración 1ms
-        JwtService shortLived = new JwtService("practiqr-dev-secret-key-32-chars-long-local-only-123456", 1, "practiqr", "practiqr_token", 1, false, "Lax");
-        String token = shortLived.generateToken("87", "RRHH", "trabajadores:87");
+        JwtService shortLived = new JwtService(testSecret(), 1, "practiqr", "practiqr_token", 1, false, "Lax");
+        String token = shortLived.generateToken("1", "RRHH", "administradores:1");
         Thread.sleep(10);
         assertFalse(shortLived.isValid(token), "Token expirado debe ser inválido");
     }
 
     @Test
     public void testManipulatedTokenInvalid() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         String manipulated = token.substring(0, token.length() - 4) + "abcd";
         assertFalse(jwtService.isValid(manipulated));
     }
 
     @Test
     public void testWrongKeyInvalid() {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
-        JwtService otherKeyService = new JwtService("otra-clave-secreta-diferente-32-chars-xxxxxx1234", 28800000, "practiqr", "practiqr_token", 28800, false, "Lax");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
+        JwtService otherKeyService = new JwtService(testSecret() + "-clave-diferente", 28800000, "practiqr", "practiqr_token", 28800, false, "Lax");
         assertFalse(otherKeyService.isValid(token));
+    }
+
+    private static String testSecret() {
+        String secret = System.getenv("JWT_SECRET");
+        assertNotNull(secret, "JWT_SECRET debe estar configurado para ejecutar las pruebas");
+        assertFalse(secret.isBlank(), "JWT_SECRET no debe estar vacío para ejecutar las pruebas");
+        return secret;
     }
 }

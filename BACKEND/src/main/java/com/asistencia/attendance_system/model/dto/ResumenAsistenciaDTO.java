@@ -15,7 +15,7 @@ public class ResumenAsistenciaDTO {
     private String documento;
     @JsonAlias({"agencia", "sede"})
     private String sede;
-    private String cargo;
+    private String tipoPracticante;
     private Integer horasSemanalesRequeridas;
     private Integer horasCumplidas;
     private Integer horasPendientes;

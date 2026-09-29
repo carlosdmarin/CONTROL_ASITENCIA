@@ -82,8 +82,8 @@ export function ReporteMensualView({ reporte }: { reporte: ReporteMensualRespons
                   <span className="text-xs font-medium text-slate-900">{p.nombreOficina || (p as any).oficina || "—"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[10px] text-slate-500">Cargo</span>
-                  <span className="text-xs font-medium text-slate-900">{p.cargo || "—"}</span>
+                  <span className="text-[10px] text-slate-500">Tipo de practicante</span>
+                  <span className="text-xs font-medium text-slate-900">{p.tipoPracticante || "—"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[10px] text-slate-500">Sede</span>

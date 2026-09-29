@@ -16,7 +16,7 @@ public class PracticanteRequest {
     private Integer idOficina;
 
     private Long idTipoInstituto;
-    private Long idCargo;
+    private Long idTipoPracticante;
     private String correoElectronico;
     private String telefono;
     private LocalDate fechaInicioPracticas;

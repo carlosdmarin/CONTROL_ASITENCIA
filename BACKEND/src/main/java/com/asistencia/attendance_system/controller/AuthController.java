@@ -3,17 +3,16 @@ package com.asistencia.attendance_system.controller;
 import com.asistencia.attendance_system.model.dto.AuthResult;
 import com.asistencia.attendance_system.model.dto.LoginRequest;
 import com.asistencia.attendance_system.model.dto.LoginResponse;
+import com.asistencia.attendance_system.model.entity.Administrador;
 import com.asistencia.attendance_system.model.entity.Practicante;
-import com.asistencia.attendance_system.model.entity.Trabajador;
 import com.asistencia.attendance_system.model.entity.Vigilante;
+import com.asistencia.attendance_system.repository.AdministradorRepository;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
-import com.asistencia.attendance_system.repository.TrabajadorRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import com.asistencia.attendance_system.security.JwtService;
 import com.asistencia.attendance_system.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -22,9 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,10 +32,7 @@ public class AuthController {
     private final JwtService jwtService;
     private final PracticanteRepository practicanteRepository;
     private final VigilanteRepository vigilanteRepository;
-    private final TrabajadorRepository trabajadorRepository;
-
-    @Value("${practiqr.auth.rrhh-worker-ids:87}")
-    private String rrhhWorkerIds;
+    private final AdministradorRepository administradorRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -135,24 +129,17 @@ public class AuthController {
                         .build();
                 return ResponseEntity.ok(Map.of("authenticated", true, "user", userInfo));
 
-            } else if ("trabajadores".equals(source)) {
-                Integer id = Integer.valueOf(idStr);
-                var opt = trabajadorRepository.findById(id);
+            } else if ("administradores".equals(source)) {
+                Long id = Long.valueOf(idStr);
+                var opt = administradorRepository.findById(id);
                 if (opt.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("authenticated", false));
-                Trabajador t = opt.get();
-                Set<Integer> allowed = new HashSet<>();
-                for (String s : rrhhWorkerIds.split(",")) {
-                    try { allowed.add(Integer.valueOf(s.trim())); } catch (Exception ignored) {}
-                }
-                if (!allowed.contains(t.getIdTrabajador()) || t.getEstado() == null || t.getEstado() != 1 || t.getEstadoUsuario() == null || t.getEstadoUsuario() != 1) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("authenticated", false));
-                }
+                Administrador a = opt.get();
                 var userInfo = LoginResponse.UserInfo.builder()
-                        .id(Long.valueOf(t.getIdTrabajador()))
-                        .nombre(t.getNombres() + " " + t.getApellidos())
-                        .usuario(t.getUsuario())
+                        .id(a.getId())
+                        .nombre(a.getUsuario())
+                        .usuario(a.getUsuario())
                         .rol(rol != null ? rol : "RRHH")
-                        .documento(t.getNroDoc())
+                        .documento(null)
                         .build();
                 return ResponseEntity.ok(Map.of("authenticated", true, "user", userInfo));
             }

@@ -10,6 +10,8 @@ import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +30,8 @@ import java.util.Map;
 @RequestMapping({"/api/asistencias", "/asistencias"})
 @RequiredArgsConstructor
 public class AsistenciaController {
+
+    private static final Logger log = LoggerFactory.getLogger(AsistenciaController.class);
 
     private final AsistenciaService asistenciaService;
     private final PracticanteRepository practicanteRepository;
@@ -117,9 +121,10 @@ public class AsistenciaController {
         } catch (BusinessException be) {
             throw be;
         } catch (RuntimeException e) {
+            log.error("Error al registrar marcación", e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", e.getMessage());
+            errorResponse.put("message", "No se pudo registrar la marcación.");
             errorResponse.put("error", true);
             String mensaje = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
             if (mensaje.contains("no activo") || mensaje.contains("inactivo")) {
@@ -139,9 +144,10 @@ public class AsistenciaController {
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
+            log.error("Error interno al registrar marcación", e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", "Error interno del servidor: " + e.getMessage());
+            errorResponse.put("message", "Error interno del servidor.");
             errorResponse.put("error", true);
             errorResponse.put("tipo", "ERROR");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
@@ -314,7 +320,8 @@ public class AsistenciaController {
         } catch (java.time.format.DateTimeParseException e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Formato de fecha inválido, use YYYY-MM-DD"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            log.error("Error al obtener resumen de rango", e);
+            return ResponseEntity.badRequest().body(Map.of("message", "No se pudo obtener el resumen."));
         }
     }
 
@@ -433,14 +440,15 @@ public class AsistenciaController {
             AsistenciaDiariaResponse resp = asistenciaService.justificarAsistencia(idAsistencia, motivo, observacion, tipo, horaSalidaAnticipada);
             return ResponseEntity.ok(resp);
         } catch (RuntimeException e) {
+            log.error("Error al justificar asistencia {}", idAsistencia, e);
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
             if (msg.contains("no encontrada") || msg.contains("no encontrado")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Asistencia no encontrada."));
             }
             if (msg.contains("ya tiene una justificación")) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "La asistencia ya tiene una justificación."));
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "No se pudo registrar la justificación."));
         }
     }
 
@@ -459,7 +467,8 @@ public class AsistenciaController {
             var j = asistenciaService.registrarPermiso(idPracticante, fecha, motivo, observacion, tipo);
             return new ResponseEntity<>(j, HttpStatus.CREATED);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+            log.error("Error al registrar permiso", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "No se pudo registrar el permiso."));
         }
     }
 
@@ -478,14 +487,15 @@ public class AsistenciaController {
             AsistenciaDiariaResponse resp = asistenciaService.corregirAsistenciaManual(idPracticante, fecha, horaEntrada, horaSalida, observaciones);
             return ResponseEntity.ok(resp);
         } catch (RuntimeException e) {
+            log.error("Error al corregir asistencia manual {}", idPracticante, e);
             String msg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
             if (msg.contains("no encontrada") || msg.contains("no encontrado") || msg.contains("practicante no encontrado")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Asistencia no encontrada."));
             }
             if (msg.contains("ya tiene una justificación") || msg.contains("no se puede editar una asistencia justificada")) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "La asistencia no se puede modificar."));
             }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "No se pudo corregir la asistencia."));
         }
     }
 

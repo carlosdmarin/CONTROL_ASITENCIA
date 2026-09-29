@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -20,6 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -29,9 +31,13 @@ import java.util.Map;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final String corsAllowedOrigins;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            @Value("${CORS_ALLOWED_ORIGINS:http://localhost:3000}") String corsAllowedOrigins) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.corsAllowedOrigins = corsAllowedOrigins;
     }
 
     @Bean
@@ -42,14 +48,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Orígenes permitidos: local + frontend público Cloudflare (temporal) + patrón para futuros tunnels
-        // Se usa allowedOriginPatterns para soportar URLs temporales *.trycloudflare.com
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000",
-                "https://starsmerchant-fisheries-pushing-stood.trycloudflare.com",
-                "https://*.trycloudflare.com"
-        ));
-        // Mantener allowedOrigins vacío cuando se usan patterns
+        // Allowlist explícita y configurable, sin patrones comodín permanentes.
+        // Desarrollo puede usar, por ejemplo:
+        // CORS_ALLOWED_ORIGINS=http://localhost:3000,https://xxxxx.trycloudflare.com
+        List<String> allowedOrigins = Arrays.stream(corsAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+        if (allowedOrigins.isEmpty()) {
+            allowedOrigins = List.of("http://localhost:3000");
+        }
+
+//one.olamsa.com.pe/practiqr
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -106,8 +117,8 @@ public class SecurityConfig {
                 // Todo /api/** requiere autenticación; autorización por rol vía @PreAuthorize
                 .requestMatchers("/api/**").authenticated()
                 // Alias sin prefijo /api (compatibilidad frontend antiguo)
-                .requestMatchers("/asistencias/**", "/cargos/**", "/cargo/**", "/sedes/**", "/agencias/**", "/oficinas/**", "/tipos-instituto/**", "/tipo-instituto/**").authenticated()
-                .anyRequest().permitAll()
+                .requestMatchers("/asistencias/**", "/tipos-practicante/**", "/sedes/**", "/agencias/**", "/oficinas/**", "/tipos-instituto/**", "/tipo-instituto/**").authenticated()
+                .anyRequest().authenticated()
             )
             .httpBasic(httpBasic -> httpBasic.disable())
             .formLogin(form -> form.disable())

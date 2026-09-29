@@ -51,7 +51,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void rrhhPuedeListarVigilantes200() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         MvcResult result = mockMvc.perform(get("/api/vigilantes").cookie(cookie))
                 .andExpect(status().isOk())
@@ -90,7 +90,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void passwordNuncaExpuesta() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         MvcResult result = mockMvc.perform(get("/api/vigilantes").cookie(cookie))
                 .andExpect(status().isOk())
@@ -103,7 +103,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void sedeRealDevuelta() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         MvcResult result = mockMvc.perform(get("/api/vigilantes").cookie(cookie))
                 .andExpect(status().isOk())
@@ -119,7 +119,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void rrhhPuedeCrearVigilante201() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "testvig_" + UUID.randomUUID().toString().substring(0, 8);
         Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
@@ -193,7 +193,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void crearUsuarioDuplicado409() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         // 123456 ya existe (vigilante inicial)
         Map<String, Object> body = Map.of(
@@ -210,7 +210,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void crearSedeInexistente400() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "test_sede_" + UUID.randomUUID().toString().substring(0,6);
         Map<String, Object> body = Map.of(
@@ -224,7 +224,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void crearValidacion400() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         Map<String, Object> body = Map.of(
                 "nombre", "", "apellido", "", "usuario", "   ",
@@ -238,7 +238,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void postNoExponeContrasena() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "test_nopass_" + UUID.randomUUID().toString().substring(0,6);
         Map<String, Object> body = Map.of(
@@ -260,7 +260,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void rrhhPuedeCambiarContrasena204() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         // Crear vigilante temporal para no afectar al id 1
         String usuarioUnico = "test_pwd_" + UUID.randomUUID().toString().substring(0,6);
@@ -301,7 +301,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void cambiarContrasenaVigilanteInexistente404() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         Map<String, Object> body = Map.of(
                 "nuevaContrasena", "Pass123!", "confirmarContrasena", "Pass123!");
@@ -314,7 +314,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void cambiarContrasenaDiferentes400() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "test_diff_" + UUID.randomUUID().toString().substring(0,6);
         Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
@@ -340,7 +340,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void cambiarContrasenaCamposInvalidos400() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         Map<String, Object> bodyVacio = Map.of(
                 "nuevaContrasena", "", "confirmarContrasena", "");
@@ -394,7 +394,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void putNoExponeContrasena204() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "test_nopass2_" + UUID.randomUUID().toString().substring(0,6);
         Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
@@ -425,7 +425,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void rrhhPuedeDesactivarVigilante200() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "test_desact_" + UUID.randomUUID().toString().substring(0,6);
         Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
@@ -460,7 +460,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void rrhhPuedeActivarVigilante200() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "test_act_" + UUID.randomUUID().toString().substring(0,6);
         Integer sedeId = sedeRepository.findAll().stream().findFirst().map(s -> s.getIdSede()).orElse(3);
@@ -490,7 +490,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void cambiarEstadoVigilanteInexistente404() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         Map<String, Object> body = Map.of("estado", false);
         mockMvc.perform(patch("/api/vigilantes/999999/estado").cookie(cookie).with(csrf())
@@ -501,7 +501,7 @@ public class VigilanteControllerTest {
 
     @Test
     public void cambiarEstadoInvalido400() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         // Sin campo
         mockMvc.perform(patch("/api/vigilantes/1/estado").cookie(cookie).with(csrf())
@@ -556,7 +556,7 @@ public class VigilanteControllerTest {
     @Test
     @Transactional
     public void vigilanteInactivoNoPuedeLogearse() throws Exception {
-        String token = jwtService.generateToken("87", "RRHH", "trabajadores:87");
+        String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         String usuarioUnico = "test_inact_" + UUID.randomUUID().toString().substring(0,6);
         String pass = "PassInact123!";
