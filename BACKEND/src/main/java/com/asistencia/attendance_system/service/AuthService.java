@@ -143,19 +143,19 @@ public class AuthService {
         // DEBUG: CANDIDATOS ENCONTRADOS
         // =========================================================
 
-        log.info(
+        log.debug(
                 "LOGIN DEBUG - usuario recibido: [{}]",
                 usuarioTrim
         );
 
-        log.info(
+        log.debug(
                 "LOGIN DEBUG - candidatos encontrados: {}",
                 candidates.size()
         );
 
         for (Candidate c : candidates) {
 
-            log.info(
+            log.debug(
                     "LOGIN DEBUG - source={}",
                     c.source
             );
@@ -213,7 +213,7 @@ public class AuthService {
             String stored = p.getContrasena();
 
             // DEBUG
-            log.info(
+            log.debug(
                     "LOGIN DEBUG - practicante encontrado id={}, usuario={}, passwordBCrypt={}",
                     p.getIdPracticante(),
                     p.getUsuario(),
@@ -287,7 +287,7 @@ public class AuthService {
                             ? p.getSede().getNombre()
                             : null;
 
-            log.info(
+            log.debug(
                     "LOGIN DEBUG - autenticación exitosa como PRACTICANTE, id={}",
                     p.getIdPracticante()
             );
@@ -315,7 +315,7 @@ public class AuthService {
             String stored = v.getContrasena();
 
             // DEBUG
-            log.info(
+            log.debug(
                     "LOGIN DEBUG - vigilante encontrado id={}, usuario={}, passwordBCrypt={}",
                     v.getIdVigilante(),
                     v.getUsuario(),
@@ -360,7 +360,7 @@ public class AuthService {
             String nombre =
                     v.getNombre() + " " + v.getApellido();
 
-            log.info(
+            log.debug(
                     "LOGIN DEBUG - autenticación exitosa como VIGILANTE, id={}",
                     v.getIdVigilante()
             );
@@ -388,7 +388,7 @@ public class AuthService {
                     a.getPasswordHash();
 
             // DEBUG (sin exponer el hash)
-            log.info(
+            log.debug(
                     "LOGIN DEBUG - administrador encontrado id={}, usuario={}, passwordBCrypt={}",
                     a.getId(),
                     a.getUsuario(),
@@ -431,7 +431,7 @@ public class AuthService {
                 );
             }
 
-            log.info(
+            log.debug(
                     "LOGIN DEBUG - autenticación exitosa como RRHH, id={}",
                     a.getId()
             );

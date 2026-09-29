@@ -62,7 +62,9 @@ public class SecurityConfig {
 //one.olamsa.com.pe/practiqr
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        // Solo los headers realmente utilizados por el frontend (ver lib/api/axios.ts, lib/auth.ts):
+        // Content-Type (JSON), Accept y X-XSRF-TOKEN (CSRF en mutaciones). Sin wildcard con credentials.
+        config.setAllowedHeaders(List.of("Content-Type", "Accept", "X-XSRF-TOKEN"));
         config.setAllowCredentials(true);
         // Headers expuestos para que el frontend pueda leer Set-Cookie si fuera necesario (no HttpOnly)
         config.setExposedHeaders(List.of("Set-Cookie", "Authorization"));

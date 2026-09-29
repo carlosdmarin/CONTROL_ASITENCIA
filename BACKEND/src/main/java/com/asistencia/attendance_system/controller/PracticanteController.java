@@ -23,13 +23,6 @@ public class PracticanteController {
     private final PracticanteService practicanteService;
     private final HorarioService horarioService;
 
-    // ========== TEST ==========
-    @GetMapping("/test")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> test() {
-        return ResponseEntity.ok("Backend funcionando correctamente");
-    }
-
     // ========== CRUD BÁSICO ==========
 
     @GetMapping

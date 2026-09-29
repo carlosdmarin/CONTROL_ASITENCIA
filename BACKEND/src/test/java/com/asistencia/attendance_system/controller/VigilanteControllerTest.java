@@ -1,5 +1,7 @@
 package com.asistencia.attendance_system.controller;
 
+import com.asistencia.attendance_system.model.entity.Sede;
+import com.asistencia.attendance_system.model.entity.Vigilante;
 import com.asistencia.attendance_system.repository.SedeRepository;
 import com.asistencia.attendance_system.repository.VigilanteRepository;
 import com.asistencia.attendance_system.security.JwtService;
@@ -49,8 +51,36 @@ public class VigilanteControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    /**
+     * Sedes tiene columnas legacy NOT NULL no mapeadas (Abrev, Estado):
+     * seed con SQL nativo. Todo test que lo usa es @Transactional (rollback).
+     */
+    private Sede crearSede(String nombre, String abrev) {
+        jdbcTemplate.update(
+                "INSERT INTO sedes (Sede, Abrev, Estado, activo, fecha_creacion, nombre) VALUES (?,?,?,?,?,?)",
+                nombre, abrev, 1, true, java.time.LocalDateTime.now(), nombre);
+        return sedeRepository.findAll().stream()
+                .filter(s -> nombre.equals(s.getNombre())).findFirst().orElseThrow();
+    }
+
+    private Vigilante crearVigilante(String usuario, Sede sede) {
+        Vigilante v = new Vigilante();
+        v.setNombre("Test");
+        v.setApellido("Seed");
+        v.setUsuario(usuario);
+        v.setContrasena(passwordEncoder.encode("Secret123!"));
+        v.setEstado(true);
+        v.setSede(sede);
+        return vigilanteRepository.save(v);
+    }
+
     @Test
+    @Transactional
     public void rrhhPuedeListarVigilantes200() throws Exception {
+        crearVigilante("seed_listar_" + UUID.randomUUID().toString().substring(0, 8), null);
         String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         MvcResult result = mockMvc.perform(get("/api/vigilantes").cookie(cookie))
@@ -102,7 +132,12 @@ public class VigilanteControllerTest {
     }
 
     @Test
+    @Transactional
     public void sedeRealDevuelta() throws Exception {
+        Sede sede = sedeRepository.findAll().stream()
+                .filter(s -> s.getNombre() != null && s.getNombre().contains("PUCALLPA"))
+                .findFirst().orElseGet(() -> crearSede("SEDE PUCALLPA", "SPUC"));
+        crearVigilante("seed_sede_" + UUID.randomUUID().toString().substring(0, 8), sede);
         String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
         MvcResult result = mockMvc.perform(get("/api/vigilantes").cookie(cookie))
@@ -195,7 +230,8 @@ public class VigilanteControllerTest {
     public void crearUsuarioDuplicado409() throws Exception {
         String token = jwtService.generateToken("1", "RRHH", "administradores:1");
         Cookie cookie = new Cookie("practiqr_token", token);
-        // 123456 ya existe (vigilante inicial)
+        // Seed previo: el duplicado debe existir para que responda 409
+        crearVigilante("123456", null);
         Map<String, Object> body = Map.of(
                 "nombre", "Dup", "apellido", "Test", "usuario", "123456",
                 "contrasena", "pass123", "sedeId", 3);
