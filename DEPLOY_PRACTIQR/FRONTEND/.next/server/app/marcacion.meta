@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/marcacion/layout,_N_T_/marcacion/page,_N_T_/marcacion"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/marcacion/__PAGE__",
+    "/marcacion",
+    "/_index",
+    "/_head"
+  ]
+}

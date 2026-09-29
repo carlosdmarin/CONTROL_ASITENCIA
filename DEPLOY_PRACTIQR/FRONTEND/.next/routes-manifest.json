@@ -1,0 +1,135 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [
+      {
+        "source": "/api/:path*",
+        "destination": "http://localhost:8080/api/:path*",
+        "regex": "^/api(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+      }
+    ],
+    "fallback": []
+  },
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/asistencia",
+      "regex": "^/dashboard/asistencia(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/asistencia(?:/)?$"
+    },
+    {
+      "page": "/dashboard/practicantes",
+      "regex": "^/dashboard/practicantes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/practicantes(?:/)?$"
+    },
+    {
+      "page": "/dashboard/reportes",
+      "regex": "^/dashboard/reportes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/reportes(?:/)?$"
+    },
+    {
+      "page": "/dashboard/vigilantes",
+      "regex": "^/dashboard/vigilantes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/vigilantes(?:/)?$"
+    },
+    {
+      "page": "/icon.png",
+      "regex": "^/icon\\.png(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/icon\\.png(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/marcacion",
+      "regex": "^/marcacion(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/marcacion(?:/)?$"
+    },
+    {
+      "page": "/marcacion/historial",
+      "regex": "^/marcacion/historial(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/marcacion/historial(?:/)?$"
+    },
+    {
+      "page": "/practicante",
+      "regex": "^/practicante(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/practicante(?:/)?$"
+    },
+    {
+      "page": "/practicante/informacion",
+      "regex": "^/practicante/informacion(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/practicante/informacion(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
