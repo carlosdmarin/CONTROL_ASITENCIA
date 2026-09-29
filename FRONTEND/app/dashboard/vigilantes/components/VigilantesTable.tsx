@@ -383,7 +383,6 @@ export default function VigilantesTable({
                             </p>
                             <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
                               <span className="inline-flex items-center gap-1 font-mono">
-                                <AtSign className="h-3 w-3" />
                                 {v.usuario}
                               </span>
                               <span className="text-slate-300">·</span>
