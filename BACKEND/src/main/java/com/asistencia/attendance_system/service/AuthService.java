@@ -42,6 +42,64 @@ public class AuthService {
         return hash;
     }
 
+    private boolean coincideContrasena(String stored, String contrasenaTrim) {
+        if (stored == null || contrasenaTrim == null) {
+            return false;
+        }
+
+        if (isBCrypt(stored)) {
+            return passwordEncoder.matches(
+                    contrasenaTrim,
+                    normalizeForBcrypt(stored)
+            );
+        }
+
+        return stored.equals(contrasenaTrim);
+    }
+
+    /**
+     * Indica si las credenciales corresponden a una cuenta existente pero
+     * desactivada (practicante no ACTIVO o vigilante con estado distinto de true).
+     * Solo se usa para mostrar un mensaje claro; con credencial incorrecta o
+     * usuario inexistente se mantiene el mensaje genérico.
+     */
+    private boolean esCuentaDesactivadaConCredencialValida(String usuarioTrim,
+                                                           String contrasenaTrim) {
+        Optional<Practicante> optPracticante =
+                practicanteRepository.findByUsuario(usuarioTrim);
+
+        if (optPracticante.isEmpty()) {
+            optPracticante =
+                    practicanteRepository.findByDocumento(usuarioTrim);
+        }
+
+        if (optPracticante.isPresent()) {
+            Practicante p = optPracticante.get();
+
+            boolean inactivo = p.getSituacion() == null
+                    || !p.getSituacion().name().equals("ACTIVO");
+
+            if (inactivo
+                    && coincideContrasena(p.getContrasena(), contrasenaTrim)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        Optional<Vigilante> optVigilante =
+                vigilanteRepository.findByUsuario(usuarioTrim);
+
+        if (optVigilante.isPresent()) {
+            Vigilante v = optVigilante.get();
+
+            return !Boolean.TRUE.equals(v.getEstado())
+                    && coincideContrasena(v.getContrasena(), contrasenaTrim);
+        }
+
+        return false;
+    }
+
     @Transactional
     public AuthResult authenticate(String usuario, String contrasena) {
 
@@ -171,6 +229,14 @@ public class AuthService {
                     "LOGIN DEBUG - No se encontró ningún usuario activo/autorizado para [{}]",
                     usuarioTrim
             );
+
+            if (esCuentaDesactivadaConCredencialValida(usuarioTrim, contrasenaTrim)) {
+
+                throw new BusinessException(
+                        "Tu cuenta se encuentra desactivada. Si consideras que se trata de un error, comunícate con Recursos Humanos.",
+                        HttpStatus.UNAUTHORIZED
+                );
+            }
 
             throw new BusinessException(
                     "Usuario o contraseña incorrectos",

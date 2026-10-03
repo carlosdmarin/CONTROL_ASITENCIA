@@ -8,6 +8,7 @@ import com.asistencia.attendance_system.excepcion.BusinessException;
 import com.asistencia.attendance_system.model.enums.Agencia;
 import com.asistencia.attendance_system.repository.PracticanteRepository;
 import com.asistencia.attendance_system.service.AsistenciaService;
+import com.asistencia.attendance_system.service.VigilanteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ public class AsistenciaController {
 
     private final AsistenciaService asistenciaService;
     private final PracticanteRepository practicanteRepository;
+    private final VigilanteService vigilanteService;
 
     // ========== MARCACIONES ==========
 
@@ -356,16 +358,45 @@ public class AsistenciaController {
 
     @GetMapping("/validar/entrada-hoy/{idPracticante}")
     @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
-    public ResponseEntity<Boolean> yaMarcoEntradaHoy(@PathVariable Long idPracticante) {
+    public ResponseEntity<Boolean> yaMarcoEntradaHoy(Authentication authentication,
+                                                     @PathVariable Long idPracticante) {
+        validarAlcanceVigilante(authentication, idPracticante);
         boolean resultado = asistenciaService.yaMarcoEntradaHoy(idPracticante);
         return ResponseEntity.ok(resultado);
     }
 
     @GetMapping("/validar/salida-hoy/{idPracticante}")
     @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
-    public ResponseEntity<Boolean> yaMarcoSalidaHoy(@PathVariable Long idPracticante) {
+    public ResponseEntity<Boolean> yaMarcoSalidaHoy(Authentication authentication,
+                                                    @PathVariable Long idPracticante) {
+        validarAlcanceVigilante(authentication, idPracticante);
         boolean resultado = asistenciaService.yaMarcoSalidaHoy(idPracticante);
         return ResponseEntity.ok(resultado);
+    }
+
+    /**
+     * VIGILANTE solo puede validar practicantes de su propia sede (RRHH global).
+     * No se acepta sede del cliente: ambas se resuelven server-side.
+     */
+    private void validarAlcanceVigilante(Authentication authentication, Long idPracticante) {
+        boolean esVigilante = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_VIGILANTE".equals(a.getAuthority()));
+        if (!esVigilante) {
+            return;
+        }
+        Integer idSedeVigilante;
+        try {
+            idSedeVigilante = vigilanteService.obtenerIdSede(Integer.valueOf(authentication.getName()));
+        } catch (NumberFormatException | NullPointerException e) {
+            idSedeVigilante = null;
+        }
+        Integer idSedePracticante = practicanteRepository.findById(idPracticante)
+                .map(p -> p.getSede() != null ? p.getSede().getIdSede() : null)
+                .orElse(null);
+        if (idSedeVigilante == null || !idSedeVigilante.equals(idSedePracticante)) {
+            throw new BusinessException("Acceso denegado: el practicante no pertenece a su sede.",
+                    HttpStatus.FORBIDDEN);
+        }
     }
 
     // ========== REPORTES ==========

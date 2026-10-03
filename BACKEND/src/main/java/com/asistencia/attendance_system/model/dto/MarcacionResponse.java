@@ -24,6 +24,8 @@ public class MarcacionResponse {
     private String estado; // "EXITOSA", "FUERA_DE_HORARIO", "DUPLICADA"
     private String mensaje;
     private LocalDateTime fechaRegistro;
+    private Integer sedeId; // sede donde ocurrió el evento (null = no registrada)
+    private String sedeNombre;
 
     // Compatibilidad
     public String getCodigoTrabajador() { return documento; }

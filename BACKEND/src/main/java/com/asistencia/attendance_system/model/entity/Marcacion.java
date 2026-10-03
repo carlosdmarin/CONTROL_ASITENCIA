@@ -26,6 +26,10 @@ public class Marcacion {
     @JoinColumn(name = "id_practicante", referencedColumnName = "id_practicante", nullable = false)
     private Practicante practicante;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sede_id", referencedColumnName = "IdSede", foreignKey = @ForeignKey(name = "fk_marcacion_sede"))
+    private Sede sede;
+
     @Column(name = "fecha", nullable = false)
     private LocalDate fecha;
 

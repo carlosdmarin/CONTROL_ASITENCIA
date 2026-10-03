@@ -6,11 +6,13 @@ import com.asistencia.attendance_system.model.dto.PracticanteRequest;
 import com.asistencia.attendance_system.model.dto.PracticanteResponse;
 import com.asistencia.attendance_system.service.HorarioService;
 import com.asistencia.attendance_system.service.PracticanteService;
+import com.asistencia.attendance_system.service.VigilanteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,7 @@ public class PracticanteController {
 
     private final PracticanteService practicanteService;
     private final HorarioService horarioService;
+    private final VigilanteService vigilanteService;
 
     // ========== CRUD BÁSICO ==========
 
@@ -87,8 +90,30 @@ public class PracticanteController {
 
     @GetMapping("/buscar")
     @PreAuthorize("hasAnyRole('RRHH','VIGILANTE')")
-    public ResponseEntity<List<PracticanteResponse>> buscar(@RequestParam String termino) {
-        return ResponseEntity.ok(practicanteService.buscarPorNombre(termino));
+    public ResponseEntity<List<PracticanteResponse>> buscar(Authentication authentication,
+                                                            @RequestParam String termino) {
+        List<PracticanteResponse> resultados = practicanteService.buscarPorNombre(termino);
+        // VIGILANTE solo ve su sede (RRHH conserva vista global).
+        if (esVigilante(authentication)) {
+            Integer idSede = sedeDelVigilante(authentication);
+            resultados = resultados.stream()
+                    .filter(p -> idSede != null && idSede.equals(p.getIdSede()))
+                    .toList();
+        }
+        return ResponseEntity.ok(resultados);
+    }
+
+    private boolean esVigilante(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_VIGILANTE".equals(a.getAuthority()));
+    }
+
+    private Integer sedeDelVigilante(Authentication authentication) {
+        try {
+            return vigilanteService.obtenerIdSede(Integer.valueOf(authentication.getName()));
+        } catch (NumberFormatException | NullPointerException e) {
+            return null;
+        }
     }
 
     // ========== ESTADÍSTICAS ==========

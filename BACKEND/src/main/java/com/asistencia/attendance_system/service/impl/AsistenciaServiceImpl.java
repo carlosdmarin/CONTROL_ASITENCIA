@@ -34,8 +34,11 @@ import com.asistencia.attendance_system.service.HorarioService;
 import com.asistencia.attendance_system.utils.HorarioUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -184,6 +187,7 @@ public class AsistenciaServiceImpl implements AsistenciaService {
 
         Marcacion marcacion = new Marcacion();
         marcacion.setPracticante(practicante);
+        marcacion.setSede(resolverSedeDelEvento());
         marcacion.setFecha(fecha);
         marcacion.setHoraMarcacion(hora);
         marcacion.setTipoMarcacion(tipo);
@@ -193,7 +197,16 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         marcacion.setLongitud(request.getLongitud());
         marcacion.setObservaciones(request.getObservaciones());
 
-        Marcacion saved = marcacionRepository.save(marcacion);
+        Marcacion saved;
+        try {
+            saved = marcacionRepository.saveAndFlush(marcacion);
+        } catch (DataIntegrityViolationException e) {
+            // Concurrencia: otro request registró el mismo evento (practicante, fecha, tipo).
+            // El mensaje conserva el prefijo YA_REGISTRADO que el controller mapea.
+            log.warn("Marcación duplicada concurrente para practicante {} fecha {} tipo {}",
+                    practicante.getIdPracticante(), fecha, tipo);
+            throw new RuntimeException("Ya registraste esta marcación hoy. La jornada de hoy ya está registrada.");
+        }
         log.info("Marcación registrada: {} - {} a las {}", tipo, practicante.getDocumento(), hora);
 
         procesarAsistenciaDiaria(practicante.getIdPracticante(), fecha);
@@ -209,6 +222,10 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         response.setEstado("EXITOSA");
         response.setMensaje(tipo == TipoMarcacion.ENTRADA ? "Entrada registrada correctamente" : "Salida registrada correctamente");
         response.setFechaRegistro(saved.getFechaRegistro());
+        if (saved.getSede() != null) {
+            response.setSedeId(saved.getSede().getIdSede());
+            response.setSedeNombre(saved.getSede().getNombre());
+        }
 
         return response;
     }
@@ -1029,7 +1046,37 @@ public class AsistenciaServiceImpl implements AsistenciaService {
         response.setFechaRegistro(marcacion.getFechaRegistro());
         response.setEstado("EXITOSA");
         response.setMensaje("Marcación registrada");
+        if (marcacion.getSede() != null) {
+            response.setSedeId(marcacion.getSede().getIdSede());
+            response.setSedeNombre(marcacion.getSede().getNombre());
+        }
         return response;
+    }
+
+    /**
+     * Sede donde ocurre el evento: se resuelve del vigilante autenticado.
+     * La sede del practicante NO se usa ni se modifica (marcación multi-sede).
+     * Retorna null si no puede resolverse (no debe bloquear la marcación).
+     */
+    private Sede resolverSedeDelEvento() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return null;
+            }
+            boolean esVigilante = authentication.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_VIGILANTE".equals(a.getAuthority()));
+            if (!esVigilante) {
+                return null;
+            }
+            Integer idVigilante = Integer.valueOf(authentication.getName());
+            return vigilanteRepository.findById(idVigilante)
+                    .map(Vigilante::getSede)
+                    .orElse(null);
+        } catch (Exception e) {
+            log.debug("No se pudo resolver la sede del evento: {}", e.getMessage());
+            return null;
+        }
     }
 
     private AsistenciaDiariaResponse convertAsistenciaToResponse(AsistenciaDiaria asistencia) {

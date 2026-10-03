@@ -1,5 +1,7 @@
 package com.asistencia.attendance_system.security;
 
+import com.asistencia.attendance_system.repository.PracticanteRepository;
+import com.asistencia.attendance_system.repository.VigilanteRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -18,9 +20,15 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final PracticanteRepository practicanteRepository;
+    private final VigilanteRepository vigilanteRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService,
+                                   PracticanteRepository practicanteRepository,
+                                   VigilanteRepository vigilanteRepository) {
         this.jwtService = jwtService;
+        this.practicanteRepository = practicanteRepository;
+        this.vigilanteRepository = vigilanteRepository;
     }
 
     @Override
@@ -36,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String rol = jwtService.getRol(token);
                 String sid = jwtService.getSid(token);
 
-                if (subject != null && rol != null && sid != null) {
+                if (subject != null && rol != null && sid != null && cuentaActiva(sid)) {
                     String authority = "ROLE_" + rol;
                     var authorities = List.of(new SimpleGrantedAuthority(authority));
                     var authentication = new UsernamePasswordAuthenticationToken(subject, sid, authorities);
@@ -49,6 +57,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Revalida la vigencia de la cuenta en cada request: una cuenta desactivada
+     * después de emitir el JWT deja de autenticar aunque el token siga vigente.
+     * Si la cuenta ya no existe o no puede verificarse, se conserva el
+     * comportamiento anterior (solo se rechaza la inactividad comprobada).
+     */
+    private boolean cuentaActiva(String sid) {
+        try {
+            if (sid.startsWith("practicante:")) {
+                Long id = Long.valueOf(sid.substring("practicante:".length()));
+                return practicanteRepository.findById(id)
+                        .map(p -> p.getSituacion() != null
+                                && "ACTIVO".equals(p.getSituacion().name()))
+                        .orElse(true);
+            }
+            if (sid.startsWith("vigilante:")) {
+                Integer id = Integer.valueOf(sid.substring("vigilante:".length()));
+                return vigilanteRepository.findById(id)
+                        .map(v -> Boolean.TRUE.equals(v.getEstado()))
+                        .orElse(true);
+            }
+            // administradores no tiene estado: la existencia del registro ya fue
+            // la autorización al emitir el JWT; se conserva el comportamiento.
+        } catch (Exception e) {
+            return true;
+        }
+        return true;
     }
 
     private String extractTokenFromCookie(HttpServletRequest request) {

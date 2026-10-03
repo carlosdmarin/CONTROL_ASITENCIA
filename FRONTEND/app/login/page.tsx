@@ -98,7 +98,12 @@ function LoginInner() {
       }
 
       if (response.status === 401) {
-        setError("Usuario o contraseña incorrectos");
+        const msg = body?.message || "";
+        if (/desactivada/i.test(msg)) {
+          setError(msg);
+        } else {
+          setError("Usuario o contraseña incorrectos");
+        }
         return;
       }
       if (response.status === 400) {

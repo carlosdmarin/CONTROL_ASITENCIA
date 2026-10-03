@@ -28,6 +28,17 @@ public class VigilanteServiceImpl implements VigilanteService {
 
     @Override
     @Transactional(readOnly = true)
+    public Integer obtenerIdSede(Integer idVigilante) {
+        if (idVigilante == null) {
+            return null;
+        }
+        return vigilanteRepository.findById(idVigilante)
+                .map(v -> v.getSede() != null ? v.getSede().getIdSede() : null)
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<VigilanteResponse> listar() {
         List<Vigilante> vigilantes = vigilanteRepository.findAll();
         return vigilantes.stream().map(this::toResponse).toList();

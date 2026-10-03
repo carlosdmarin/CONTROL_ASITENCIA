@@ -16,4 +16,10 @@ public interface VigilanteService {
     void cambiarContrasena(Integer id, VigilanteChangePasswordRequest request);
 
     VigilanteResponse cambiarEstado(Integer id, VigilanteEstadoRequest request);
+
+    /**
+     * Sede asignada al vigilante. Retorna null si no existe o no tiene sede.
+     * Se usa para acotar consultas por sede sin aceptar sede del cliente.
+     */
+    Integer obtenerIdSede(Integer idVigilante);
 }
