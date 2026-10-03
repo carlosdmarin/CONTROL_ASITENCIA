@@ -334,7 +334,14 @@ export function PracticanteEditDialog({
         );
 
         if (horarioData && horarioData.length > 0) {
-          const nuevoHorario = { ...HORARIO_DEFAULT };
+          // Base todo-inactivo: solo los días presentes en la API quedan ACTIVOS.
+          // (HORARIO_DEFAULT trae Lun–Vie activos y no debe usarse como base aquí.)
+          const nuevoHorario = Object.fromEntries(
+            Object.entries(HORARIO_DEFAULT).map(([dia, data]) => [
+              dia,
+              { ...data, activo: false },
+            ]),
+          ) as HorarioSemanal;
           horarioData.forEach((bloque: HorarioBackend) => {
             const diaKey = bloque.diaSemana as keyof HorarioSemanal;
             if (nuevoHorario[diaKey]) {
