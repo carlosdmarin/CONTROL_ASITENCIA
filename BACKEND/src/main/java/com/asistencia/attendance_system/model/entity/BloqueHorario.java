@@ -40,6 +40,9 @@ public class BloqueHorario {
     @Column(name = "tipo_bloque", nullable = false)
     private TipoBloque tipoBloque = TipoBloque.TRABAJO;
 
+    @Column(name = "descuenta_almuerzo", nullable = false)
+    private Boolean descuentaAlmuerzo = true;
+
     @Column(name = "descripcion", length = 100)
     private String descripcion;
 

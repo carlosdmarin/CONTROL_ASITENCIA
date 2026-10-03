@@ -76,6 +76,7 @@ interface DiaHorario {
   activo: boolean;
   entrada: string;
   salida: string;
+  jornada: "NORMAL" | "CORRIDO"; // NORMAL descuenta refrigerio, CORRIDO no
 }
 
 interface HorarioSemanal {
@@ -92,6 +93,7 @@ interface HorarioBackend {
   horaInicio: string;
   horaFin: string;
   activo: boolean;
+  descuentaAlmuerzo?: boolean; // true = NORMAL, false = CORRIDO
 }
 
 const DIAS_SEMANA = [
@@ -104,12 +106,12 @@ const DIAS_SEMANA = [
 ];
 
 const HORARIO_DEFAULT: HorarioSemanal = {
-  LUNES: { activo: true, entrada: "07:30", salida: "17:00" },
-  MARTES: { activo: true, entrada: "07:30", salida: "17:00" },
-  MIERCOLES: { activo: true, entrada: "07:30", salida: "17:00" },
-  JUEVES: { activo: true, entrada: "07:30", salida: "17:00" },
-  VIERNES: { activo: true, entrada: "07:30", salida: "17:00" },
-  SABADO: { activo: false, entrada: "07:30", salida: "13:00" },
+  LUNES: { activo: true, entrada: "07:30", salida: "17:00", jornada: "NORMAL" },
+  MARTES: { activo: true, entrada: "07:30", salida: "17:00", jornada: "NORMAL" },
+  MIERCOLES: { activo: true, entrada: "07:30", salida: "17:00", jornada: "NORMAL" },
+  JUEVES: { activo: true, entrada: "07:30", salida: "17:00", jornada: "NORMAL" },
+  VIERNES: { activo: true, entrada: "07:30", salida: "17:00", jornada: "NORMAL" },
+  SABADO: { activo: false, entrada: "07:30", salida: "13:00", jornada: "NORMAL" },
 };
 
 // ====== FUNCIÓN PARA NORMALIZAR TEXTO ======
@@ -120,7 +122,7 @@ const normalizar = (texto: string) => {
 // ====== HELPERS ======
 const minutosDelDia = (dia: DiaHorario): number => {
   if (!dia.activo) return 0;
-  return calcularMinutosTrabajados(dia.entrada, dia.salida);
+  return calcularMinutosTrabajados(dia.entrada, dia.salida, dia.jornada !== "CORRIDO");
 };
 
 export function PracticanteEditDialog({
@@ -340,6 +342,7 @@ export function PracticanteEditDialog({
                 activo: bloque.activo,
                 entrada: bloque.horaInicio.substring(0, 5),
                 salida: bloque.horaFin.substring(0, 5),
+                jornada: bloque.descuentaAlmuerzo === false ? "CORRIDO" : "NORMAL",
               };
             }
           });
@@ -527,6 +530,7 @@ export function PracticanteEditDialog({
         horaInicio: data.entrada,
         horaFin: data.salida,
         activo: data.activo,
+        descuentaAlmuerzo: data.jornada !== "CORRIDO",
       })),
     };
 
@@ -1396,6 +1400,26 @@ export function PracticanteEditDialog({
                               />
                             </div>
                           </div>
+                          <div className="flex flex-col gap-1.5 flex-1">
+                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">
+                              Jornada
+                            </span>
+                            <select
+                              value={diaData.jornada}
+                              onChange={(e) =>
+                                handleHorarioChange(
+                                  dia.key,
+                                  "jornada",
+                                  e.target.value,
+                                )
+                              }
+                              title="Normal descuenta 1 h de refrigerio; Corrido no descuenta"
+                              className="w-full sm:w-28 h-10 text-sm rounded-md border border-slate-200 bg-white px-2 text-slate-700"
+                            >
+                              <option value="NORMAL">Normal</option>
+                              <option value="CORRIDO">Corrido</option>
+                            </select>
+                          </div>
                           <span
                             className={`hidden sm:inline-flex ml-1 text-xs font-medium px-2.5 py-1 rounded-full border ${tieneError ? "bg-red-100 text-red-700 border-red-200" : "bg-slate-100 text-slate-700 border-slate-200"}`}
                           >
@@ -1778,20 +1802,23 @@ export function PracticanteEditDialog({
                         {dia.label}
                       </span>
                     </div>
-                    {diaData.activo ? (
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11.5px] font-semibold text-slate-700 tabular-nums">
-                          {diaData.entrada}
-                        </span>
-                        <ArrowRight
-                          className="h-3 w-3 text-slate-300"
-                          strokeWidth={2.4}
-                        />
-                        <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11.5px] font-semibold text-slate-700 tabular-nums">
-                          {diaData.salida}
-                        </span>
-                      </div>
-                    ) : (
+                      {diaData.activo ? (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11.5px] font-semibold text-slate-700 tabular-nums">
+                            {diaData.entrada}
+                          </span>
+                          <ArrowRight
+                            className="h-3 w-3 text-slate-300"
+                            strokeWidth={2.4}
+                          />
+                          <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 font-mono text-[11.5px] font-semibold text-slate-700 tabular-nums">
+                            {diaData.salida}
+                          </span>
+                          <span className="inline-flex items-center rounded-md bg-slate-100 border border-slate-200 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                            {diaData.jornada === "CORRIDO" ? "Corrido" : "Normal"}
+                          </span>
+                        </div>
+                      ) : (
                       <span className="text-[11.5px] text-slate-400 italic">
                         Descanso
                       </span>

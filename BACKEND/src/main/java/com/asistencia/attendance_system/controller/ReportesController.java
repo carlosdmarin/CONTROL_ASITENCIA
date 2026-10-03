@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/reportes")
+@RequestMapping({"/api/reportes", "/reportes"})
 @RequiredArgsConstructor
 public class ReportesController {
 

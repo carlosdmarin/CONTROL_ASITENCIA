@@ -479,15 +479,22 @@ public class ReportesServiceImpl implements ReportesService {
                     .build();
             detalle.add(det);
 
-            // C2: determinar si es futuro/no evaluable usando fuente de verdad jornadaTerminada
-            boolean isFuture = fecha.isAfter(hoy) || (fecha.isEqual(hoy) && bloqueOpt.isPresent() && !calculadoraEstado.jornadaTerminada(bloqueOpt.get(), fecha, hoy, ahora));
+            // Horas programadas: horario esperado del MES COMPLETO (días pasados, hoy y futuros),
+            // consistente con el reporte semanal. Solo lo trabajado/contadores usan días evaluables.
+            diasProgramados++;
+            horasProgramadasEvaluable = horasProgramadasEvaluable.add(horasEsperadas);
+
+            // C2: determinar si es futuro/no evaluable usando fuente de verdad jornadaTerminada.
+            // Excepción: el día actual con marcación completa (entrada y salida reales) ya es
+            // evaluable aunque la hora de fin del bloque aún no haya llegado. Sin salida no se
+            // inventan horas: se mantiene la regla de jornada cerrada.
+            boolean jornadaCompleta = asistencia.getEntradaReal() != null && asistencia.getSalidaReal() != null;
+            boolean isFuture = fecha.isAfter(hoy) || (fecha.isEqual(hoy) && bloqueOpt.isPresent() && !jornadaCompleta && !calculadoraEstado.jornadaTerminada(bloqueOpt.get(), fecha, hoy, ahora));
             if (isFuture) {
                 continue;
             }
 
-            // Evaluable: acumular métricas
-            diasProgramados++;
-            horasProgramadasEvaluable = horasProgramadasEvaluable.add(horasEsperadas);
+            // Evaluable: acumular métricas de cumplimiento
             horasTrabajadasEvaluable = horasTrabajadasEvaluable.add(ht);
 
             boolean tieneTrabajo = ht.compareTo(BigDecimal.ZERO) > 0 || "PRESENTE".equals(estadoNorm) || "TARDANZA".equals(estadoNorm);
@@ -573,7 +580,7 @@ public class ReportesServiceImpl implements ReportesService {
 
     private BigDecimal calcularHorasEsperadas(BloqueHorario bloque) {
         if (bloque == null || bloque.getHoraInicio() == null || bloque.getHoraFin() == null) return BigDecimal.ZERO;
-        long mins = HorarioUtils.calcularMinutosTrabajados(bloque.getHoraInicio(), bloque.getHoraFin());
+        long mins = HorarioUtils.calcularMinutosTrabajados(bloque.getHoraInicio(), bloque.getHoraFin(), bloque.getDescuentaAlmuerzo());
         if (mins < 0) return BigDecimal.ZERO;
         return BigDecimal.valueOf(mins).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
     }

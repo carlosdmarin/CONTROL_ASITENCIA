@@ -14,4 +14,5 @@ public class BloqueHorarioResponseDTO {
     private String horaFin;    // "17:00"
     private Boolean activo;
     private String tipoBloque; // "TRABAJO" o "DESCANSO"
+    private Boolean descuentaAlmuerzo; // true = NORMAL, false = CORRIDO
 }

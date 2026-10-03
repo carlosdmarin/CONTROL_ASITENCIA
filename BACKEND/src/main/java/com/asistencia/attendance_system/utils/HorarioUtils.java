@@ -30,10 +30,21 @@ public final class HorarioUtils {
      * Calcula minutos efectivamente trabajados entre entrada y salida,
      * descontando solo el solapamiento real con 13:00-14:00.
      * Retorna -1 si entrada >= salida o nulo (indica inválido).
+     * Comportamiento histórico (NORMAL): descuenta refrigerio.
      */
     public static long calcularMinutosTrabajados(LocalTime entrada, LocalTime salida) {
+        return calcularMinutosTrabajados(entrada, salida, true);
+    }
+
+    /**
+     * Variante por modalidad de jornada del bloque:
+     * descuentaAlmuerzo=true (NORMAL) descuenta el solapamiento con 13:00-14:00;
+     * descuentaAlmuerzo=false (CORRIDO) no descuenta. null equivale a NORMAL.
+     */
+    public static long calcularMinutosTrabajados(LocalTime entrada, LocalTime salida, Boolean descuentaAlmuerzo) {
         if (entrada == null || salida == null || !entrada.isBefore(salida)) return -1;
         long duracionTotal = java.time.Duration.between(entrada, salida).toMinutes();
+        if (Boolean.FALSE.equals(descuentaAlmuerzo)) return duracionTotal;
         long solapamiento = calcularSolapamientoAlmuerzo(entrada, salida);
         return duracionTotal - solapamiento;
     }

@@ -56,9 +56,8 @@ public class PracticanteServiceImpl implements PracticanteService {
         if (oficina.getEstado() == null || oficina.getEstado() != 1) {
             throw new BusinessException("La oficina seleccionada '" + oficina.getOficina() + "' está inactiva y no puede asignarse.", HttpStatus.BAD_REQUEST);
         }
-        if (oficina.getIdSede() != null && !oficina.getIdSede().equals(sede.getIdSede())) {
-            throw new BusinessException("La oficina '" + oficina.getOficina() + "' no pertenece a la sede seleccionada.", HttpStatus.BAD_REQUEST);
-        }
+        // IdSede e IdOficina son independientes: oficinas.IdSede es dato histórico/informativo
+        // del catálogo corporativo y no restringe la sede del practicante.
 
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
                 .orElseThrow(() -> new RuntimeException("Tipo de instituto no encontrado con ID: " + request.getIdTipoInstituto()));
@@ -115,9 +114,8 @@ public class PracticanteServiceImpl implements PracticanteService {
         if (oficina.getEstado() == null || oficina.getEstado() != 1) {
             throw new BusinessException("La oficina '" + oficina.getOficina() + "' está inactiva.", HttpStatus.BAD_REQUEST);
         }
-        if (oficina.getIdSede() != null && !oficina.getIdSede().equals(sede.getIdSede())) {
-            throw new BusinessException("La oficina '" + oficina.getOficina() + "' no pertenece a la sede seleccionada.", HttpStatus.BAD_REQUEST);
-        }
+        // IdSede e IdOficina son independientes: oficinas.IdSede es dato histórico/informativo
+        // del catálogo corporativo y no restringe la sede del practicante.
 
         TipoInstituto tipoInstituto = tipoInstitutoRepository.findById(request.getIdTipoInstituto())
                 .orElseThrow(() -> new RuntimeException("Tipo de instituto no encontrado con ID: " + request.getIdTipoInstituto()));
@@ -304,6 +302,7 @@ public class PracticanteServiceImpl implements PracticanteService {
                     bloque.setHoraInicio(LocalTime.parse(req.getHoraInicio()));
                     bloque.setHoraFin(LocalTime.parse(req.getHoraFin()));
                     bloque.setTipoBloque(TipoBloque.TRABAJO);
+                    bloque.setDescuentaAlmuerzo(req.getDescuentaAlmuerzo() != null ? req.getDescuentaAlmuerzo() : true);
                     bloque.setActivo(true);
                     bloque.setFechaInicio(practicante.getFechaInicioPracticas());
                     bloque.setFechaFin(practicante.getFechaFinPracticas());

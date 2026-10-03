@@ -94,7 +94,8 @@ public class SecurityConfig {
                 .csrfTokenRepository(csrfRepo)
                 .csrfTokenRequestHandler(requestHandler)
                 // Permitir que el frontend obtenga el token CSRF sin auth
-                .ignoringRequestMatchers("/api/auth/**")
+                // Variante sin /api: Apache de producción elimina el prefijo /api antes de reenviar a Spring
+                .ignoringRequestMatchers("/api/auth/**", "/auth/**")
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex
@@ -112,14 +113,14 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/logout").permitAll()
-                .requestMatchers("/api/csrf").permitAll()
-                .requestMatchers("/api/auth/me").authenticated()
+                .requestMatchers("/api/auth/login", "/auth/login", "/api/auth/logout", "/auth/logout").permitAll()
+                .requestMatchers("/api/csrf", "/csrf").permitAll()
+                .requestMatchers("/api/auth/me", "/auth/me").authenticated()
                 .requestMatchers("/health", "/health/**").permitAll()
                 // Todo /api/** requiere autenticación; autorización por rol vía @PreAuthorize
                 .requestMatchers("/api/**").authenticated()
-                // Alias sin prefijo /api (compatibilidad frontend antiguo)
-                .requestMatchers("/asistencias/**", "/tipos-practicante/**", "/sedes/**", "/agencias/**", "/oficinas/**", "/tipos-instituto/**", "/tipo-instituto/**").authenticated()
+                // Alias sin prefijo /api (compatibilidad Apache producción que elimina /api)
+                .requestMatchers("/asistencias/**", "/tipos-practicante/**", "/sedes/**", "/agencias/**", "/oficinas/**", "/tipos-instituto/**", "/tipo-instituto/**", "/auth/**", "/practicantes/**", "/horarios/**", "/vigilantes/**", "/reportes/**", "/csrf").authenticated()
                 .anyRequest().authenticated()
             )
             .httpBasic(httpBasic -> httpBasic.disable())

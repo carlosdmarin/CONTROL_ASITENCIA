@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping({"/api/tipos-practicante"})
+@RequestMapping({"/api/tipos-practicante", "/tipos-practicante"})
 @RequiredArgsConstructor
 public class TiposPracticanteController {
 

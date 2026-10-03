@@ -25,16 +25,18 @@ export function timeToMinutes(hhmm: string): number {
 }
 
 /**
- * Calcula minutos efectivamente trabajados entre entrada y salida,
- * descontando solo el solapamiento real con 13:00-14:00.
+ * Calcula minutos efectivamente trabajados entre entrada y salida.
+ * descuentaAlmuerzo=true (NORMAL, por defecto): descuenta el solapamiento real con 13:00-14:00.
+ * descuentaAlmuerzo=false (CORRIDO): no descuenta refrigerio.
  * Retorna NaN si entrada >= salida o formato inválido.
  * Retorna 0 si el día no está activo (manejado por el llamador).
  */
-export function calcularMinutosTrabajados(entrada: string, salida: string): number {
+export function calcularMinutosTrabajados(entrada: string, salida: string, descuentaAlmuerzo: boolean = true): number {
   const ini = timeToMinutes(entrada);
   const fin = timeToMinutes(salida);
   if (Number.isNaN(ini) || Number.isNaN(fin) || ini >= fin) return NaN;
   const duracionTotal = fin - ini;
+  if (!descuentaAlmuerzo) return duracionTotal;
   const solapamiento = calcularSolapamientoAlmuerzo(ini, fin);
   return duracionTotal - solapamiento;
 }

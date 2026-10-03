@@ -6,6 +6,7 @@ export type BloqueHorarioRequest = {
   horaInicio: string;  // "07:00"
   horaFin: string;     // "17:00"
   activo: boolean;
+  descuentaAlmuerzo?: boolean; // true = NORMAL (defecto), false = CORRIDO
 };
 
 export type BloqueHorarioResponse = {
@@ -16,6 +17,7 @@ export type BloqueHorarioResponse = {
   horaFin: string;
   tipoBloque: string;
   activo: boolean;
+  descuentaAlmuerzo?: boolean; // true = NORMAL, false = CORRIDO
   fechaInicio: string;
   fechaFin?: string;
 };

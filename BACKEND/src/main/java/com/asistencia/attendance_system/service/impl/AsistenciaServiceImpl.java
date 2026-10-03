@@ -479,9 +479,10 @@ public class AsistenciaServiceImpl implements AsistenciaService {
 
         BigDecimal horasTrabajadas = BigDecimal.ZERO;
         if (entradaReal != null && salidaReal != null) {
-            long minutosTrabajados = HorarioUtils.calcularMinutosTrabajados(entradaReal, salidaReal);
+            long minutosTrabajados = HorarioUtils.calcularMinutosTrabajados(entradaReal, salidaReal, bloque.getDescuentaAlmuerzo());
             if (minutosTrabajados >= 0) {
-                horasTrabajadas = BigDecimal.valueOf(minutosTrabajados / 60.0);
+                horasTrabajadas = BigDecimal.valueOf(minutosTrabajados)
+                        .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
             }
         }
 
@@ -890,8 +891,9 @@ public class AsistenciaServiceImpl implements AsistenciaService {
             }
             // horas trabajadas
             if (entrada != null && salida != null) {
-                long mins = HorarioUtils.calcularMinutosTrabajados(entrada, salida);
-                ad.setHorasTrabajadas(mins >= 0 ? BigDecimal.valueOf(mins / 60.0) : BigDecimal.ZERO);
+                long mins = HorarioUtils.calcularMinutosTrabajados(entrada, salida, b.getDescuentaAlmuerzo());
+                ad.setHorasTrabajadas(mins >= 0 ? BigDecimal.valueOf(mins)
+                        .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP) : BigDecimal.ZERO);
             } else {
                 ad.setHorasTrabajadas(BigDecimal.ZERO);
             }

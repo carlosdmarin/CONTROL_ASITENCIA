@@ -51,6 +51,7 @@ public class HorarioServiceImpl implements HorarioService {
         dto.setHoraFin(e.getHoraFin() != null ? e.getHoraFin().toString() : null);
         dto.setActivo(e.getActivo());
         dto.setTipoBloque(e.getTipoBloque() != null ? e.getTipoBloque().name() : null);
+        dto.setDescuentaAlmuerzo(e.getDescuentaAlmuerzo() != null ? e.getDescuentaAlmuerzo() : true);
         return dto;
     }
 
@@ -81,6 +82,7 @@ public class HorarioServiceImpl implements HorarioService {
                         bloque.setHoraInicio(LocalTime.parse(req.getHoraInicio()));
                         bloque.setHoraFin(LocalTime.parse(req.getHoraFin()));
                         bloque.setTipoBloque(TipoBloque.TRABAJO);
+                        bloque.setDescuentaAlmuerzo(req.getDescuentaAlmuerzo() != null ? req.getDescuentaAlmuerzo() : true);
                         bloque.setActivo(true);
                         bloque.setFechaInicio(practicante.getFechaInicioPracticas());
                         bloque.setFechaFin(practicante.getFechaFinPracticas());

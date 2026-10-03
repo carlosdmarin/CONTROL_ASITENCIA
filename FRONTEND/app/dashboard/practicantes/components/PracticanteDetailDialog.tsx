@@ -35,6 +35,7 @@ interface HorarioDetalle {
   horaInicio: string;
   horaFin: string;
   activo: boolean;
+  descuentaAlmuerzo?: boolean; // true = NORMAL, false = CORRIDO
 }
 
 const getInitials = (nombreCompleto: string) => {
@@ -347,7 +348,7 @@ export function PracticanteDetailDialog({
                             }`}
                           >
                             {bloque.activo
-                              ? `${bloque.horaInicio.substring(0, 5)} – ${bloque.horaFin.substring(0, 5)}`
+                              ? `${bloque.horaInicio.substring(0, 5)} – ${bloque.horaFin.substring(0, 5)}${bloque.descuentaAlmuerzo === false ? " · Corrido" : ""}`
                               : "Descanso"}
                           </span>
                         </div>
